@@ -1,1 +1,27 @@
-biomes/foret_luminescente.json
+{
+  "name": "Forêt Luminescente",
+  "category": "FOREST",
+  "temperature": 0.7,
+  "downfall": 0.8,
+  "effects": {
+    "sky_color": "#1a0533",
+    "fog_color": "#2b1055",
+    "water_color": "#3f76e4",
+    "water_fog_color": "#050533",
+    "grass_color": "#4ade80",
+    "foliage_color": "#22d3ee"
+  },
+  "features": {
+    "glowing_trees": true,
+    "luminescent_flowers": true,
+    "mystical_particles": true
+  },
+  "spawn_settings": {
+    "creature_spawn_probability": 0.1,
+    "spawners": {
+      "monster": [],
+      "creature": [],
+      "ambient": []
+    }
+  }
+}
