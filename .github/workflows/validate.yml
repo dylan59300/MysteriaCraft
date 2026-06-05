@@ -1,0 +1,44 @@
+name: Validate Data Files
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'biomes/**'
+      - 'schemas/**'
+      - 'scripts/validate.py'
+  pull_request:
+    paths:
+      - 'biomes/**'
+      - 'schemas/**'
+      - 'scripts/validate.py'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate JSON data files
+        run: python scripts/validate.py --verbose
+
+      - name: Check JSON formatting
+        run: |
+          error=0
+          for f in $(find biomes -name '*.json' 2>/dev/null); do
+            if ! python -m json.tool "$f" > /dev/null 2>&1; then
+              echo "ERROR: $f is not valid JSON"
+              error=1
+            else
+              formatted=$(python -m json.tool --indent 2 "$f")
+              actual=$(cat "$f")
+              if [ "$formatted" != "$actual" ]; then
+                echo "WARNING: $f is not consistently formatted (run: python -m json.tool --indent 2 $f)"
+              fi
+            fi
+          done
+          exit $error

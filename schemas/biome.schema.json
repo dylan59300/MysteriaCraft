@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MysteriaCraft Biome",
+  "description": "Schema for MysteriaCraft biome definition files",
+  "type": "object",
+  "required": ["name", "category", "temperature", "downfall", "effects"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name of the biome"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "NONE", "TAIGA", "EXTREME_HILLS", "JUNGLE", "MESA",
+        "PLAINS", "SAVANNA", "ICY", "THE_END", "BEACH",
+        "FOREST", "OCEAN", "DESERT", "RIVER", "SWAMP",
+        "MUSHROOM", "NETHER", "UNDERGROUND"
+      ],
+      "description": "Biome category"
+    },
+    "temperature": {
+      "type": "number",
+      "minimum": -2.0,
+      "maximum": 2.0,
+      "description": "Biome temperature (-2.0 to 2.0)"
+    },
+    "downfall": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Precipitation level (0.0 to 1.0)"
+    },
+    "effects": {
+      "type": "object",
+      "required": ["sky_color", "fog_color", "water_color", "water_fog_color"],
+      "properties": {
+        "sky_color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Sky color as hex (#RRGGBB)"
+        },
+        "fog_color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Fog color as hex (#RRGGBB)"
+        },
+        "water_color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Water color as hex (#RRGGBB)"
+        },
+        "water_fog_color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Underwater fog color as hex (#RRGGBB)"
+        },
+        "grass_color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Grass color override as hex (#RRGGBB)"
+        },
+        "foliage_color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Foliage color override as hex (#RRGGBB)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "features": {
+      "type": "object",
+      "description": "Custom features enabled in this biome",
+      "additionalProperties": {
+        "type": "boolean"
+      }
+    },
+    "spawn_settings": {
+      "type": "object",
+      "properties": {
+        "creature_spawn_probability": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "spawners": {
+          "type": "object",
+          "properties": {
+            "monster": { "$ref": "#/definitions/spawner_list" },
+            "creature": { "$ref": "#/definitions/spawner_list" },
+            "ambient": { "$ref": "#/definitions/spawner_list" },
+            "water_creature": { "$ref": "#/definitions/spawner_list" },
+            "water_ambient": { "$ref": "#/definitions/spawner_list" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "spawner_list": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "weight", "min_count", "max_count"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Entity type ID (e.g. minecraft:zombie)"
+          },
+          "weight": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "min_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "max_count": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
