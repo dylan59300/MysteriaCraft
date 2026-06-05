@@ -1,0 +1,61 @@
+# ================================
+# Vanadia RPG Plugin - Messages
+# ================================
+
+prefix: "&6[Vanadia] &r"
+
+# General
+no-permission: "&cVous n'avez pas la permission."
+player-only: "&cCette commande est reservee aux joueurs."
+player-not-found: "&cJoueur introuvable."
+reload-success: "&aConfiguration rechargee avec succes!"
+
+# Classes
+class-chosen: "&aVous avez choisi la classe &e{class}&a!"
+class-already-chosen: "&cVous avez deja la classe &e{class}&c."
+class-info: "&7Classe: &e{class} &7| Niveau: &e{level} &7| XP: &e{xp}/{max_xp}"
+class-list-header: "&6=== Classes disponibles ==="
+class-no-class: "&cVous n'avez pas encore choisi de classe. Utilisez &e/class <nom>"
+
+# Niveaux & XP
+level-up: "&6&lNiveau superieur! &eVous etes maintenant niveau &a{level}&e!"
+xp-gained: "&a+{xp} XP"
+
+# Competences
+skill-used: "&aCompetence &e{skill} &aactivee!"
+skill-cooldown: "&cCompetence en recharge! &e{time}s &crestantes."
+skill-no-mana: "&cPas assez de mana! &e{current}/{required}"
+skill-list-header: "&6=== Vos competences ==="
+skill-unlocked: "&6&lNouvelle competence debloquee: &e{skill}!"
+
+# Quetes
+quest-accepted: "&aQuete &e{quest} &aacceptee!"
+quest-completed: "&6&lQuete terminee: &e{quest}&6! Recompense: &a{reward}"
+quest-abandoned: "&cQuete &e{quest} &cabandonnee."
+quest-already-active: "&cVous avez deja cette quete en cours."
+quest-max-active: "&cVous avez atteint le nombre max de quetes actives."
+quest-list-header: "&6=== Quetes disponibles ==="
+quest-progress: "&7Quete &e{quest}&7: &a{progress}/{goal}"
+
+# Mobs custom
+mob-killed: "&a+{xp} XP &7({mob})"
+
+# Donjons
+dungeon-enter: "&6Vous entrez dans &e{dungeon}&6!"
+dungeon-leave: "&7Vous quittez le donjon."
+dungeon-completed: "&6&lDonjon termine: &e{dungeon}&6! Bravo!"
+dungeon-level-required: "&cNiveau minimum requis: &e{level}"
+dungeon-full: "&cCe donjon est plein!"
+dungeon-wave: "&c&lVague {wave}/{max_wave} - Preparez-vous!"
+dungeon-boss: "&4&lBOSS APPARU: &c{boss}"
+
+# Profil
+profile-header: "&6=== Profil de {player} ==="
+profile-class: "&7Classe: &e{class}"
+profile-level: "&7Niveau: &e{level}"
+profile-xp: "&7XP: &e{xp}/{max_xp}"
+profile-health: "&7PV: &c{health}"
+profile-damage: "&7Degats: &e{damage}"
+profile-defense: "&7Defense: &e{defense}"
+profile-quests: "&7Quetes terminees: &e{quests}"
+profile-dungeons: "&7Donjons termines: &e{dungeons}"

@@ -1,0 +1,106 @@
+# ================================
+# Vanadia RPG Plugin - Configuration
+# ================================
+
+# Parametres generaux
+general:
+  language: fr
+  debug: false
+  auto-save-interval: 300 # secondes
+
+# Systeme de niveaux
+levels:
+  max-level: 100
+  xp-formula-base: 100
+  xp-formula-multiplier: 1.5
+  xp-mob-kill: 10
+  xp-quest-completion: 50
+  xp-dungeon-completion: 200
+
+# Classes RPG
+classes:
+  guerrier:
+    display-name: "&cGuerrier"
+    description: "Combattant robuste au corps a corps"
+    base-health: 30
+    base-damage: 8
+    base-defense: 10
+    base-speed: 0.2
+  mage:
+    display-name: "&9Mage"
+    description: "Maitre des arcanes et de la magie"
+    base-health: 20
+    base-damage: 12
+    base-defense: 4
+    base-speed: 0.2
+    base-mana: 100
+  archer:
+    display-name: "&aArcher"
+    description: "Tireur d'elite a longue portee"
+    base-health: 22
+    base-damage: 10
+    base-defense: 6
+    base-speed: 0.25
+  assassin:
+    display-name: "&5Assassin"
+    description: "Frappe rapide et furtive"
+    base-health: 18
+    base-damage: 14
+    base-defense: 3
+    base-speed: 0.3
+
+# Mobs custom
+mobs:
+  zombie-sorcier:
+    display-name: "&5Zombie Sorcier"
+    base-entity: ZOMBIE
+    health: 40
+    damage: 8
+    xp-reward: 25
+    spawn-chance: 0.1
+  squelette-maudit:
+    display-name: "&4Squelette Maudit"
+    base-entity: SKELETON
+    health: 35
+    damage: 10
+    xp-reward: 30
+    spawn-chance: 0.08
+  araignee-venimeuse:
+    display-name: "&2Araignee Venimeuse"
+    base-entity: SPIDER
+    health: 30
+    damage: 6
+    xp-reward: 20
+    spawn-chance: 0.12
+  golem-ancien:
+    display-name: "&6Golem Ancien"
+    base-entity: IRON_GOLEM
+    health: 200
+    damage: 20
+    xp-reward: 100
+    spawn-chance: 0.02
+
+# Donjons
+dungeons:
+  crypte-obscure:
+    display-name: "&8Crypte Obscure"
+    min-level: 5
+    max-players: 4
+    mob-waves: 5
+    boss: golem-ancien
+    rewards:
+      xp: 200
+      items:
+        - DIAMOND:3
+        - GOLDEN_APPLE:1
+  foret-maudite:
+    display-name: "&2Foret Maudite"
+    min-level: 10
+    max-players: 4
+    mob-waves: 8
+    boss: zombie-sorcier
+    rewards:
+      xp: 350
+      items:
+        - DIAMOND:5
+        - ENCHANTED_GOLDEN_APPLE:1
