@@ -1,0 +1,48 @@
+name: Vanadia
+version: '${project.version}'
+main: fr.vanadia.Vanadia
+api-version: '1.20'
+prefix: Vanadia
+description: Plugin RPG magique - Classes, Quetes, Donjons, Mobs custom
+authors:
+  - dylan59300
+
+commands:
+  class:
+    description: Choisir ou voir sa classe RPG
+    usage: /class [guerrier|mage|archer|assassin]
+    permission: vanadia.class
+  skills:
+    description: Voir et utiliser ses competences
+    usage: /skills
+    permission: vanadia.skills
+  quest:
+    description: Gerer ses quetes
+    usage: /quest [list|accept|abandon|info]
+    permission: vanadia.quest
+  profile:
+    description: Voir son profil RPG
+    usage: /profile [joueur]
+    permission: vanadia.profile
+  dungeon:
+    description: Entrer dans un donjon
+    usage: /dungeon [nom]
+    permission: vanadia.dungeon
+  vanadia:
+    description: Commande admin du plugin
+    usage: /vanadia [reload|give|setlevel]
+    permission: vanadia.admin
+
+permissions:
+  vanadia.class:
+    default: true
+  vanadia.skills:
+    default: true
+  vanadia.quest:
+    default: true
+  vanadia.profile:
+    default: true
+  vanadia.dungeon:
+    default: true
+  vanadia.admin:
+    default: op
