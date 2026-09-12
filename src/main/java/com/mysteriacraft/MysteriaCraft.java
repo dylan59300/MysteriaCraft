@@ -12,6 +12,10 @@ import com.mysteriacraft.economy.commands.EcoReloadCommand;
 import com.mysteriacraft.economy.commands.PayCommand;
 import com.mysteriacraft.economy.commands.PayConfirmCommand;
 import com.mysteriacraft.economy.listeners.EconomyJoinQuitListener;
+import com.mysteriacraft.core.gui.MenuListener;
+import com.mysteriacraft.kits.KitManager;
+import com.mysteriacraft.kits.KitService;
+import com.mysteriacraft.kits.commands.KitCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -29,6 +33,10 @@ public final class MysteriaCraft extends JavaPlugin {
     private EconomyManager economyManager;
     private PendingPaymentManager pendingPaymentManager;
 
+    private ConfigManager kitsConfig;
+    private KitManager kitManager;
+    private KitService kitService;
+
     @Override
     public void onEnable() {
         long start = System.currentTimeMillis();
@@ -41,8 +49,14 @@ public final class MysteriaCraft extends JavaPlugin {
         this.database = new Database(this, configManager.get().getString("base-de-donnees.fichier", "database.db"));
         database.connect();
 
+        // Listener generique pour tous les menus GUI (kits, crates, battlepass, quetes, pets...)
+        Bukkit.getPluginManager().registerEvents(new MenuListener(), this);
+
         // ---- Module Economie ----
         setupEconomy();
+
+        // ---- Module Kits ----
+        setupKits();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -66,6 +80,14 @@ public final class MysteriaCraft extends JavaPlugin {
         Bukkit.getScheduler().runTaskAsynchronously(this, () ->
                 Bukkit.getOnlinePlayers().forEach(player ->
                         economyManager.loadAccount(player.getUniqueId(), player.getName())));
+    }
+
+    private void setupKits() {
+        this.kitsConfig = new ConfigManager(this, "kits.yml");
+        this.kitManager = new KitManager(this, database, kitsConfig);
+        this.kitService = new KitService(this, kitManager, messages);
+
+        getCommand("kit").setExecutor(new KitCommand(kitManager, kitService, messages));
     }
 
     @Override

@@ -35,3 +35,12 @@ economie:
   baltop-titre: "&d&l=== Classement des fortunes (page {page}/{max}) ==="
   baltop-ligne: "&7#{rang} &e{joueur} &7- &a{montant}"
   baltop-vide: "&7Aucun joueur enregistre pour le moment."
+
+kits:
+  titre-gui: "&8Kits disponibles"
+  gui-verrouille: "&c&lVerrouille"
+  introuvable: "&cCe kit n'existe pas."
+  pas-permission: "&cVous n'avez pas la permission de reclamer le kit &e{kit}&c."
+  cooldown: "&cVous devez encore attendre &e{temps} &cavant de reclamer &e{kit} &cde nouveau."
+  recu: "&aVous avez recu le kit &e{kit}&a !"
+  inventaire-plein: "&eVotre inventaire etait plein, le surplus a ete depose au sol."

@@ -27,8 +27,14 @@ commands:
     description: Recharge la configuration et les messages du plugin
     usage: /<command>
     permission: mysteriacraft.eco.admin
+  kit:
+    description: Ouvre le menu des kits ou reclame un kit precis
+    usage: /<command> [nom-du-kit]
 
 permissions:
   mysteriacraft.eco.admin:
     description: Autorise la gestion admin de l'economie
     default: op
+  mysteriacraft.kit.vip:
+    description: Donne acces au kit VIP
+    default: false

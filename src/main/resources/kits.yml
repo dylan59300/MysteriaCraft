@@ -1,0 +1,69 @@
+# =========================================
+#   MysteriaCraft - Configuration des kits
+# =========================================
+# cooldown-heures : delai avant de pouvoir reclamer le kit a nouveau (24h par defaut).
+# permission : laisser vide ("") pour un kit accessible a tout le monde.
+# items : liste des objets donnes. "enchantements" est optionnel (NOM_ENCHANTEMENT: niveau).
+
+kits:
+  starter:
+    nom: "&aKit Debutant"
+    icone: CHEST
+    ordre: 1
+    permission: ""
+    cooldown-heures: 24
+    lore:
+      - "&7Un kit pour bien commencer"
+      - "&7l'aventure sur MysteriaCraft."
+      - ""
+      - "&eClic gauche pour reclamer"
+    items:
+      - materiel: WOODEN_SWORD
+        quantite: 1
+      - materiel: WOODEN_PICKAXE
+        quantite: 1
+      - materiel: WOODEN_AXE
+        quantite: 1
+      - materiel: BREAD
+        quantite: 16
+
+  guerrier:
+    nom: "&cKit Guerrier"
+    icone: IRON_SWORD
+    ordre: 2
+    permission: ""
+    cooldown-heures: 24
+    lore:
+      - "&7Equipement de combat basique."
+      - ""
+      - "&eClic gauche pour reclamer"
+    items:
+      - materiel: IRON_SWORD
+        quantite: 1
+      - materiel: IRON_CHESTPLATE
+        quantite: 1
+      - materiel: SHIELD
+        quantite: 1
+      - materiel: COOKED_BEEF
+        quantite: 8
+
+  vip:
+    nom: "&6&lKit VIP"
+    icone: DIAMOND_SWORD
+    ordre: 3
+    permission: "mysteriacraft.kit.vip"
+    cooldown-heures: 24
+    lore:
+      - "&7Reserve aux joueurs VIP."
+      - ""
+      - "&eClic gauche pour reclamer"
+    items:
+      - materiel: DIAMOND_SWORD
+        quantite: 1
+        nom: "&bLame du VIP"
+        enchantements:
+          SHARPNESS: 2
+      - materiel: GOLDEN_APPLE
+        quantite: 4
+      - materiel: DIAMOND
+        quantite: 8
