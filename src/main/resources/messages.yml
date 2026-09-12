@@ -1,0 +1,28 @@
+# =========================================
+#   MysteriaCraft - Messages (couleurs & codes avec &)
+# =========================================
+
+general:
+  joueur-introuvable: "&cCe joueur est introuvable ou n'a jamais rejoint le serveur."
+  pas-de-permission: "&cVous n'avez pas la permission d'utiliser cette commande."
+  commande-joueur-uniquement: "&cCette commande est reservee aux joueurs."
+  usage-invalide: "&cUsage incorrect : &7{usage}"
+
+economie:
+  solde-personnel: "&7Votre solde : &a{montant}"
+  solde-autre: "&7Solde de &e{joueur} &7: &a{montant}"
+  pay-usage: "&cUsage : /pay <joueur> <montant>"
+  pay-montant-invalide: "&cLe montant doit etre un nombre positif."
+  pay-fonds-insuffisants: "&cVous n'avez pas assez d'argent pour effectuer ce paiement."
+  pay-soi-meme: "&cVous ne pouvez pas vous payer vous-meme."
+  pay-envoye: "&aVous avez envoye &e{montant} &a a &e{joueur}&a."
+  pay-recu: "&aVous avez recu &e{montant} &ade la part de &e{joueur}&a."
+  eco-usage: "&cUsage : /eco <give|take|set|reset> <joueur> [montant]"
+  eco-montant-invalide: "&cMontant invalide."
+  eco-give: "&aVous avez donne &e{montant} &aa &e{joueur}&a."
+  eco-take: "&aVous avez retire &e{montant} &ade &e{joueur}&a."
+  eco-set: "&aLe solde de &e{joueur} &aa ete fixe a &e{montant}&a."
+  eco-reset: "&aLe solde de &e{joueur} &aa ete reinitialise."
+  baltop-titre: "&d&l=== Classement des fortunes (page {page}/{max}) ==="
+  baltop-ligne: "&7#{rang} &e{joueur} &7- &a{montant}"
+  baltop-vide: "&7Aucun joueur enregistre pour le moment."

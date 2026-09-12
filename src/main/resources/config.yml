@@ -1,0 +1,15 @@
+# =========================================
+#   MysteriaCraft - Configuration generale
+# =========================================
+
+prefix: "&8[&dMysteria&5Craft&8]&r "
+
+# Devise utilisee pour l'economie interne
+economie:
+  symbole: "$"
+  solde-depart: 100.0
+  solde-max: 1.0E12
+  autoriser-solde-negatif: false
+
+base-de-donnees:
+  fichier: "database.db"

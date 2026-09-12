@@ -1,0 +1,27 @@
+name: MysteriaCraft
+version: '${project.version}'
+main: com.mysteriacraft.MysteriaCraft
+api-version: '1.20'
+author: dylan59300
+description: Plugin serveur - Crates, Economie, Kits, BattlePass, Quetes, Pets, LuckyBlock
+
+commands:
+  balance:
+    description: Affiche votre solde ou celui d'un joueur
+    usage: /<command> [joueur]
+    aliases: [bal, argent]
+  pay:
+    description: Envoie de l'argent a un autre joueur
+    usage: /<command> <joueur> <montant>
+  baltop:
+    description: Classement des joueurs les plus riches
+    usage: /<command> [page]
+  eco:
+    description: Commande admin pour gerer l'economie
+    usage: /<command> <give|take|set|reset> <joueur> [montant]
+    permission: mysteriacraft.eco.admin
+
+permissions:
+  mysteriacraft.eco.admin:
+    description: Autorise la gestion admin de l'economie
+    default: op
