@@ -13,12 +13,19 @@ commands:
   pay:
     description: Envoie de l'argent a un autre joueur
     usage: /<command> <joueur> <montant>
+  payconfirm:
+    description: Confirme un paiement en attente (montant superieur au seuil configure)
+    usage: /<command>
   baltop:
     description: Classement des joueurs les plus riches
     usage: /<command> [page]
   eco:
     description: Commande admin pour gerer l'economie
     usage: /<command> <give|take|set|reset> <joueur> [montant]
+    permission: mysteriacraft.eco.admin
+  ecoreload:
+    description: Recharge la configuration et les messages du plugin
+    usage: /<command>
     permission: mysteriacraft.eco.admin
 
 permissions:
