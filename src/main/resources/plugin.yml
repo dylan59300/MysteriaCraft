@@ -34,6 +34,17 @@ commands:
     description: Recharge kits.yml
     usage: /<command>
     permission: mysteriacraft.kit.admin
+  crate:
+    description: Ouvre le menu des caisses ou ouvre directement une caisse precise
+    usage: /<command> [nom-caisse]
+  cratekey:
+    description: Gere les cles virtuelles d'un joueur pour une caisse
+    usage: /<command> <give|take|set> <joueur> <caisse> <quantite>
+    permission: mysteriacraft.crate.admin
+  cratereload:
+    description: Recharge crates.yml
+    usage: /<command>
+    permission: mysteriacraft.crate.admin
 
 permissions:
   mysteriacraft.eco.admin:
@@ -54,3 +65,6 @@ permissions:
   mysteriacraft.kit.cooldown.vip:
     description: Reduit le cooldown des kits pour les VIP (voir cooldown-permissions dans kits.yml)
     default: false
+  mysteriacraft.crate.admin:
+    description: Autorise la gestion admin des caisses (cles, reload)
+    default: op

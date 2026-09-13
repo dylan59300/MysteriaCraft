@@ -17,6 +17,11 @@ import com.mysteriacraft.kits.KitManager;
 import com.mysteriacraft.kits.KitService;
 import com.mysteriacraft.kits.commands.KitCommand;
 import com.mysteriacraft.kits.commands.KitReloadCommand;
+import com.mysteriacraft.crates.CrateManager;
+import com.mysteriacraft.crates.CrateService;
+import com.mysteriacraft.crates.commands.CrateCommand;
+import com.mysteriacraft.crates.commands.CrateKeyCommand;
+import com.mysteriacraft.crates.commands.CrateReloadCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -38,6 +43,10 @@ public final class MysteriaCraft extends JavaPlugin {
     private KitManager kitManager;
     private KitService kitService;
 
+    private ConfigManager cratesConfig;
+    private CrateManager crateManager;
+    private CrateService crateService;
+
     @Override
     public void onEnable() {
         long start = System.currentTimeMillis();
@@ -58,6 +67,9 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Module Kits ----
         setupKits();
+
+        // ---- Module Crates ----
+        setupCrates();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -90,6 +102,16 @@ public final class MysteriaCraft extends JavaPlugin {
 
         getCommand("kit").setExecutor(new KitCommand(this, kitManager, kitService, messages));
         getCommand("kitreload").setExecutor(new KitReloadCommand(kitsConfig, kitManager, messages));
+    }
+
+    private void setupCrates() {
+        this.cratesConfig = new ConfigManager(this, "crates.yml");
+        this.crateManager = new CrateManager(this, database, cratesConfig);
+        this.crateService = new CrateService(this, crateManager, economyManager, messages);
+
+        getCommand("crate").setExecutor(new CrateCommand(this, crateManager, crateService, messages));
+        getCommand("cratekey").setExecutor(new CrateKeyCommand(this, crateManager, messages));
+        getCommand("cratereload").setExecutor(new CrateReloadCommand(cratesConfig, crateManager, messages));
     }
 
     @Override

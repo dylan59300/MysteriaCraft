@@ -1,0 +1,124 @@
+# =========================================
+#   MysteriaCraft - Configuration des caisses (crates)
+# =========================================
+# Les cles sont virtuelles (stockees en base), pas des objets physiques.
+# animation : INSTANT | ROULETTE | QUICK_REVEAL
+# loot.chance : poids relatif (n'a pas besoin de sommer a 100, juste des proportions entre elles).
+# loot.type : ITEM (donne un objet) ou ECONOMIE (credite un montant).
+# loot.rarete : COMMUNE | RARE | EPIQUE | LEGENDAIRE (couleur d'affichage uniquement).
+
+crates:
+  commune:
+    nom: "&7Caisse Commune"
+    icone: CHEST
+    ordre: 1
+    permission: ""
+    animation: ROULETTE
+    lore:
+      - "&7Une caisse basique, contient"
+      - "&7surtout des recompenses communes."
+    loot:
+      - id: bois
+        type: ITEM
+        materiel: OAK_LOG
+        quantite: 16
+        chance: 35
+        rarete: COMMUNE
+      - id: fer
+        type: ITEM
+        materiel: IRON_INGOT
+        quantite: 8
+        chance: 25
+        rarete: COMMUNE
+      - id: piecettes
+        type: ECONOMIE
+        montant: 50
+        icone: GOLD_NUGGET
+        nom: "&e50 pieces"
+        chance: 20
+        rarete: COMMUNE
+      - id: or
+        type: ITEM
+        materiel: GOLD_INGOT
+        quantite: 8
+        chance: 12
+        rarete: RARE
+      - id: diamant
+        type: ITEM
+        materiel: DIAMOND
+        quantite: 2
+        chance: 6
+        rarete: RARE
+      - id: jackpot
+        type: ECONOMIE
+        montant: 1000
+        icone: EMERALD
+        nom: "&6&lJackpot 1000$"
+        chance: 2
+        rarete: LEGENDAIRE
+
+  legendaire:
+    nom: "&6&lCaisse Legendaire"
+    icone: ENDER_CHEST
+    ordre: 2
+    permission: ""
+    animation: QUICK_REVEAL
+    lore:
+      - "&7Une caisse rare, avec de bien"
+      - "&7meilleures chances de gros lots."
+    loot:
+      - id: diamants
+        type: ITEM
+        materiel: DIAMOND
+        quantite: 5
+        chance: 30
+        rarete: RARE
+      - id: emeraudes
+        type: ITEM
+        materiel: EMERALD
+        quantite: 10
+        chance: 25
+        rarete: RARE
+      - id: piecettes
+        type: ECONOMIE
+        montant: 500
+        icone: GOLD_INGOT
+        nom: "&e500 pieces"
+        chance: 20
+        rarete: EPIQUE
+      - id: netherite
+        type: ITEM
+        materiel: NETHERITE_INGOT
+        quantite: 1
+        chance: 15
+        rarete: EPIQUE
+      - id: jackpot
+        type: ECONOMIE
+        montant: 5000
+        icone: NETHER_STAR
+        nom: "&6&lJACKPOT 5000$"
+        chance: 10
+        rarete: LEGENDAIRE
+
+  bienvenue:
+    nom: "&aCaisse de Bienvenue"
+    icone: BUNDLE
+    ordre: 3
+    permission: ""
+    animation: INSTANT
+    lore:
+      - "&7Un petit cadeau instantane."
+    loot:
+      - id: pain
+        type: ITEM
+        materiel: BREAD
+        quantite: 8
+        chance: 50
+        rarete: COMMUNE
+      - id: piecettes
+        type: ECONOMIE
+        montant: 25
+        icone: GOLD_NUGGET
+        nom: "&e25 pieces"
+        chance: 50
+        rarete: COMMUNE
