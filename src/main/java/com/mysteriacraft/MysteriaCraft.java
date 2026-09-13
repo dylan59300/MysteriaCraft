@@ -22,6 +22,10 @@ import com.mysteriacraft.crates.CrateService;
 import com.mysteriacraft.crates.commands.CrateCommand;
 import com.mysteriacraft.crates.commands.CrateKeyCommand;
 import com.mysteriacraft.crates.commands.CrateReloadCommand;
+import com.mysteriacraft.battlepass.BattlePassManager;
+import com.mysteriacraft.battlepass.BattlePassService;
+import com.mysteriacraft.battlepass.commands.BattlePassAdminCommand;
+import com.mysteriacraft.battlepass.commands.BattlePassCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -47,6 +51,10 @@ public final class MysteriaCraft extends JavaPlugin {
     private CrateManager crateManager;
     private CrateService crateService;
 
+    private ConfigManager battlepassConfig;
+    private BattlePassManager battlePassManager;
+    private BattlePassService battlePassService;
+
     @Override
     public void onEnable() {
         long start = System.currentTimeMillis();
@@ -70,6 +78,9 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Module Crates ----
         setupCrates();
+
+        // ---- Module BattlePass ----
+        setupBattlePass();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -112,6 +123,24 @@ public final class MysteriaCraft extends JavaPlugin {
         getCommand("crate").setExecutor(new CrateCommand(this, crateManager, crateService, economyManager, messages));
         getCommand("cratekey").setExecutor(new CrateKeyCommand(this, crateManager, messages));
         getCommand("cratereload").setExecutor(new CrateReloadCommand(cratesConfig, crateManager, messages));
+    }
+
+    private void setupBattlePass() {
+        this.battlepassConfig = new ConfigManager(this, "battlepass.yml");
+        this.battlePassManager = new BattlePassManager(this, database, battlepassConfig);
+        this.battlePassService = new BattlePassService(this, battlePassManager, economyManager, messages);
+
+        getCommand("battlepass").setExecutor(new BattlePassCommand(this, battlePassManager, battlePassService, messages));
+        getCommand("battlepassadmin").setExecutor(
+                new BattlePassAdminCommand(this, battlepassConfig, battlePassManager, battlePassService, messages));
+
+        // XP passive au temps de jeu, en attendant que le module Quetes soit branche sur addXp().
+        long xpPerMinute = battlePassManager.getXpPerMinute();
+        if (xpPerMinute > 0) {
+            Bukkit.getScheduler().runTaskTimer(this, () ->
+                    Bukkit.getOnlinePlayers().forEach(player -> battlePassService.addXp(player, xpPerMinute)),
+                    20L * 60, 20L * 60);
+        }
     }
 
     @Override

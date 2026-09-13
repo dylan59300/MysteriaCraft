@@ -45,6 +45,13 @@ commands:
     description: Recharge crates.yml
     usage: /<command>
     permission: mysteriacraft.crate.admin
+  battlepass:
+    description: Ouvre le menu du BattlePass (saison permanente)
+    usage: /<command>
+  battlepassadmin:
+    description: Gere le BattlePass (addxp, reload)
+    usage: /<command> <addxp <joueur> <montant>|reload>
+    permission: mysteriacraft.battlepass.admin
 
 permissions:
   mysteriacraft.eco.admin:
@@ -67,4 +74,7 @@ permissions:
     default: false
   mysteriacraft.crate.admin:
     description: Autorise la gestion admin des caisses (cles, reload)
+    default: op
+  mysteriacraft.battlepass.admin:
+    description: Autorise la gestion admin du BattlePass (xp, reload)
     default: op

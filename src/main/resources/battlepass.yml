@@ -1,0 +1,106 @@
+# =========================================
+#   MysteriaCraft - Configuration du BattlePass
+# =========================================
+# Saison permanente : pas de date de fin, la progression n'est jamais reinitialisee.
+# xp-requis est CUMULATIF (xp totale necessaire depuis le debut pour atteindre ce palier).
+# gratuit / premium : ITEM (materiel + quantite) ou ECONOMIE (montant). Laisser absent = pas de recompense sur cette piste.
+# Tant que les Quetes ne sont pas branchees dessus, l'xp est gagnee passivement (xp-par-minute-de-jeu)
+# et via /battlepassadmin addxp <joueur> <montant> (admin).
+
+xp-par-minute-de-jeu: 5
+prix-premium: 5000
+
+niveaux:
+  1:
+    xp-requis: 0
+    gratuit:
+      type: ITEM
+      materiel: BREAD
+      quantite: 8
+    premium:
+      type: ECONOMIE
+      montant: 100
+  2:
+    xp-requis: 100
+    gratuit:
+      type: ITEM
+      materiel: IRON_INGOT
+      quantite: 4
+    premium:
+      type: ITEM
+      materiel: DIAMOND
+      quantite: 1
+  3:
+    xp-requis: 250
+    gratuit:
+      type: ECONOMIE
+      montant: 150
+    premium:
+      type: ITEM
+      materiel: EMERALD
+      quantite: 4
+  4:
+    xp-requis: 450
+    gratuit:
+      type: ITEM
+      materiel: GOLDEN_APPLE
+      quantite: 1
+    premium:
+      type: ECONOMIE
+      montant: 500
+  5:
+    xp-requis: 700
+    gratuit:
+      type: ITEM
+      materiel: DIAMOND
+      quantite: 2
+    premium:
+      type: ITEM
+      materiel: NETHERITE_SCRAP
+      quantite: 2
+  6:
+    xp-requis: 1000
+    gratuit:
+      type: ECONOMIE
+      montant: 250
+    premium:
+      type: ITEM
+      materiel: DIAMOND
+      quantite: 5
+  7:
+    xp-requis: 1400
+    gratuit:
+      type: ITEM
+      materiel: EXPERIENCE_BOTTLE
+      quantite: 8
+    premium:
+      type: ECONOMIE
+      montant: 750
+  8:
+    xp-requis: 1900
+    gratuit:
+      type: ITEM
+      materiel: DIAMOND
+      quantite: 3
+    premium:
+      type: ITEM
+      materiel: NETHERITE_INGOT
+      quantite: 1
+  9:
+    xp-requis: 2500
+    gratuit:
+      type: ECONOMIE
+      montant: 400
+    premium:
+      type: ITEM
+      materiel: NETHER_STAR
+      quantite: 1
+  10:
+    xp-requis: 3200
+    gratuit:
+      type: ITEM
+      materiel: DIAMOND_BLOCK
+      quantite: 1
+    premium:
+      type: ECONOMIE
+      montant: 5000
