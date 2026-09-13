@@ -26,6 +26,12 @@ import com.mysteriacraft.battlepass.BattlePassManager;
 import com.mysteriacraft.battlepass.BattlePassService;
 import com.mysteriacraft.battlepass.commands.BattlePassAdminCommand;
 import com.mysteriacraft.battlepass.commands.BattlePassCommand;
+import com.mysteriacraft.battlepass.commands.BattlePassConfirmPremiumCommand;
+import com.mysteriacraft.quests.QuestManager;
+import com.mysteriacraft.quests.QuestService;
+import com.mysteriacraft.quests.commands.QuestsAdminCommand;
+import com.mysteriacraft.quests.commands.QuestsCommand;
+import com.mysteriacraft.quests.listeners.QuestListener;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -55,6 +61,10 @@ public final class MysteriaCraft extends JavaPlugin {
     private BattlePassManager battlePassManager;
     private BattlePassService battlePassService;
 
+    private ConfigManager questsConfig;
+    private QuestManager questManager;
+    private QuestService questService;
+
     @Override
     public void onEnable() {
         long start = System.currentTimeMillis();
@@ -81,6 +91,9 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Module BattlePass ----
         setupBattlePass();
+
+        // ---- Module Quetes ----
+        setupQuests();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -133,14 +146,27 @@ public final class MysteriaCraft extends JavaPlugin {
         getCommand("battlepass").setExecutor(new BattlePassCommand(this, battlePassManager, battlePassService, messages));
         getCommand("battlepassadmin").setExecutor(
                 new BattlePassAdminCommand(this, battlepassConfig, battlePassManager, battlePassService, messages));
+        getCommand("battlepassconfirmpremium").setExecutor(
+                new BattlePassConfirmPremiumCommand(battlePassService, messages));
 
-        // XP passive au temps de jeu, en attendant que le module Quetes soit branche sur addXp().
+        // XP passive au temps de jeu, en plus de l'xp donnee par les Quetes (QuestService#addXp).
         long xpPerMinute = battlePassManager.getXpPerMinute();
         if (xpPerMinute > 0) {
             Bukkit.getScheduler().runTaskTimer(this, () ->
                     Bukkit.getOnlinePlayers().forEach(player -> battlePassService.addXp(player, xpPerMinute)),
                     20L * 60, 20L * 60);
         }
+    }
+
+    private void setupQuests() {
+        this.questsConfig = new ConfigManager(this, "quests.yml");
+        this.questManager = new QuestManager(this, database, questsConfig);
+        this.questService = new QuestService(this, questManager, battlePassService, economyManager, messages);
+
+        Bukkit.getPluginManager().registerEvents(new QuestListener(questService), this);
+
+        getCommand("quests").setExecutor(new QuestsCommand(this, questManager, messages));
+        getCommand("questsadmin").setExecutor(new QuestsAdminCommand(questsConfig, questManager, messages));
     }
 
     @Override

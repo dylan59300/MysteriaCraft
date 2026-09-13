@@ -78,7 +78,7 @@ public class BattlePassGui extends Menu {
     public void refresh() {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             long newXp = manager.getXp(viewer.getUniqueId());
-            boolean newPremium = manager.isPremium(viewer.getUniqueId());
+            boolean newPremium = service.isPremiumEffective(viewer);
             Set<String> newClaims = manager.getAllClaims(viewer.getUniqueId());
             Bukkit.getScheduler().runTask(plugin, () -> {
                 this.xp = newXp;
@@ -214,8 +214,10 @@ public class BattlePassGui extends Menu {
             return;
         }
         if (slot == BUY_PREMIUM_SLOT && !premium && event.getWhoClicked() instanceof Player player) {
-            service.buyPremium(player);
-            refresh();
+            // L'achat necessite une confirmation cliquable dans le chat : on ferme le menu
+            // pour que le joueur voie clairement le message de confirmation.
+            player.closeInventory();
+            service.requestPremiumPurchase(player);
             return;
         }
 

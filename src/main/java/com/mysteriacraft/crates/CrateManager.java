@@ -2,6 +2,8 @@ package com.mysteriacraft.crates;
 
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.gui.ItemBuilder;
+import com.mysteriacraft.core.reward.Reward;
+import com.mysteriacraft.core.reward.RewardType;
 import com.mysteriacraft.core.storage.Database;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -135,7 +137,8 @@ public class CrateManager {
                     .name(displayName)
                     .lore(List.of("&7Recompense : &e" + amount + "$"))
                     .build();
-            return new CrateReward(id, RewardType.ECONOMIE, null, amount, chance, rarity, displayName, displayIcon);
+            Reward reward = Reward.ofEconomy(amount, displayName, displayIcon);
+            return new CrateReward(id, reward, chance, rarity);
         }
 
         Object materialRaw = raw.get("materiel");
@@ -157,7 +160,8 @@ public class CrateManager {
                 .name(displayName)
                 .build();
 
-        return new CrateReward(id, RewardType.ITEM, item, 0, chance, rarity, displayName, displayIcon);
+        Reward reward = Reward.ofItem(item, displayName, displayIcon);
+        return new CrateReward(id, reward, chance, rarity);
     }
 
     public List<Crate> getCratesSorted() {

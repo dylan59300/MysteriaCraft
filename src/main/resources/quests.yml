@@ -1,0 +1,79 @@
+# =========================================
+#   MysteriaCraft - Configuration des Quetes
+# =========================================
+# Reset automatique : la progression est suivie par periode (jour ou semaine ISO courante).
+# Des qu'un nouveau jour/semaine commence, la progression repart de zero, sans tache a programmer.
+# type : BREAK_BLOCK | PLACE_BLOCK | KILL_MOB | FISH
+# cible : materiau (BREAK_BLOCK/PLACE_BLOCK) ou type d'entite (KILL_MOB). Absent = tout compte (FISH).
+# xp : ajoutee automatiquement au BattlePass a la completion.
+# recompense : ITEM ou ECONOMIE, donnee automatiquement a la completion (optionnel).
+
+quotidiennes:
+  casser_pierre:
+    nom: "&7Casser de la pierre"
+    icone: STONE
+    type: BREAK_BLOCK
+    cible: STONE
+    objectif: 64
+    xp: 50
+    recompense:
+      type: ECONOMIE
+      montant: 20
+
+  tuer_zombies:
+    nom: "&2Tuer des zombies"
+    icone: ZOMBIE_HEAD
+    type: KILL_MOB
+    cible: ZOMBIE
+    objectif: 10
+    xp: 80
+    recompense:
+      type: ITEM
+      materiel: COOKED_BEEF
+      quantite: 8
+
+  planter_bois:
+    nom: "&6Recolter du bois"
+    icone: OAK_LOG
+    type: BREAK_BLOCK
+    cible: OAK_LOG
+    objectif: 32
+    xp: 40
+    recompense:
+      type: ECONOMIE
+      montant: 15
+
+hebdomadaires:
+  miner_diamants:
+    nom: "&bMiner du minerai de diamant"
+    icone: DIAMOND_ORE
+    type: BREAK_BLOCK
+    cible: DIAMOND_ORE
+    objectif: 20
+    xp: 400
+    recompense:
+      type: ECONOMIE
+      montant: 500
+
+  pecher:
+    nom: "&9Pecher"
+    icone: FISHING_ROD
+    type: FISH
+    objectif: 30
+    xp: 300
+    recompense:
+      type: ITEM
+      materiel: EMERALD
+      quantite: 5
+
+  tuer_squelettes:
+    nom: "&fTuer des squelettes"
+    icone: SKELETON_SKULL
+    type: KILL_MOB
+    cible: SKELETON
+    objectif: 50
+    xp: 350
+    recompense:
+      type: ITEM
+      materiel: DIAMOND
+      quantite: 3

@@ -2,6 +2,7 @@ package com.mysteriacraft.battlepass;
 
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.gui.ItemBuilder;
+import com.mysteriacraft.core.reward.Reward;
 import com.mysteriacraft.core.storage.Database;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -104,10 +105,11 @@ public class BattlePassManager {
 
         if (isEconomie) {
             double amount = section.getDouble("montant", 0);
+            String displayName = (long) amount + "$";
             ItemStack icon = new ItemBuilder(Material.GOLD_INGOT)
-                    .name("&e" + (long) amount + "$")
+                    .name("&e" + displayName)
                     .build();
-            return new BattlePassReward(RewardType.ECONOMIE, null, amount, (long) amount + "$", icon);
+            return new BattlePassReward(Reward.ofEconomy(amount, displayName, icon));
         }
 
         Material material = Material.matchMaterial(section.getString("materiel", "STONE"));
@@ -118,7 +120,7 @@ public class BattlePassManager {
         ItemStack item = new ItemStack(material, quantity);
         String displayName = material.name().replace('_', ' ') + " x" + quantity;
         ItemStack icon = new ItemBuilder(material, quantity).name("&f" + displayName).build();
-        return new BattlePassReward(RewardType.ITEM, item, 0, displayName, icon);
+        return new BattlePassReward(Reward.ofItem(item, displayName, icon));
     }
 
     public List<BattlePassLevel> getLevels() {

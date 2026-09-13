@@ -52,6 +52,16 @@ commands:
     description: Gere le BattlePass (addxp, reload)
     usage: /<command> <addxp <joueur> <montant>|reload>
     permission: mysteriacraft.battlepass.admin
+  battlepassconfirmpremium:
+    description: Confirme l'achat en attente du Pass Premium
+    usage: /<command>
+  quests:
+    description: Ouvre le menu des quetes quotidiennes et hebdomadaires
+    usage: /<command>
+  questsadmin:
+    description: Recharge quests.yml
+    usage: /<command>
+    permission: mysteriacraft.quests.admin
 
 permissions:
   mysteriacraft.eco.admin:
@@ -77,4 +87,10 @@ permissions:
     default: op
   mysteriacraft.battlepass.admin:
     description: Autorise la gestion admin du BattlePass (xp, reload)
+    default: op
+  mysteriacraft.battlepass.premium:
+    description: Accorde le Pass Premium sans achat (a lier a un rang ou un kit VIP)
+    default: false
+  mysteriacraft.quests.admin:
+    description: Autorise la gestion admin des quetes (reload)
     default: op

@@ -34,7 +34,7 @@ public class BattlePassCommand implements CommandExecutor {
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             long xp = manager.getXp(player.getUniqueId());
-            boolean premium = manager.isPremium(player.getUniqueId());
+            boolean premium = service.isPremiumEffective(player);
             var claims = manager.getAllClaims(player.getUniqueId());
 
             Bukkit.getScheduler().runTask(plugin, () ->

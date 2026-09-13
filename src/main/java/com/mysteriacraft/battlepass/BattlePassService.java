@@ -1,35 +1,54 @@
 package com.mysteriacraft.battlepass;
 
 import com.mysteriacraft.core.config.MessageManager;
+import com.mysteriacraft.core.reward.RewardGiver;
 import com.mysteriacraft.economy.EconomyManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Orchestre la progression du BattlePass : gain d'xp (avec detection de passage de niveau),
- * achat de la piste premium, et reclamation des recompenses (gratuite/premium) par palier.
+ * achat de la piste premium (avec confirmation cliquable), et reclamation des recompenses
+ * (gratuite/premium) par palier.
  */
 public class BattlePassService {
 
     public static final String TRACK_FREE = "GRATUIT";
     public static final String TRACK_PREMIUM = "PREMIUM";
 
+    /** Permission accordant le premium sans achat (ex: liee a un rang ou un kit VIP vendu ailleurs). */
+    public static final String PERMISSION_PREMIUM = "mysteriacraft.battlepass.premium";
+
+    private static final long CONFIRMATION_EXPIRATION_SECONDS = 30L;
+
     private final Plugin plugin;
     private final BattlePassManager manager;
     private final EconomyManager economyManager;
     private final MessageManager messages;
+
+    /** Achats de premium en attente de confirmation cliquable, par joueur (expiration en millis). */
+    private final Map<UUID, Long> pendingPremiumPurchase = new ConcurrentHashMap<>();
 
     public BattlePassService(Plugin plugin, BattlePassManager manager, EconomyManager economyManager, MessageManager messages) {
         this.plugin = plugin;
         this.manager = manager;
         this.economyManager = economyManager;
         this.messages = messages;
+    }
+
+    /** Premium effectif : achete OU accorde par permission (rang, kit VIP vendu via un autre systeme). */
+    public boolean isPremiumEffective(Player player) {
+        return player.hasPermission(PERMISSION_PREMIUM) || manager.isPremium(player.getUniqueId());
     }
 
     /** Ajoute de l'xp a un joueur en ligne et le previent s'il passe un ou plusieurs niveaux. */
@@ -50,11 +69,46 @@ public class BattlePassService {
         });
     }
 
-    public void buyPremium(Player player) {
+    /** Etape 1 : demande de confirmation avant l'achat du premium (comme le seuil de confirmation sur /pay). */
+    public void requestPremiumPurchase(Player player) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            if (isPremiumEffective(player)) {
+                Bukkit.getScheduler().runTask(plugin, () -> messages.send(player, "battlepass.deja-premium"));
+                return;
+            }
+
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                long expiresAt = System.currentTimeMillis() + CONFIRMATION_EXPIRATION_SECONDS * 1000L;
+                pendingPremiumPurchase.put(player.getUniqueId(), expiresAt);
+
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("prix", economyManager.format(manager.getPremiumPrice()));
+                messages.send(player, "battlepass.confirmation-demande", placeholders);
+
+                String clicText = messages.raw("battlepass.confirmation-clic")
+                        .replace("{expiration}", String.valueOf(CONFIRMATION_EXPIRATION_SECONDS));
+                String survolText = messages.raw("battlepass.confirmation-survol");
+
+                LegacyComponentSerializer legacy = LegacyComponentSerializer.legacySection();
+                Component clicComponent = legacy.deserialize(clicText)
+                        .clickEvent(ClickEvent.runCommand("/battlepassconfirmpremium"))
+                        .hoverEvent(HoverEvent.showText(legacy.deserialize(survolText)));
+                player.sendMessage(clicComponent);
+            });
+        });
+    }
+
+    /** Etape 2 : confirmation effective, execute l'achat si toujours valide. */
+    public void confirmPremiumPurchase(Player player) {
+        Long expiresAt = pendingPremiumPurchase.remove(player.getUniqueId());
+        if (expiresAt == null || System.currentTimeMillis() > expiresAt) {
+            messages.send(player, "battlepass.confirmation-expiree");
+            return;
+        }
+
         double price = manager.getPremiumPrice();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            boolean alreadyPremium = manager.isPremium(player.getUniqueId());
-            if (alreadyPremium) {
+            if (isPremiumEffective(player)) {
                 Bukkit.getScheduler().runTask(plugin, () -> messages.send(player, "battlepass.deja-premium"));
                 return;
             }
@@ -77,6 +131,7 @@ public class BattlePassService {
             long xp = manager.getXp(player.getUniqueId());
             int currentLevel = manager.computeLevel(xp);
             BattlePassLevel bpLevel = manager.getLevel(level);
+            boolean premiumEffective = isPremiumEffective(player);
 
             Runnable fail = () -> Bukkit.getScheduler().runTask(plugin, () -> {
                 if (onFinished != null) {
@@ -101,7 +156,7 @@ public class BattlePassService {
                 fail.run();
                 return;
             }
-            if (TRACK_PREMIUM.equals(track) && !manager.isPremium(player.getUniqueId())) {
+            if (TRACK_PREMIUM.equals(track) && !premiumEffective) {
                 Bukkit.getScheduler().runTask(plugin, () -> messages.send(player, "battlepass.besoin-premium"));
                 fail.run();
                 return;
@@ -123,19 +178,7 @@ public class BattlePassService {
     }
 
     private void giveReward(Player player, BattlePassReward reward) {
-        if (reward.type() == RewardType.ECONOMIE) {
-            economyManager.deposit(player.getUniqueId(), reward.economyAmount());
-        } else if (reward.item() != null) {
-            ItemStack toGive = reward.item().clone();
-            Map<Integer, ItemStack> leftovers = player.getInventory().addItem(toGive);
-            if (!leftovers.isEmpty()) {
-                Location dropLocation = player.getLocation();
-                for (ItemStack leftover : leftovers.values()) {
-                    player.getWorld().dropItemNaturally(dropLocation, leftover);
-                }
-                messages.send(player, "kits.inventaire-plein");
-            }
-        }
+        RewardGiver.give(player, reward.reward(), economyManager, messages);
 
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("recompense", reward.displayName());

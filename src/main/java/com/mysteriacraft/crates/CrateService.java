@@ -1,14 +1,13 @@
 package com.mysteriacraft.crates;
 
 import com.mysteriacraft.core.config.MessageManager;
+import com.mysteriacraft.core.reward.RewardGiver;
 import com.mysteriacraft.crates.gui.InstantCrateGui;
 import com.mysteriacraft.crates.gui.QuickRevealCrateGui;
 import com.mysteriacraft.crates.gui.RouletteCrateGui;
 import com.mysteriacraft.economy.EconomyManager;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
 import java.util.HashMap;
@@ -142,19 +141,7 @@ public class CrateService {
 
     /** Applique reellement une recompense (objet ou credit d'economie) et previent le joueur. */
     public void giveReward(Player player, CrateReward reward) {
-        if (reward.type() == RewardType.ECONOMIE) {
-            economyManager.deposit(player.getUniqueId(), reward.economyAmount());
-        } else if (reward.item() != null) {
-            ItemStack toGive = reward.item().clone();
-            Map<Integer, ItemStack> leftovers = player.getInventory().addItem(toGive);
-            if (!leftovers.isEmpty()) {
-                Location dropLocation = player.getLocation();
-                for (ItemStack leftover : leftovers.values()) {
-                    player.getWorld().dropItemNaturally(dropLocation, leftover);
-                }
-                messages.send(player, "kits.inventaire-plein");
-            }
-        }
+        RewardGiver.give(player, reward.reward(), economyManager, messages);
 
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("recompense", reward.displayName());
