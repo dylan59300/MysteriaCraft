@@ -7,6 +7,7 @@ import com.mysteriacraft.core.gui.MenuHolder;
 import com.mysteriacraft.crates.Crate;
 import com.mysteriacraft.crates.CrateManager;
 import com.mysteriacraft.crates.CrateService;
+import com.mysteriacraft.economy.EconomyManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -14,6 +15,7 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,8 +23,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Menu listant les caisses disponibles avec le nombre de cles virtuelles possedees.
- * Clic gauche = ouvrir la caisse (si au moins une cle). Clic droit = voir la table de loot en %.
+ * Menu listant les caisses disponibles avec le nombre de cles virtuelles possedees et,
+ * si un pity est configure, la progression vers le prochain legendaire garanti.
+ * Clic gauche = ouvrir la caisse. Clic droit = voir la table de loot en %.
+ * Shift-clic gauche = acheter des cles (si la caisse est achetable).
  */
 public class CrateListGui extends Menu {
 
@@ -31,23 +35,30 @@ public class CrateListGui extends Menu {
     private static final int PREVIOUS_SLOT = 18;
     private static final int NEXT_SLOT = 26;
 
+    private final Plugin plugin;
     private final CrateManager crateManager;
     private final CrateService crateService;
+    private final EconomyManager economyManager;
     private final MessageManager messages;
     private final Map<String, Integer> keyCounts;
+    private final Map<String, Integer> pityCounts;
     private final Map<Integer, String> slotToCrateId = new HashMap<>();
 
     private Inventory inventory;
     private List<Crate> crates;
     private int page = 0;
 
-    public CrateListGui(Player viewer, CrateManager crateManager, CrateService crateService,
-                         MessageManager messages, Map<String, Integer> keyCounts) {
+    public CrateListGui(Plugin plugin, Player viewer, CrateManager crateManager, CrateService crateService,
+                         EconomyManager economyManager, MessageManager messages,
+                         Map<String, Integer> keyCounts, Map<String, Integer> pityCounts) {
         super(viewer);
+        this.plugin = plugin;
         this.crateManager = crateManager;
         this.crateService = crateService;
+        this.economyManager = economyManager;
         this.messages = messages;
-        this.keyCounts = keyCounts;
+        this.keyCounts = new HashMap<>(keyCounts);
+        this.pityCounts = new HashMap<>(pityCounts);
     }
 
     @Override
@@ -58,6 +69,27 @@ public class CrateListGui extends Menu {
         this.crates = new ArrayList<>(crateManager.getCratesSorted());
         render();
         return inventory;
+    }
+
+    /** Recharge les cles/pity depuis la base (async) puis rouvre le menu a la meme page. Utilise apres un achat. */
+    public void refresh() {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            Map<String, Integer> newKeys = new HashMap<>();
+            Map<String, Integer> newPity = new HashMap<>();
+            for (Crate crate : crateManager.getCratesSorted()) {
+                newKeys.put(crate.id(), crateManager.getKeyCount(viewer.getUniqueId(), crate.id()));
+                if (crate.hasPity()) {
+                    newPity.put(crate.id(), crateManager.getPityCount(viewer.getUniqueId(), crate.id()));
+                }
+            }
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                keyCounts.clear();
+                keyCounts.putAll(newKeys);
+                pityCounts.clear();
+                pityCounts.putAll(newPity);
+                open();
+            });
+        });
     }
 
     private int maxPage() {
@@ -100,16 +132,21 @@ public class CrateListGui extends Menu {
 
         List<String> lore = new ArrayList<>(crate.lore());
         lore.add("");
-        Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("cles", String.valueOf(keys));
-        String keyLine = messages.raw("crates.gui-cles");
-        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-            keyLine = keyLine.replace("{" + entry.getKey() + "}", entry.getValue());
+        lore.add(replace(messages.raw("crates.gui-cles"), "cles", String.valueOf(keys)));
+
+        if (crate.hasPity()) {
+            int pity = pityCounts.getOrDefault(crate.id(), 0);
+            String pityLine = replace(messages.raw("crates.gui-pity"), "compteur", String.valueOf(pity));
+            pityLine = replace(pityLine, "seuil", String.valueOf(crate.pityThreshold()));
+            lore.add(pityLine);
         }
-        lore.add(keyLine);
+
         lore.add("");
         lore.add(messages.raw("crates.gui-clic-gauche"));
         lore.add(messages.raw("crates.gui-clic-droit"));
+        if (crate.isPurchasable()) {
+            lore.add(replace(messages.raw("crates.gui-clic-shift"), "prix", economyManager.format(crate.keyPrice())));
+        }
         if (!unlocked) {
             lore.add("");
             lore.add(messages.raw("kits.gui-verrouille"));
@@ -120,6 +157,10 @@ public class CrateListGui extends Menu {
                 .name(name)
                 .lore(lore)
                 .build();
+    }
+
+    private String replace(String text, String key, String value) {
+        return text.replace("{" + key + "}", value);
     }
 
     @Override
@@ -141,12 +182,22 @@ public class CrateListGui extends Menu {
         if (crateId == null || !(event.getWhoClicked() instanceof Player player)) {
             return;
         }
+        Crate crate = crateManager.getCrate(crateId);
+        if (crate == null) {
+            return;
+        }
 
         if (event.getClick() == ClickType.RIGHT) {
-            Crate crate = crateManager.getCrate(crateId);
-            if (crate != null) {
-                new CrateOddsGui(player, crate, this, messages).open();
+            new CrateOddsGui(player, crate, this, messages).open();
+            return;
+        }
+
+        if (event.getClick() == ClickType.SHIFT_LEFT) {
+            if (!crate.isPurchasable()) {
+                messages.send(player, "crates.non-achetable");
+                return;
             }
+            new BuyKeyGui(player, crate, this, crateService, economyManager, messages).open();
             return;
         }
 

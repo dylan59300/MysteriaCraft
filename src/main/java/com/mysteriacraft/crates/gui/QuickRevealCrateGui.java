@@ -24,19 +24,21 @@ import java.util.List;
 
 /**
  * Animation "reveal rapide" : l'icone centrale change tres vite parmi les recompenses possibles
- * puis se fixe sur le gain reel, façon "loot box" rapide.
+ * puis se fixe sur le(s) gain(s) reel(s), façon "loot box" rapide.
+ * S'il y a plusieurs tirages, le premier est celui anime ; les suivants apparaissent avec lui a la fin.
  */
 public class QuickRevealCrateGui extends Menu {
 
     private static final int SIZE = 27;
     private static final int RESULT_SLOT = 13;
+    private static final int[] EXTRA_SLOTS = {11, 12, 14, 15};
     private static final int CLOSE_SLOT = 22;
     private static final int TOTAL_TICKS = 40; // ~2 secondes a 20 TPS
     private static final long PERIOD_TICKS = 2L;
 
     private final Plugin plugin;
     private final Crate crate;
-    private final CrateReward reward;
+    private final List<CrateReward> rewards;
     private final CrateManager crateManager;
     private final CrateService crateService;
     private final MessageManager messages;
@@ -45,12 +47,12 @@ public class QuickRevealCrateGui extends Menu {
     private BukkitTask task;
     private boolean finished = false;
 
-    public QuickRevealCrateGui(Plugin plugin, Player viewer, Crate crate, CrateReward reward,
+    public QuickRevealCrateGui(Plugin plugin, Player viewer, Crate crate, List<CrateReward> rewards,
                                 CrateManager crateManager, CrateService crateService, MessageManager messages) {
         super(viewer);
         this.plugin = plugin;
         this.crate = crate;
-        this.reward = reward;
+        this.rewards = rewards;
         this.crateManager = crateManager;
         this.crateService = crateService;
         this.messages = messages;
@@ -95,20 +97,30 @@ public class QuickRevealCrateGui extends Menu {
 
     private void reveal() {
         finished = true;
-        ItemStack finalIcon = reward.displayIcon().clone();
-        ItemMeta meta = finalIcon.getItemMeta();
+        CrateReward primary = rewards.get(0);
+        inventory.setItem(RESULT_SLOT, appendWinLore(primary.displayIcon().clone()));
+
+        for (int i = 1; i < rewards.size() && (i - 1) < EXTRA_SLOTS.length; i++) {
+            inventory.setItem(EXTRA_SLOTS[i - 1], appendWinLore(rewards.get(i).displayIcon().clone()));
+        }
+
+        inventory.setItem(CLOSE_SLOT, new ItemBuilder(Material.BARRIER)
+                .name(messages.raw("crates.gui-fermer")).build());
+
+        crateService.giveRewards(viewer, rewards);
+        crateService.finishOpening(viewer.getUniqueId());
+    }
+
+    private ItemStack appendWinLore(ItemStack item) {
+        ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
             lore.add("");
             lore.add(MessageManager.color(messages.raw("crates.gui-gagne")));
             meta.setLore(lore);
-            finalIcon.setItemMeta(meta);
+            item.setItemMeta(meta);
         }
-        inventory.setItem(RESULT_SLOT, finalIcon);
-        inventory.setItem(CLOSE_SLOT, new ItemBuilder(Material.BARRIER)
-                .name(messages.raw("crates.gui-fermer")).build());
-
-        crateService.giveReward(viewer, reward);
+        return item;
     }
 
     @Override
@@ -127,7 +139,8 @@ public class QuickRevealCrateGui extends Menu {
         // Si le joueur ferme avant la fin de l'animation, la recompense a deja ete tiree en amont
         // (CrateService.open) : on la lui donne quand meme pour ne pas perdre la cle consommee.
         if (!finished) {
-            crateService.giveReward(viewer, reward);
+            crateService.giveRewards(viewer, rewards);
+            crateService.finishOpening(viewer.getUniqueId());
         }
     }
 }

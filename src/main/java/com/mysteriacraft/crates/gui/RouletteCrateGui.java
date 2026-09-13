@@ -23,8 +23,9 @@ import java.util.List;
 
 /**
  * Animation "roulette" : un bandeau d'icones defile dans la rangee du milieu et ralentit
- * progressivement (deceleration) jusqu'a s'arreter sur la recompense reelle, au centre,
+ * progressivement (deceleration) jusqu'a s'arreter sur la recompense principale, au centre,
  * entre les deux fleches indicatrices (façon ouverture de caisse "case opening").
+ * S'il y a d'autres tirages (tirages > 1), ils apparaissent sur la rangee du haut a la fin.
  */
 public class RouletteCrateGui extends Menu {
 
@@ -33,6 +34,7 @@ public class RouletteCrateGui extends Menu {
     private static final int CENTER_OFFSET = 4; // slot 13, au milieu de REEL_SLOTS
     private static final int TOP_POINTER_SLOT = 4;
     private static final int BOTTOM_POINTER_SLOT = 22;
+    private static final int[] EXTRA_SLOTS = {2, 3, 5, 6};
     private static final int CLOSE_SLOT = 26;
 
     private static final int FINAL_STEP = 30;
@@ -41,7 +43,7 @@ public class RouletteCrateGui extends Menu {
 
     private final Plugin plugin;
     private final Crate crate;
-    private final CrateReward reward;
+    private final List<CrateReward> rewards;
     private final CrateManager crateManager;
     private final CrateService crateService;
     private final MessageManager messages;
@@ -52,15 +54,19 @@ public class RouletteCrateGui extends Menu {
     private boolean cancelled = false;
     private boolean finished = false;
 
-    public RouletteCrateGui(Plugin plugin, Player viewer, Crate crate, CrateReward reward,
+    public RouletteCrateGui(Plugin plugin, Player viewer, Crate crate, List<CrateReward> rewards,
                              CrateManager crateManager, CrateService crateService, MessageManager messages) {
         super(viewer);
         this.plugin = plugin;
         this.crate = crate;
-        this.reward = reward;
+        this.rewards = rewards;
         this.crateManager = crateManager;
         this.crateService = crateService;
         this.messages = messages;
+    }
+
+    private CrateReward primary() {
+        return rewards.get(0);
     }
 
     @Override
@@ -81,26 +87,28 @@ public class RouletteCrateGui extends Menu {
         return inventory;
     }
 
-    /** Genere le bandeau : des recompenses aleatoires, avec la vraie recompense placee pile au point d'arret. */
+    /** Genere le bandeau : des recompenses aleatoires, avec la recompense principale placee pile au point d'arret. */
     private List<CrateReward> buildStrip() {
+        CrateReward primary = primary();
         int winningIndex = FINAL_STEP + CENTER_OFFSET;
         int length = winningIndex + REEL_SLOTS.length - CENTER_OFFSET;
         List<CrateReward> generated = new ArrayList<>(length);
         for (int i = 0; i < length; i++) {
             if (i == winningIndex) {
-                generated.add(reward);
+                generated.add(primary);
             } else {
                 CrateReward filler = crateManager.pickReward(crate);
-                generated.add(filler != null ? filler : reward);
+                generated.add(filler != null ? filler : primary);
             }
         }
         return generated;
     }
 
     private void displayStep(int step) {
+        CrateReward primary = primary();
         for (int i = 0; i < REEL_SLOTS.length; i++) {
             int index = step + i;
-            CrateReward entry = index < strip.size() ? strip.get(index) : reward;
+            CrateReward entry = index < strip.size() ? strip.get(index) : primary;
             inventory.setItem(REEL_SLOTS[i], entry.displayIcon().clone());
         }
     }
@@ -130,20 +138,29 @@ public class RouletteCrateGui extends Menu {
     private void finishReveal() {
         finished = true;
 
-        ItemStack finalIcon = reward.displayIcon().clone();
-        ItemMeta meta = finalIcon.getItemMeta();
+        inventory.setItem(REEL_SLOTS[CENTER_OFFSET], appendWinLore(primary().displayIcon().clone()));
+
+        for (int i = 1; i < rewards.size() && (i - 1) < EXTRA_SLOTS.length; i++) {
+            inventory.setItem(EXTRA_SLOTS[i - 1], appendWinLore(rewards.get(i).displayIcon().clone()));
+        }
+
+        inventory.setItem(CLOSE_SLOT, new ItemBuilder(Material.BARRIER)
+                .name(messages.raw("crates.gui-fermer")).build());
+
+        crateService.giveRewards(viewer, rewards);
+        crateService.finishOpening(viewer.getUniqueId());
+    }
+
+    private ItemStack appendWinLore(ItemStack item) {
+        ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
             lore.add("");
             lore.add(MessageManager.color(messages.raw("crates.gui-gagne")));
             meta.setLore(lore);
-            finalIcon.setItemMeta(meta);
+            item.setItemMeta(meta);
         }
-        inventory.setItem(REEL_SLOTS[CENTER_OFFSET], finalIcon);
-        inventory.setItem(CLOSE_SLOT, new ItemBuilder(Material.BARRIER)
-                .name(messages.raw("crates.gui-fermer")).build());
-
-        crateService.giveReward(viewer, reward);
+        return item;
     }
 
     @Override
@@ -163,7 +180,8 @@ public class RouletteCrateGui extends Menu {
         // Si le joueur ferme avant la fin de l'animation, la recompense a deja ete tiree en amont
         // (CrateService.open) : on la lui donne quand meme pour ne pas perdre la cle consommee.
         if (!finished) {
-            crateService.giveReward(viewer, reward);
+            crateService.giveRewards(viewer, rewards);
+            crateService.finishOpening(viewer.getUniqueId());
         }
     }
 }

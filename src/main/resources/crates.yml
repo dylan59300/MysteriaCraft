@@ -6,6 +6,10 @@
 # loot.chance : poids relatif (n'a pas besoin de sommer a 100, juste des proportions entre elles).
 # loot.type : ITEM (donne un objet) ou ECONOMIE (credite un montant).
 # loot.rarete : COMMUNE | RARE | EPIQUE | LEGENDAIRE (couleur d'affichage uniquement).
+# tirages : nombre de recompenses tirees par ouverture (defaut 1).
+# prix-cle : prix d'une cle en monnaie interne (0 = pas achetable via /crate, shift-clic dans le GUI).
+# pity-seuil : nombre d'ouvertures consecutives sans LEGENDAIRE avant qu'un legendaire soit
+#              garanti au tirage suivant (0 = desactive).
 
 crates:
   commune:
@@ -14,6 +18,9 @@ crates:
     ordre: 1
     permission: ""
     animation: ROULETTE
+    tirages: 1
+    prix-cle: 200
+    pity-seuil: 20
     lore:
       - "&7Une caisse basique, contient"
       - "&7surtout des recompenses communes."
@@ -63,9 +70,13 @@ crates:
     ordre: 2
     permission: ""
     animation: QUICK_REVEAL
+    tirages: 2
+    prix-cle: 1500
+    pity-seuil: 15
     lore:
       - "&7Une caisse rare, avec de bien"
       - "&7meilleures chances de gros lots."
+      - "&7(2 recompenses par ouverture)"
     loot:
       - id: diamants
         type: ITEM

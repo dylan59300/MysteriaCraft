@@ -12,11 +12,15 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Orchestre l'ouverture d'une caisse : permission, consommation d'une cle virtuelle (async),
- * tirage pondere de la recompense, puis lance l'animation GUI correspondante.
+ * Orchestre l'ouverture d'une caisse : permission, verrou anti-double-ouverture, consommation
+ * d'une cle virtuelle (async), garantie "pity", tirage(s) pondere(s), puis lance l'animation GUI.
  */
 public class CrateService {
 
@@ -25,11 +29,23 @@ public class CrateService {
     private final EconomyManager economyManager;
     private final MessageManager messages;
 
+    /** Joueurs ayant actuellement une animation d'ouverture en cours (anti-spam/anti-exploit). */
+    private final Set<UUID> currentlyOpening = ConcurrentHashMap.newKeySet();
+
     public CrateService(Plugin plugin, CrateManager crateManager, EconomyManager economyManager, MessageManager messages) {
         this.plugin = plugin;
         this.crateManager = crateManager;
         this.economyManager = economyManager;
         this.messages = messages;
+    }
+
+    public boolean isOpening(UUID uuid) {
+        return currentlyOpening.contains(uuid);
+    }
+
+    /** A appeler par les GUI d'animation une fois l'ouverture terminee (ou annulee) pour liberer le verrou. */
+    public void finishOpening(UUID uuid) {
+        currentlyOpening.remove(uuid);
     }
 
     public void open(Player player, String crateId) {
@@ -46,9 +62,15 @@ public class CrateService {
             return;
         }
 
+        if (!currentlyOpening.add(player.getUniqueId())) {
+            messages.send(player, "crates.deja-en-cours");
+            return;
+        }
+
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             boolean consumed = crateManager.consumeKey(player.getUniqueId(), crate.id());
             if (!consumed) {
+                currentlyOpening.remove(player.getUniqueId());
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     Map<String, String> placeholders = new HashMap<>();
                     placeholders.put("caisse", crate.displayName());
@@ -57,26 +79,68 @@ public class CrateService {
                 return;
             }
 
-            CrateReward reward = crateManager.pickReward(crate);
+            boolean forceLegendary = crate.hasPity()
+                    && crateManager.getPityCount(player.getUniqueId(), crate.id()) >= crate.pityThreshold();
+            List<CrateReward> rewards = crateManager.pickRewards(crate, forceLegendary);
+
+            if (crate.hasPity()) {
+                boolean gotLegendary = rewards.stream().anyMatch(r -> r.rarity() == Rarity.LEGENDAIRE);
+                if (gotLegendary) {
+                    crateManager.resetPity(player.getUniqueId(), crate.id());
+                } else {
+                    crateManager.incrementPity(player.getUniqueId(), crate.id());
+                }
+            }
+
             Bukkit.getScheduler().runTask(plugin, () -> {
-                if (reward == null) {
+                if (rewards.isEmpty()) {
+                    currentlyOpening.remove(player.getUniqueId());
                     messages.send(player, "crates.aucune-recompense");
                     return;
                 }
-                launchAnimation(player, crate, reward);
+                launchAnimation(player, crate, rewards);
             });
         });
     }
 
-    private void launchAnimation(Player player, Crate crate, CrateReward reward) {
+    /** Achete des cles virtuelles avec la monnaie interne (via le GUI, shift-clic sur une caisse). */
+    public void buyKeys(Player player, Crate crate, int quantity) {
+        if (!crate.isPurchasable()) {
+            messages.send(player, "crates.non-achetable");
+            return;
+        }
+        double totalPrice = crate.keyPrice() * quantity;
+        if (!economyManager.has(player.getUniqueId(), totalPrice)) {
+            messages.send(player, "crates.fonds-insuffisants");
+            return;
+        }
+        if (!economyManager.withdraw(player.getUniqueId(), totalPrice)) {
+            messages.send(player, "crates.fonds-insuffisants");
+            return;
+        }
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            int newTotal = crateManager.addKeys(player.getUniqueId(), crate.id(), quantity);
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("quantite", String.valueOf(quantity));
+                placeholders.put("caisse", crate.displayName());
+                placeholders.put("prix", economyManager.format(totalPrice));
+                placeholders.put("total", String.valueOf(newTotal));
+                messages.send(player, "crates.achat-reussi", placeholders);
+            });
+        });
+    }
+
+    private void launchAnimation(Player player, Crate crate, List<CrateReward> rewards) {
         switch (crate.animation()) {
-            case ROULETTE -> new RouletteCrateGui(plugin, player, crate, reward, crateManager, this, messages).open();
-            case QUICK_REVEAL -> new QuickRevealCrateGui(plugin, player, crate, reward, crateManager, this, messages).open();
-            case INSTANT -> new InstantCrateGui(player, crate, reward, this, messages).open();
+            case ROULETTE -> new RouletteCrateGui(plugin, player, crate, rewards, crateManager, this, messages).open();
+            case QUICK_REVEAL -> new QuickRevealCrateGui(plugin, player, crate, rewards, crateManager, this, messages).open();
+            case INSTANT -> new InstantCrateGui(player, crate, rewards, this, messages).open();
         }
     }
 
-    /** Applique reellement la recompense (objet ou credit d'economie) et previent le joueur. Appele a la fin de l'animation. */
+    /** Applique reellement une recompense (objet ou credit d'economie) et previent le joueur. */
     public void giveReward(Player player, CrateReward reward) {
         if (reward.type() == RewardType.ECONOMIE) {
             economyManager.deposit(player.getUniqueId(), reward.economyAmount());
@@ -95,5 +159,12 @@ public class CrateService {
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("recompense", reward.displayName());
         messages.send(player, "crates.gain", placeholders);
+    }
+
+    /** Applique une liste de recompenses (tirages multiples) en une seule fois. */
+    public void giveRewards(Player player, List<CrateReward> rewards) {
+        for (CrateReward reward : rewards) {
+            giveReward(player, reward);
+        }
     }
 }

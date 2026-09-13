@@ -35,8 +35,8 @@ commands:
     usage: /<command>
     permission: mysteriacraft.kit.admin
   crate:
-    description: Ouvre le menu des caisses ou ouvre directement une caisse precise
-    usage: /<command> [nom-caisse]
+    description: Ouvre le menu des caisses, ouvre directement une caisse, ou /crate preview <caisse>
+    usage: /<command> [nom-caisse|preview <nom-caisse>]
   cratekey:
     description: Gere les cles virtuelles d'un joueur pour une caisse
     usage: /<command> <give|take|set> <joueur> <caisse> <quantite>

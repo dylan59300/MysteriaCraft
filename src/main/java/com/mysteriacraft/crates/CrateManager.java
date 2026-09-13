@@ -47,11 +47,22 @@ public class CrateManager {
                 "quantite INTEGER NOT NULL DEFAULT 0, " +
                 "PRIMARY KEY (uuid, crate_id)" +
                 ");";
+        String pityTable = "CREATE TABLE IF NOT EXISTS crate_pity (" +
+                "uuid TEXT NOT NULL, " +
+                "crate_id TEXT NOT NULL, " +
+                "compteur INTEGER NOT NULL DEFAULT 0, " +
+                "PRIMARY KEY (uuid, crate_id)" +
+                ");";
         Connection connection = database.getConnection();
         try (PreparedStatement statement = connection.prepareStatement(keysTable)) {
             statement.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().severe("Erreur creation table 'crate_keys' : " + e.getMessage());
+        }
+        try (PreparedStatement statement = connection.prepareStatement(pityTable)) {
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur creation table 'crate_pity' : " + e.getMessage());
         }
     }
 
@@ -88,6 +99,9 @@ public class CrateManager {
         List<String> lore = section.getStringList("lore");
         String permission = section.getString("permission", "");
         CrateAnimationType animation = CrateAnimationType.fromString(section.getString("animation", "INSTANT"));
+        int drawsPerOpen = Math.max(1, section.getInt("tirages", 1));
+        double keyPrice = section.getDouble("prix-cle", 0);
+        int pityThreshold = Math.max(0, section.getInt("pity-seuil", 0));
 
         List<CrateReward> rewards = new ArrayList<>();
         List<Map<?, ?>> lootMaps = section.getMapList("loot");
@@ -98,7 +112,8 @@ public class CrateManager {
             }
         }
 
-        return new Crate(id, displayName, icon, order, lore, permission, animation, rewards);
+        return new Crate(id, displayName, icon, order, lore, permission, animation,
+                drawsPerOpen, keyPrice, pityThreshold, rewards);
     }
 
     private CrateReward parseReward(Map<?, ?> raw) {
@@ -157,19 +172,49 @@ public class CrateManager {
 
     /** Tirage pondere d'une recompense parmi celles de la caisse, selon leur "chance" relative. */
     public CrateReward pickReward(Crate crate) {
-        double totalWeight = crate.totalWeight();
-        if (totalWeight <= 0 || crate.rewards().isEmpty()) {
+        return pickReward(crate.rewards());
+    }
+
+    private CrateReward pickReward(List<CrateReward> pool) {
+        double totalWeight = 0;
+        for (CrateReward reward : pool) {
+            totalWeight += reward.chance();
+        }
+        if (totalWeight <= 0 || pool.isEmpty()) {
             return null;
         }
         double roll = ThreadLocalRandom.current().nextDouble(totalWeight);
         double cumulative = 0;
-        for (CrateReward reward : crate.rewards()) {
+        for (CrateReward reward : pool) {
             cumulative += reward.chance();
             if (roll < cumulative) {
                 return reward;
             }
         }
-        return crate.rewards().get(crate.rewards().size() - 1);
+        return pool.get(pool.size() - 1);
+    }
+
+    /** Tirage pondere d'une recompense de rarete LEGENDAIRE uniquement (utilise pour la garantie "pity"). */
+    public CrateReward pickLegendary(Crate crate) {
+        List<CrateReward> legendaries = crate.rewards().stream()
+                .filter(reward -> reward.rarity() == Rarity.LEGENDAIRE)
+                .toList();
+        return legendaries.isEmpty() ? pickReward(crate) : pickReward(legendaries);
+    }
+
+    /**
+     * Tire drawsPerOpen recompenses pour une ouverture. Si forceLegendary est vrai, la premiere
+     * recompense tiree est garantie LEGENDAIRE (systeme "pity").
+     */
+    public List<CrateReward> pickRewards(Crate crate, boolean forceLegendary) {
+        List<CrateReward> results = new ArrayList<>();
+        for (int i = 0; i < crate.drawsPerOpen(); i++) {
+            CrateReward reward = (i == 0 && forceLegendary) ? pickLegendary(crate) : pickReward(crate);
+            if (reward != null) {
+                results.add(reward);
+            }
+        }
+        return results;
     }
 
     // ---- Cles virtuelles ----
@@ -222,5 +267,46 @@ public class CrateManager {
 
     public synchronized int setKeys(UUID uuid, String crateId, int amount) {
         return addKeys(uuid, crateId, amount - getKeyCount(uuid, crateId));
+    }
+
+    // ---- Systeme "pity" (garantie de legendaire) ----
+
+    public synchronized int getPityCount(UUID uuid, String crateId) {
+        String select = "SELECT compteur FROM crate_pity WHERE uuid = ? AND crate_id = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, crateId.toLowerCase());
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("compteur");
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture pity caisse '" + crateId + "' pour " + uuid + " : " + e.getMessage());
+        }
+        return 0;
+    }
+
+    private synchronized void setPityCount(UUID uuid, String crateId, int value) {
+        String upsert = "INSERT INTO crate_pity (uuid, crate_id, compteur) VALUES (?, ?, ?) " +
+                "ON CONFLICT(uuid, crate_id) DO UPDATE SET compteur = excluded.compteur;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(upsert)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, crateId.toLowerCase());
+            statement.setInt(3, Math.max(0, value));
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur mise a jour pity caisse '" + crateId + "' pour " + uuid + " : " + e.getMessage());
+        }
+    }
+
+    public synchronized void incrementPity(UUID uuid, String crateId) {
+        setPityCount(uuid, crateId, getPityCount(uuid, crateId) + 1);
+    }
+
+    public synchronized void resetPity(UUID uuid, String crateId) {
+        setPityCount(uuid, crateId, 0);
     }
 }

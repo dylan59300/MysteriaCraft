@@ -109,7 +109,7 @@ public final class MysteriaCraft extends JavaPlugin {
         this.crateManager = new CrateManager(this, database, cratesConfig);
         this.crateService = new CrateService(this, crateManager, economyManager, messages);
 
-        getCommand("crate").setExecutor(new CrateCommand(this, crateManager, crateService, messages));
+        getCommand("crate").setExecutor(new CrateCommand(this, crateManager, crateService, economyManager, messages));
         getCommand("cratekey").setExecutor(new CrateKeyCommand(this, crateManager, messages));
         getCommand("cratereload").setExecutor(new CrateReloadCommand(cratesConfig, crateManager, messages));
     }
