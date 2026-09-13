@@ -38,6 +38,11 @@ import com.mysteriacraft.pets.PetService;
 import com.mysteriacraft.pets.commands.PetsAdminCommand;
 import com.mysteriacraft.pets.commands.PetsCommand;
 import com.mysteriacraft.pets.listeners.PetJoinQuitListener;
+import com.mysteriacraft.luckyblock.LuckyBlockManager;
+import com.mysteriacraft.luckyblock.LuckyBlockService;
+import com.mysteriacraft.luckyblock.commands.LuckyBlockAdminCommand;
+import com.mysteriacraft.luckyblock.commands.LuckyBlockCommand;
+import com.mysteriacraft.luckyblock.listeners.LuckyBlockListener;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -76,6 +81,10 @@ public final class MysteriaCraft extends JavaPlugin {
     private PetManager petManager;
     private PetService petService;
 
+    private ConfigManager luckyBlocksConfig;
+    private LuckyBlockManager luckyBlockManager;
+    private LuckyBlockService luckyBlockService;
+
     @Override
     public void onEnable() {
         long start = System.currentTimeMillis();
@@ -108,6 +117,9 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Module Pets ----
         setupPets();
+
+        // ---- Module LuckyBlock ----
+        setupLuckyBlock();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -205,8 +217,23 @@ public final class MysteriaCraft extends JavaPlugin {
         Bukkit.getOnlinePlayers().forEach(petService::respawnSavedPet);
     }
 
+    private void setupLuckyBlock() {
+        this.luckyBlocksConfig = new ConfigManager(this, "luckyblocks.yml");
+        this.luckyBlockManager = new LuckyBlockManager(this, database, luckyBlocksConfig);
+        this.luckyBlockService = new LuckyBlockService(this, luckyBlockManager, economyManager, rewardGiver, messages);
+        rewardGiver.setLuckyBlockGiveHandler(luckyBlockService);
+
+        Bukkit.getPluginManager().registerEvents(new LuckyBlockListener(luckyBlockManager, luckyBlockService), this);
+
+        getCommand("luckyblock").setExecutor(new LuckyBlockCommand(luckyBlockService, messages));
+        getCommand("luckyblockadmin").setExecutor(new LuckyBlockAdminCommand(luckyBlocksConfig, luckyBlockManager, messages));
+    }
+
     @Override
     public void onDisable() {
+        if (luckyBlockManager != null) {
+            luckyBlockManager.unregisterRecipes();
+        }
         if (petService != null) {
             Bukkit.getOnlinePlayers().forEach(petService::despawnActive);
         }

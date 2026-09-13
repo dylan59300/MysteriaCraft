@@ -26,8 +26,20 @@ public final class RewardParser {
             case "CLE_CAISSE" -> parseCrateKey(section);
             case "BOOST_XP" -> parseXpBoost(section);
             case "PET" -> parsePet(section);
+            case "LUCKYBLOCK" -> parseLuckyBlock(section);
             default -> parseItem(section);
         };
+    }
+
+    private static Reward parseLuckyBlock(ConfigurationSection section) {
+        String familyId = section.getString("famille", "");
+        String displayName = section.getString("nom", "Lucky Block : " + familyId);
+        Material iconMaterial = Material.matchMaterial(section.getString("icone", "GOLD_BLOCK"));
+        if (iconMaterial == null) {
+            iconMaterial = Material.GOLD_BLOCK;
+        }
+        ItemStack icon = new ItemBuilder(iconMaterial).name("&e" + displayName).build();
+        return Reward.ofLuckyBlock(familyId, displayName, icon);
     }
 
     private static Reward parsePet(ConfigurationSection section) {

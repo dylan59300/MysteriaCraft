@@ -13,5 +13,7 @@ public enum RewardType {
     /** Multiplicateur d'xp BattlePass temporaire. */
     BOOST_XP,
     /** Debloque un pet (module Pets). */
-    PET
+    PET,
+    /** Donne un item Lucky Block marque (module LuckyBlock). */
+    LUCKYBLOCK
 }

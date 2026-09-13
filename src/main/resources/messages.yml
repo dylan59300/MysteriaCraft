@@ -154,3 +154,17 @@ pets:
   gui-clic-desactiver: "&eCliquez pour ranger"
   gui-clic-acheter: "&eCliquez pour acheter"
   gui-recompense-uniquement: "&6Obtenable uniquement en recompense"
+
+luckyblock:
+  usage: "&cUsage : /luckyblock buy <famille> [quantite]"
+  admin-usage: "&cUsage : /luckyblockadmin <give <joueur> <famille> [quantite]|reload>"
+  introuvable: "&cCette famille de Lucky Block n'existe pas."
+  non-achetable: "&cCette famille n'est pas achetable directement (craft ou recompense uniquement)."
+  fonds-insuffisants: "&cVous n'avez pas assez d'argent pour cet achat."
+  achat-reussi: "&aVous avez achete &e{quantite}x {famille} &apour &e{prix}&a."
+  give-effectue: "&a{joueur} a recu &e{quantite}x {famille}&a."
+  reload: "&aLes Lucky Blocks ont ete recharges."
+  cooldown: "&cCe Lucky Block doit encore recharger : &e{temps}&c."
+  aucun-effet: "&cErreur : aucun effet configure pour cette famille."
+  bon-effet: "&a&lBonne pioche ! &aVous avez obtenu : &e{effet}"
+  mauvais-effet: "&4&lPas de chance... &c{effet}"

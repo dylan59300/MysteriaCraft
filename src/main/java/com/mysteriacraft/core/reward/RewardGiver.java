@@ -29,6 +29,7 @@ public class RewardGiver {
 
     private XpBoosterHandler boosterHandler;
     private PetUnlockHandler petUnlockHandler;
+    private LuckyBlockGiveHandler luckyBlockGiveHandler;
 
     public RewardGiver(Plugin plugin, EconomyManager economyManager, CrateManager crateManager, MessageManager messages) {
         this.plugin = plugin;
@@ -47,12 +48,21 @@ public class RewardGiver {
         void unlockFromReward(Player player, String petId);
     }
 
+    /** Petit contrat minimal pour donner un item Lucky Block marque, implemente par LuckyBlockManager. */
+    public interface LuckyBlockGiveHandler {
+        void giveLuckyBlock(Player player, String familyId);
+    }
+
     public void setBoosterHandler(XpBoosterHandler boosterHandler) {
         this.boosterHandler = boosterHandler;
     }
 
     public void setPetUnlockHandler(PetUnlockHandler petUnlockHandler) {
         this.petUnlockHandler = petUnlockHandler;
+    }
+
+    public void setLuckyBlockGiveHandler(LuckyBlockGiveHandler luckyBlockGiveHandler) {
+        this.luckyBlockGiveHandler = luckyBlockGiveHandler;
     }
 
     public void give(Player player, Reward reward) {
@@ -68,6 +78,11 @@ public class RewardGiver {
             case PET -> {
                 if (petUnlockHandler != null) {
                     petUnlockHandler.unlockFromReward(player, reward.petId());
+                }
+            }
+            case LUCKYBLOCK -> {
+                if (luckyBlockGiveHandler != null) {
+                    luckyBlockGiveHandler.giveLuckyBlock(player, reward.luckyBlockFamilyId());
                 }
             }
             case ITEM -> giveItem(player, reward);

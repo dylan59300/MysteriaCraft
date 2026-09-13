@@ -1,0 +1,94 @@
+# =========================================
+#   MysteriaCraft - Configuration des Lucky Blocks
+# =========================================
+# A la casse, un Lucky Block declenche un effet aleatoire (bon ou mauvais) tire dans le pool
+# de sa famille, selon le poids "chance" de chaque effet (comme la table de loot des Crates).
+# cooldown-secondes : delai avant de pouvoir re-declencher un effet sur CETTE famille (par joueur).
+# prix-achat : 0 = pas achetable directement via /luckyblock buy (uniquement craft ou recompense).
+# recette : ingredients d'un craft shapeless (n'importe quel agencement dans la table).
+#
+# effets[].type : BON | MAUVAIS
+# effets[].recompense (si BON) : ITEM, ECONOMIE, CLE_CAISSE, BOOST_XP ou PET (meme format que
+#                                 crates.yml/battlepass.yml/quests.yml, systeme de recompense partage).
+# effets[].action (si MAUVAIS) : TNT | MOBS | POTION | FOUDRE
+
+familles:
+  commune:
+    nom: "&6Lucky Block Commun"
+    materiel: GOLD_BLOCK
+    ordre: 1
+    cooldown-secondes: 30
+    prix-achat: 300
+    recette:
+      - materiel: GOLD_BLOCK
+        quantite: 1
+      - materiel: RABBIT_FOOT
+        quantite: 1
+    effets:
+      - type: BON
+        chance: 35
+        recompense:
+          type: ECONOMIE
+          montant: 100
+      - type: BON
+        chance: 20
+        recompense:
+          type: ITEM
+          materiel: DIAMOND
+          quantite: 2
+      - type: BON
+        chance: 10
+        recompense:
+          type: CLE_CAISSE
+          caisse: commune
+          quantite: 1
+      - type: MAUVAIS
+        chance: 20
+        action: TNT
+        quantite: 1
+      - type: MAUVAIS
+        chance: 15
+        action: MOBS
+        mob: ZOMBIE
+        quantite: 3
+
+  rare:
+    nom: "&b&lLucky Block Rare"
+    materiel: DIAMOND_BLOCK
+    ordre: 2
+    cooldown-secondes: 90
+    prix-achat: 2000
+    recette:
+      - materiel: DIAMOND_BLOCK
+        quantite: 1
+      - materiel: RABBIT_FOOT
+        quantite: 1
+      - materiel: GOLDEN_APPLE
+        quantite: 1
+    effets:
+      - type: BON
+        chance: 30
+        recompense:
+          type: CLE_CAISSE
+          caisse: legendaire
+          quantite: 1
+      - type: BON
+        chance: 20
+        recompense:
+          type: BOOST_XP
+          duree-secondes: 900
+          multiplicateur: 3.0
+      - type: BON
+        chance: 15
+        recompense:
+          type: ECONOMIE
+          montant: 1000
+      - type: MAUVAIS
+        chance: 20
+        action: POTION
+        effet-potion: POISON
+        duree-secondes: 10
+        amplificateur: 1
+      - type: MAUVAIS
+        chance: 15
+        action: FOUDRE

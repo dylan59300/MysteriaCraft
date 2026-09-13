@@ -165,6 +165,18 @@ public class CrateManager {
             return new CrateReward(id, reward, chance, rarity);
         }
 
+        if (typeRaw.equals("LUCKYBLOCK")) {
+            String familyId = String.valueOf(raw.getOrDefault("famille", ""));
+            String displayName = raw.containsKey("nom") ? String.valueOf(raw.get("nom")) : rarity.color() + "Lucky Block : " + familyId;
+            Material iconMaterial = Material.matchMaterial(String.valueOf(raw.getOrDefault("icone", "GOLD_BLOCK")));
+            if (iconMaterial == null) {
+                iconMaterial = Material.GOLD_BLOCK;
+            }
+            ItemStack displayIcon = new ItemBuilder(iconMaterial).name(displayName).build();
+            Reward reward = Reward.ofLuckyBlock(familyId, displayName, displayIcon);
+            return new CrateReward(id, reward, chance, rarity);
+        }
+
         if (typeRaw.equals("BOOST_XP")) {
             long durationSeconds = raw.containsKey("duree-secondes") ? Long.parseLong(String.valueOf(raw.get("duree-secondes"))) : 600L;
             double multiplier = raw.containsKey("multiplicateur") ? Double.parseDouble(String.valueOf(raw.get("multiplicateur"))) : 2.0;

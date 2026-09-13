@@ -69,6 +69,13 @@ commands:
     description: Recharge pets.yml
     usage: /<command>
     permission: mysteriacraft.pets.admin
+  luckyblock:
+    description: Achete un Lucky Block avec la monnaie interne
+    usage: /<command> buy <famille> [quantite]
+  luckyblockadmin:
+    description: Donne un Lucky Block a un joueur ou recharge luckyblocks.yml
+    usage: /<command> <give <joueur> <famille> [quantite]|reload>
+    permission: mysteriacraft.luckyblock.admin
 
 permissions:
   mysteriacraft.eco.admin:
@@ -103,4 +110,7 @@ permissions:
     default: op
   mysteriacraft.pets.admin:
     description: Autorise la gestion admin des pets (reload)
+    default: op
+  mysteriacraft.luckyblock.admin:
+    description: Autorise la gestion admin des Lucky Blocks (give, reload)
     default: op
