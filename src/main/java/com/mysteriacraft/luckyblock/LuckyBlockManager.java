@@ -9,6 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -40,14 +41,18 @@ public class LuckyBlockManager {
     private final Database database;
     private final ConfigManager luckyBlocksConfig;
     private final NamespacedKey familyKey;
+    private final NamespacedKey bonusKey;
 
     private final Map<String, LuckyBlockFamily> families = new LinkedHashMap<>();
+    private final Map<Material, Double> oreBonuses = new LinkedHashMap<>();
+    private double bonusMax = 45.0;
 
     public LuckyBlockManager(Plugin plugin, Database database, ConfigManager luckyBlocksConfig) {
         this.plugin = plugin;
         this.database = database;
         this.luckyBlocksConfig = luckyBlocksConfig;
         this.familyKey = new NamespacedKey(plugin, "luckyblock-famille");
+        this.bonusKey = new NamespacedKey(plugin, "luckyblock-bonus");
         createTable();
         loadFamilies();
         registerRecipes();
@@ -70,6 +75,8 @@ public class LuckyBlockManager {
 
     public void loadFamilies() {
         families.clear();
+        loadOreBonuses();
+
         ConfigurationSection root = luckyBlocksConfig.get().getConfigurationSection("familles");
         if (root == null) {
             plugin.getLogger().warning("Aucune famille de Lucky Block trouvee (section 'familles' manquante).");
@@ -90,6 +97,24 @@ public class LuckyBlockManager {
         plugin.getLogger().info(families.size() + " famille(s) de Lucky Block chargee(s).");
     }
 
+    private void loadOreBonuses() {
+        oreBonuses.clear();
+        bonusMax = luckyBlocksConfig.get().getDouble("bonus-minerais-max", 45.0);
+
+        ConfigurationSection section = luckyBlocksConfig.get().getConfigurationSection("bonus-minerais");
+        if (section == null) {
+            return;
+        }
+        for (String materialName : section.getKeys(false)) {
+            Material material = Material.matchMaterial(materialName);
+            if (material == null) {
+                plugin.getLogger().warning("Materiau inconnu dans bonus-minerais : " + materialName);
+                continue;
+            }
+            oreBonuses.put(material, section.getDouble(materialName, 0));
+        }
+    }
+
     private LuckyBlockFamily parseFamily(String id, ConfigurationSection section) {
         String displayName = section.getString("nom", id);
         Material material = Material.matchMaterial(section.getString("materiel", "GOLD_BLOCK"));
@@ -99,6 +124,7 @@ public class LuckyBlockManager {
         int order = section.getInt("ordre", 0);
         long cooldownSeconds = section.getLong("cooldown-secondes", 30);
         double buyPrice = section.getDouble("prix-achat", 0);
+        double baseGoodChance = section.getDouble("chance-bonne-base", 50.0);
 
         List<RecipeIngredient> recipe = new ArrayList<>();
         for (Map<?, ?> raw : section.getMapList("recette")) {
@@ -118,7 +144,7 @@ public class LuckyBlockManager {
             }
         }
 
-        return new LuckyBlockFamily(id, displayName, material, order, cooldownSeconds, buyPrice, recipe, effects);
+        return new LuckyBlockFamily(id, displayName, material, order, cooldownSeconds, buyPrice, baseGoodChance, recipe, effects);
     }
 
     @SuppressWarnings("unchecked")
@@ -181,21 +207,82 @@ public class LuckyBlockManager {
         return id == null ? null : families.get(id.toLowerCase());
     }
 
-    /** Tirage pondere d'un effet parmi le pool (bons + mauvais) d'une famille. */
-    public LuckyBlockEffect pickEffect(LuckyBlockFamily family) {
-        double totalWeight = family.totalWeight();
-        if (totalWeight <= 0 || family.effects().isEmpty()) {
+    /**
+     * Tirage en 2 etapes : d'abord BON ou MAUVAIS selon la chance de base de la famille
+     * (+ bonus de minerais places a cote du bloc, plafonne), puis tirage pondere d'un effet
+     * precis au sein du pool correspondant (BON ou MAUVAIS).
+     */
+    public LuckyBlockEffect pickEffect(LuckyBlockFamily family, double bonusPercent) {
+        if (family.effects().isEmpty()) {
             return null;
+        }
+        double goodChance = Math.min(95.0, Math.max(0.0, family.baseGoodChance() + bonusPercent));
+        boolean rollGood = ThreadLocalRandom.current().nextDouble(100.0) < goodChance;
+
+        List<LuckyBlockEffect> pool = rollGood ? family.goodEffects() : family.badEffects();
+        if (pool.isEmpty()) {
+            // Repli sur l'autre pool si celui tire est vide (ex: famille sans effet MAUVAIS configure).
+            pool = rollGood ? family.badEffects() : family.goodEffects();
+        }
+        if (pool.isEmpty()) {
+            return null;
+        }
+        return pickWeighted(pool);
+    }
+
+    private LuckyBlockEffect pickWeighted(List<LuckyBlockEffect> pool) {
+        double totalWeight = 0;
+        for (LuckyBlockEffect effect : pool) {
+            totalWeight += effect.chance();
+        }
+        if (totalWeight <= 0) {
+            return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
         }
         double roll = ThreadLocalRandom.current().nextDouble(totalWeight);
         double cumulative = 0;
-        for (LuckyBlockEffect effect : family.effects()) {
+        for (LuckyBlockEffect effect : pool) {
             cumulative += effect.chance();
             if (roll < cumulative) {
                 return effect;
             }
         }
-        return family.effects().get(family.effects().size() - 1);
+        return pool.get(pool.size() - 1);
+    }
+
+    // ---- Bonus de minerais (augmente la chance d'effet BON d'un bloc pose) ----
+
+    public double getOreBonus(Material material) {
+        return oreBonuses.getOrDefault(material, 0.0);
+    }
+
+    public boolean isBonusOre(Material material) {
+        return oreBonuses.containsKey(material);
+    }
+
+    public double getBonus(Block block) {
+        Double value = block.getPersistentDataContainer().get(bonusKey, PersistentDataType.DOUBLE);
+        return value == null ? 0.0 : value;
+    }
+
+    /** Ajoute un bonus au bloc (plafonne a bonus-minerais-max). Renvoie le nouveau total. */
+    public double addBonus(Block block, double amount) {
+        double newTotal = Math.min(bonusMax, getBonus(block) + amount);
+        block.getPersistentDataContainer().set(bonusKey, PersistentDataType.DOUBLE, newTotal);
+        return newTotal;
+    }
+
+    public double getBonusMax() {
+        return bonusMax;
+    }
+
+    /** Somme les bonus de tous les minerais deja presents sur les 6 faces d'un bloc (utilise a la pose d'un Lucky Block). */
+    public double computeSurroundingOreBonus(Block block) {
+        double total = 0;
+        for (BlockFace face : new BlockFace[]{
+                BlockFace.UP, BlockFace.DOWN, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST}) {
+            total += getOreBonus(block.getRelative(face).getType());
+        }
+        return total;
     }
 
     // ---- Item / marquage du bloc ----

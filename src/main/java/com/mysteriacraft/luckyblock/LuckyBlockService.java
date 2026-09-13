@@ -47,6 +47,8 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
     /** Appele par le listener sur BlockBreakEvent quand le bloc casse est un Lucky Block marque. */
     public void handleBreak(BlockBreakEvent event, LuckyBlockFamily family) {
         Player player = event.getPlayer();
+        // Lu maintenant : une fois le bloc casse, sa PersistentDataContainer disparait avec lui.
+        double bonusPercent = manager.getBonus(event.getBlock());
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             long lastUsed = manager.getLastUsed(player.getUniqueId(), family.id());
@@ -64,7 +66,7 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
             }
 
             manager.markUsed(player.getUniqueId(), family.id());
-            LuckyBlockEffect effect = manager.pickEffect(family);
+            LuckyBlockEffect effect = manager.pickEffect(family, bonusPercent);
 
             Bukkit.getScheduler().runTask(plugin, () -> {
                 event.setDropItems(false);
