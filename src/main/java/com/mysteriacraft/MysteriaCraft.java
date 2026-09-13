@@ -43,6 +43,10 @@ import com.mysteriacraft.luckyblock.LuckyBlockService;
 import com.mysteriacraft.luckyblock.commands.LuckyBlockAdminCommand;
 import com.mysteriacraft.luckyblock.commands.LuckyBlockCommand;
 import com.mysteriacraft.luckyblock.listeners.LuckyBlockListener;
+import com.mysteriacraft.customitems.CustomItemManager;
+import com.mysteriacraft.customitems.CustomItemService;
+import com.mysteriacraft.customitems.commands.CustomItemCommand;
+import com.mysteriacraft.customitems.listeners.CustomItemListener;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -85,6 +89,10 @@ public final class MysteriaCraft extends JavaPlugin {
     private LuckyBlockManager luckyBlockManager;
     private LuckyBlockService luckyBlockService;
 
+    private ConfigManager customItemsConfig;
+    private CustomItemManager customItemManager;
+    private CustomItemService customItemService;
+
     @Override
     public void onEnable() {
         long start = System.currentTimeMillis();
@@ -120,6 +128,9 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Module LuckyBlock ----
         setupLuckyBlock();
+
+        // ---- Module Custom Items ----
+        setupCustomItems();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -225,8 +236,19 @@ public final class MysteriaCraft extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new LuckyBlockListener(luckyBlockManager, luckyBlockService, messages), this);
 
-        getCommand("luckyblock").setExecutor(new LuckyBlockCommand(luckyBlockService, messages));
+        getCommand("luckyblock").setExecutor(new LuckyBlockCommand(luckyBlockManager, luckyBlockService, economyManager, messages));
         getCommand("luckyblockadmin").setExecutor(new LuckyBlockAdminCommand(luckyBlocksConfig, luckyBlockManager, messages));
+    }
+
+    private void setupCustomItems() {
+        this.customItemsConfig = new ConfigManager(this, "custom_items.yml");
+        this.customItemManager = new CustomItemManager(this, customItemsConfig);
+        this.customItemService = new CustomItemService(customItemManager, economyManager, messages);
+        rewardGiver.setCustomItemGiveHandler(customItemService);
+
+        Bukkit.getPluginManager().registerEvents(new CustomItemListener(customItemService), this);
+
+        getCommand("customitem").setExecutor(new CustomItemCommand(customItemsConfig, customItemManager, customItemService, messages));
     }
 
     @Override

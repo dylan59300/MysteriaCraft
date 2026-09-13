@@ -27,8 +27,21 @@ public final class RewardParser {
             case "BOOST_XP" -> parseXpBoost(section);
             case "PET" -> parsePet(section);
             case "LUCKYBLOCK" -> parseLuckyBlock(section);
+            case "OBJET_CUSTOM" -> parseCustomItem(section);
             default -> parseItem(section);
         };
+    }
+
+    private static Reward parseCustomItem(ConfigurationSection section) {
+        String customItemId = section.getString("item-id", "");
+        int amount = Math.max(1, section.getInt("quantite", 1));
+        String displayName = section.getString("nom", "Objet custom : " + customItemId);
+        Material iconMaterial = Material.matchMaterial(section.getString("icone", "IRON_INGOT"));
+        if (iconMaterial == null) {
+            iconMaterial = Material.IRON_INGOT;
+        }
+        ItemStack icon = new ItemBuilder(iconMaterial, amount).name("&e" + displayName).build();
+        return Reward.ofCustomItem(customItemId, amount, displayName, icon);
     }
 
     private static Reward parseLuckyBlock(ConfigurationSection section) {

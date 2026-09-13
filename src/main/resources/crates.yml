@@ -110,6 +110,14 @@ crates:
         nom: "&6&lJACKPOT 5000$"
         chance: 10
         rarete: LEGENDAIRE
+      - id: jade
+        type: OBJET_CUSTOM
+        item-id: jade
+        quantite: 1
+        icone: IRON_INGOT
+        nom: "&a&lJade Imperiale"
+        chance: 3
+        rarete: LEGENDAIRE
 
   bienvenue:
     nom: "&aCaisse de Bienvenue"

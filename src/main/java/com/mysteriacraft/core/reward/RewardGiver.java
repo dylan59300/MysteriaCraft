@@ -30,6 +30,7 @@ public class RewardGiver {
     private XpBoosterHandler boosterHandler;
     private PetUnlockHandler petUnlockHandler;
     private LuckyBlockGiveHandler luckyBlockGiveHandler;
+    private CustomItemGiveHandler customItemGiveHandler;
 
     public RewardGiver(Plugin plugin, EconomyManager economyManager, CrateManager crateManager, MessageManager messages) {
         this.plugin = plugin;
@@ -53,6 +54,11 @@ public class RewardGiver {
         void giveLuckyBlock(Player player, String familyId);
     }
 
+    /** Petit contrat minimal pour donner un item custom, implemente par CustomItemService. */
+    public interface CustomItemGiveHandler {
+        void giveCustomItem(Player player, String customItemId, int amount);
+    }
+
     public void setBoosterHandler(XpBoosterHandler boosterHandler) {
         this.boosterHandler = boosterHandler;
     }
@@ -63,6 +69,10 @@ public class RewardGiver {
 
     public void setLuckyBlockGiveHandler(LuckyBlockGiveHandler luckyBlockGiveHandler) {
         this.luckyBlockGiveHandler = luckyBlockGiveHandler;
+    }
+
+    public void setCustomItemGiveHandler(CustomItemGiveHandler customItemGiveHandler) {
+        this.customItemGiveHandler = customItemGiveHandler;
     }
 
     public void give(Player player, Reward reward) {
@@ -83,6 +93,11 @@ public class RewardGiver {
             case LUCKYBLOCK -> {
                 if (luckyBlockGiveHandler != null) {
                     luckyBlockGiveHandler.giveLuckyBlock(player, reward.luckyBlockFamilyId());
+                }
+            }
+            case OBJET_CUSTOM -> {
+                if (customItemGiveHandler != null) {
+                    customItemGiveHandler.giveCustomItem(player, reward.customItemId(), Math.max(1, reward.crateKeyAmount()));
                 }
             }
             case ITEM -> giveItem(player, reward);

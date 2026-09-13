@@ -3,7 +3,7 @@ version: '${project.version}'
 main: com.mysteriacraft.MysteriaCraft
 api-version: '1.20'
 author: dylan59300
-description: Plugin serveur - Crates, Economie, Kits, BattlePass, Quetes, Pets, LuckyBlock
+description: Plugin serveur - Crates, Economie, Kits, BattlePass, Quetes, Pets, LuckyBlock, Custom Items
 
 commands:
   balance:
@@ -70,12 +70,15 @@ commands:
     usage: /<command>
     permission: mysteriacraft.pets.admin
   luckyblock:
-    description: Achete un Lucky Block avec la monnaie interne
-    usage: /<command> buy <famille> [quantite]
+    description: Ouvre le menu des Lucky Blocks, ou achete directement avec buy
+    usage: /<command> [buy <famille> [quantite]]
   luckyblockadmin:
     description: Donne un Lucky Block a un joueur ou recharge luckyblocks.yml
     usage: /<command> <give <joueur> <famille> [quantite]|reload>
     permission: mysteriacraft.luckyblock.admin
+  customitem:
+    description: Gere les minerais/objets custom (give admin, sell, reload admin)
+    usage: /<command> <give <joueur> <id> [quantite]|sell <id>|reload>
 
 permissions:
   mysteriacraft.eco.admin:
@@ -113,4 +116,7 @@ permissions:
     default: op
   mysteriacraft.luckyblock.admin:
     description: Autorise la gestion admin des Lucky Blocks (give, reload)
+    default: op
+  mysteriacraft.customitem.admin:
+    description: Autorise la gestion admin des items custom (give, reload)
     default: op

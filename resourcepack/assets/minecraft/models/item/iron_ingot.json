@@ -1,0 +1,18 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "item/iron_ingot"
+  },
+  "overrides": [
+    { "predicate": { "custom_model_data": 500001 }, "model": "mysteriacraft:item/gem_rubis" },
+    { "predicate": { "custom_model_data": 500002 }, "model": "mysteriacraft:item/gem_saphir" },
+    { "predicate": { "custom_model_data": 500003 }, "model": "mysteriacraft:item/gem_topaze" },
+    { "predicate": { "custom_model_data": 500004 }, "model": "mysteriacraft:item/gem_onyx" },
+    { "predicate": { "custom_model_data": 500005 }, "model": "mysteriacraft:item/gem_grenat" },
+    { "predicate": { "custom_model_data": 500006 }, "model": "mysteriacraft:item/gem_aquamarine" },
+    { "predicate": { "custom_model_data": 500007 }, "model": "mysteriacraft:item/gem_opale" },
+    { "predicate": { "custom_model_data": 500008 }, "model": "mysteriacraft:item/gem_amethyste" },
+    { "predicate": { "custom_model_data": 500009 }, "model": "mysteriacraft:item/gem_peridot" },
+    { "predicate": { "custom_model_data": 500010 }, "model": "mysteriacraft:item/gem_jade" }
+  ]
+}

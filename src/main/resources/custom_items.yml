@@ -1,0 +1,120 @@
+# =========================================
+#   MysteriaCraft - Configuration des minerais/objets custom
+# =========================================
+# Chaque minerai custom est visuellement un lingot de fer (item-de-base) redessine par le
+# resource pack via son custom-model-data (voir resourcepack/README.md pour l'installer).
+# minerais-source : blocs dont la casse a une chance (chance-drop, en %) de donner ce minerai.
+#                   Liste vide/absente = pas de source naturelle, uniquement obtenable en
+#                   recompense (crate/battlepass/quete/luckyblock via "type: OBJET_CUSTOM").
+# prix-vente : 0 = non revendable via /customitem sell.
+
+items:
+  rubis:
+    nom: "&cRubis Brut"
+    lore:
+      - "&7Une pierre precieuse rougeoyante,"
+      - "&7chaude au toucher."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500001
+    minerais-source: [REDSTONE_ORE, DEEPSLATE_REDSTONE_ORE]
+    chance-drop: 8
+    prix-vente: 40
+
+  saphir:
+    nom: "&9Saphir Brut"
+    lore:
+      - "&7Un cristal bleu profond,"
+      - "&7froid comme la glace."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500002
+    minerais-source: [LAPIS_ORE, DEEPSLATE_LAPIS_ORE]
+    chance-drop: 8
+    prix-vente: 40
+
+  topaze:
+    nom: "&6Topaze Brute"
+    lore:
+      - "&7Une gemme doree scintillante."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500003
+    minerais-source: [GOLD_ORE, DEEPSLATE_GOLD_ORE, NETHER_GOLD_ORE]
+    chance-drop: 6
+    prix-vente: 60
+
+  onyx:
+    nom: "&8Onyx Brut"
+    lore:
+      - "&7Une pierre noire et lisse."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500004
+    minerais-source: [COAL_ORE, DEEPSLATE_COAL_ORE]
+    chance-drop: 10
+    prix-vente: 20
+
+  grenat:
+    nom: "&4Grenat Brut"
+    lore:
+      - "&7Une gemme rouge sombre,"
+      - "&7veinee de metal."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500005
+    minerais-source: [IRON_ORE, DEEPSLATE_IRON_ORE]
+    chance-drop: 8
+    prix-vente: 35
+
+  aquamarine:
+    nom: "&bAquamarine Brute"
+    lore:
+      - "&7Une pierre bleu-vert claire,"
+      - "&7rare et prisee."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500006
+    minerais-source: [DIAMOND_ORE, DEEPSLATE_DIAMOND_ORE]
+    chance-drop: 5
+    prix-vente: 150
+
+  opale:
+    nom: "&fOpale Brute"
+    lore:
+      - "&7Une pierre laiteuse aux reflets"
+      - "&7changeants."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500007
+    minerais-source: [NETHER_QUARTZ_ORE]
+    chance-drop: 7
+    prix-vente: 45
+
+  amethyste:
+    nom: "&5Amethyste Brute"
+    lore:
+      - "&7Un cristal violet perce"
+      - "&7dans les grottes profondes."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500008
+    minerais-source: [AMETHYST_CLUSTER]
+    chance-drop: 12
+    prix-vente: 55
+
+  peridot:
+    nom: "&2Peridot Brut"
+    lore:
+      - "&7Une gemme vert olive extremement"
+      - "&7rare, trouvee pres du bedrock."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500009
+    minerais-source: [ANCIENT_DEBRIS]
+    chance-drop: 4
+    prix-vente: 300
+
+  jade:
+    nom: "&a&lJade Imperiale"
+    lore:
+      - "&7Une gemme legendaire, introuvable"
+      - "&7dans la nature."
+      - "&7Uniquement obtenable en recompense"
+      - "&7(crate, battlepass, quete, luckyblock)."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500010
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 500

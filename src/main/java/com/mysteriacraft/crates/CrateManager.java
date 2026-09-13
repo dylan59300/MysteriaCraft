@@ -177,6 +177,19 @@ public class CrateManager {
             return new CrateReward(id, reward, chance, rarity);
         }
 
+        if (typeRaw.equals("OBJET_CUSTOM")) {
+            String customItemId = String.valueOf(raw.getOrDefault("item-id", ""));
+            int amount = raw.containsKey("quantite") ? Integer.parseInt(String.valueOf(raw.get("quantite"))) : 1;
+            String displayName = raw.containsKey("nom") ? String.valueOf(raw.get("nom")) : rarity.color() + "Objet custom : " + customItemId;
+            Material iconMaterial = Material.matchMaterial(String.valueOf(raw.getOrDefault("icone", "IRON_INGOT")));
+            if (iconMaterial == null) {
+                iconMaterial = Material.IRON_INGOT;
+            }
+            ItemStack displayIcon = new ItemBuilder(iconMaterial, amount).name(displayName).build();
+            Reward reward = Reward.ofCustomItem(customItemId, amount, displayName, displayIcon);
+            return new CrateReward(id, reward, chance, rarity);
+        }
+
         if (typeRaw.equals("BOOST_XP")) {
             long durationSeconds = raw.containsKey("duree-secondes") ? Long.parseLong(String.valueOf(raw.get("duree-secondes"))) : 600L;
             double multiplier = raw.containsKey("multiplicateur") ? Double.parseDouble(String.valueOf(raw.get("multiplicateur"))) : 2.0;

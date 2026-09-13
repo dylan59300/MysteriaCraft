@@ -15,5 +15,7 @@ public enum RewardType {
     /** Debloque un pet (module Pets). */
     PET,
     /** Donne un item Lucky Block marque (module LuckyBlock). */
-    LUCKYBLOCK
+    LUCKYBLOCK,
+    /** Donne un minerai/objet custom (module Custom Items). */
+    OBJET_CUSTOM
 }
