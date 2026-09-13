@@ -8,7 +8,9 @@ public enum QuestType {
     BREAK_BLOCK,
     PLACE_BLOCK,
     KILL_MOB,
-    FISH;
+    FISH,
+    CRAFT_ITEM,
+    CONSUME_ITEM;
 
     public static QuestType fromString(String value) {
         try {

@@ -32,6 +32,7 @@ import com.mysteriacraft.quests.QuestService;
 import com.mysteriacraft.quests.commands.QuestsAdminCommand;
 import com.mysteriacraft.quests.commands.QuestsCommand;
 import com.mysteriacraft.quests.listeners.QuestListener;
+import com.mysteriacraft.core.reward.RewardGiver;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -56,6 +57,7 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager cratesConfig;
     private CrateManager crateManager;
     private CrateService crateService;
+    private RewardGiver rewardGiver;
 
     private ConfigManager battlepassConfig;
     private BattlePassManager battlePassManager;
@@ -131,7 +133,13 @@ public final class MysteriaCraft extends JavaPlugin {
     private void setupCrates() {
         this.cratesConfig = new ConfigManager(this, "crates.yml");
         this.crateManager = new CrateManager(this, database, cratesConfig);
-        this.crateService = new CrateService(this, crateManager, economyManager, messages);
+
+        // RewardGiver est partage par Crates, BattlePass et Quetes : cree ici car il a besoin de
+        // crateManager (pour les recompenses de type CLE_CAISSE). Le lien vers BattlePassService
+        // (pour BOOST_XP) est complete dans setupBattlePass() via setBoosterHandler().
+        this.rewardGiver = new RewardGiver(this, economyManager, crateManager, messages);
+
+        this.crateService = new CrateService(this, crateManager, economyManager, rewardGiver, messages);
 
         getCommand("crate").setExecutor(new CrateCommand(this, crateManager, crateService, economyManager, messages));
         getCommand("cratekey").setExecutor(new CrateKeyCommand(this, crateManager, messages));
@@ -141,7 +149,8 @@ public final class MysteriaCraft extends JavaPlugin {
     private void setupBattlePass() {
         this.battlepassConfig = new ConfigManager(this, "battlepass.yml");
         this.battlePassManager = new BattlePassManager(this, database, battlepassConfig);
-        this.battlePassService = new BattlePassService(this, battlePassManager, economyManager, messages);
+        this.battlePassService = new BattlePassService(this, battlePassManager, economyManager, rewardGiver, messages);
+        rewardGiver.setBoosterHandler(battlePassService);
 
         getCommand("battlepass").setExecutor(new BattlePassCommand(this, battlePassManager, battlePassService, messages));
         getCommand("battlepassadmin").setExecutor(
@@ -161,12 +170,12 @@ public final class MysteriaCraft extends JavaPlugin {
     private void setupQuests() {
         this.questsConfig = new ConfigManager(this, "quests.yml");
         this.questManager = new QuestManager(this, database, questsConfig);
-        this.questService = new QuestService(this, questManager, battlePassService, economyManager, messages);
+        this.questService = new QuestService(this, questManager, battlePassService, rewardGiver, messages);
 
         Bukkit.getPluginManager().registerEvents(new QuestListener(questService), this);
 
         getCommand("quests").setExecutor(new QuestsCommand(this, questManager, messages));
-        getCommand("questsadmin").setExecutor(new QuestsAdminCommand(questsConfig, questManager, messages));
+        getCommand("questsadmin").setExecutor(new QuestsAdminCommand(this, questsConfig, questManager, messages));
     }
 
     @Override

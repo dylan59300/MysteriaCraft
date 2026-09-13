@@ -26,15 +26,18 @@ public class CrateService {
     private final Plugin plugin;
     private final CrateManager crateManager;
     private final EconomyManager economyManager;
+    private final RewardGiver rewardGiver;
     private final MessageManager messages;
 
     /** Joueurs ayant actuellement une animation d'ouverture en cours (anti-spam/anti-exploit). */
     private final Set<UUID> currentlyOpening = ConcurrentHashMap.newKeySet();
 
-    public CrateService(Plugin plugin, CrateManager crateManager, EconomyManager economyManager, MessageManager messages) {
+    public CrateService(Plugin plugin, CrateManager crateManager, EconomyManager economyManager,
+                         RewardGiver rewardGiver, MessageManager messages) {
         this.plugin = plugin;
         this.crateManager = crateManager;
         this.economyManager = economyManager;
+        this.rewardGiver = rewardGiver;
         this.messages = messages;
     }
 
@@ -139,9 +142,9 @@ public class CrateService {
         }
     }
 
-    /** Applique reellement une recompense (objet ou credit d'economie) et previent le joueur. */
+    /** Applique reellement une recompense (objet, economie, cle de caisse ou boost xp) et previent le joueur. */
     public void giveReward(Player player, CrateReward reward) {
-        RewardGiver.give(player, reward.reward(), economyManager, messages);
+        rewardGiver.give(player, reward.reward());
 
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("recompense", reward.displayName());

@@ -3,6 +3,7 @@ package com.mysteriacraft.quests;
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.gui.ItemBuilder;
 import com.mysteriacraft.core.reward.Reward;
+import com.mysteriacraft.core.reward.RewardParser;
 import com.mysteriacraft.core.storage.Database;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -98,33 +99,9 @@ public class QuestManager {
         String target = section.getString("cible", null);
         int objective = Math.max(1, section.getInt("objectif", 1));
         long xp = section.getLong("xp", 0);
-        Reward reward = parseReward(section.getConfigurationSection("recompense"));
+        Reward reward = RewardParser.parse(section.getConfigurationSection("recompense"));
 
         return new QuestDefinition(id, displayName, icon, type, target, objective, xp, reward, period);
-    }
-
-    private Reward parseReward(ConfigurationSection section) {
-        if (section == null) {
-            return null;
-        }
-        boolean isEconomie = "ECONOMIE".equalsIgnoreCase(section.getString("type", "ITEM"));
-
-        if (isEconomie) {
-            double amount = section.getDouble("montant", 0);
-            String displayName = (long) amount + "$";
-            ItemStack icon = new ItemBuilder(Material.GOLD_INGOT).name("&e" + displayName).build();
-            return Reward.ofEconomy(amount, displayName, icon);
-        }
-
-        Material material = Material.matchMaterial(section.getString("materiel", "STONE"));
-        if (material == null) {
-            material = Material.STONE;
-        }
-        int quantity = Math.max(1, section.getInt("quantite", 1));
-        ItemStack item = new ItemStack(material, quantity);
-        String displayName = material.name().replace('_', ' ') + " x" + quantity;
-        ItemStack icon = new ItemBuilder(material, quantity).name("&f" + displayName).build();
-        return Reward.ofItem(item, displayName, icon);
     }
 
     public List<QuestDefinition> getDailyQuests() {
@@ -209,5 +186,17 @@ public class QuestManager {
         }
 
         return new ProgressResult(newProgression, justCompleted);
+    }
+
+    /** Supprime toute la progression (quotidienne et hebdomadaire, toutes periodes confondues) d'un joueur. Commande admin. */
+    public synchronized void resetAllProgress(UUID uuid) {
+        String delete = "DELETE FROM quest_progression WHERE uuid = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(delete)) {
+            statement.setString(1, uuid.toString());
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur reinitialisation progression quetes pour " + uuid + " : " + e.getMessage());
+        }
     }
 }

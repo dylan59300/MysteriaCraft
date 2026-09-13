@@ -59,8 +59,8 @@ commands:
     description: Ouvre le menu des quetes quotidiennes et hebdomadaires
     usage: /<command>
   questsadmin:
-    description: Recharge quests.yml
-    usage: /<command>
+    description: Recharge quests.yml ou reinitialise la progression d'un joueur
+    usage: /<command> [reset <joueur>]
     permission: mysteriacraft.quests.admin
 
 permissions:

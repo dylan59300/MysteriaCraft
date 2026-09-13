@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * achat de la piste premium (avec confirmation cliquable), et reclamation des recompenses
  * (gratuite/premium) par palier.
  */
-public class BattlePassService {
+public class BattlePassService implements RewardGiver.XpBoosterHandler {
 
     public static final String TRACK_FREE = "GRATUIT";
     public static final String TRACK_PREMIUM = "PREMIUM";
@@ -34,16 +34,53 @@ public class BattlePassService {
     private final Plugin plugin;
     private final BattlePassManager manager;
     private final EconomyManager economyManager;
+    private final RewardGiver rewardGiver;
     private final MessageManager messages;
 
     /** Achats de premium en attente de confirmation cliquable, par joueur (expiration en millis). */
     private final Map<UUID, Long> pendingPremiumPurchase = new ConcurrentHashMap<>();
 
-    public BattlePassService(Plugin plugin, BattlePassManager manager, EconomyManager economyManager, MessageManager messages) {
+    /**
+     * Boosts d'xp actifs (multiplicateur + expiration en millis), par joueur. Volontairement
+     * en memoire uniquement (non persiste) : un redemarrage du serveur y met fin, ce qui est
+     * un compromis acceptable pour un bonus temporaire.
+     */
+    private final Map<UUID, ActiveBooster> activeBoosters = new ConcurrentHashMap<>();
+
+    private record ActiveBooster(double multiplier, long expiresAtMillis) {
+        boolean isActive() {
+            return System.currentTimeMillis() < expiresAtMillis;
+        }
+    }
+
+    public BattlePassService(Plugin plugin, BattlePassManager manager, EconomyManager economyManager,
+                              RewardGiver rewardGiver, MessageManager messages) {
         this.plugin = plugin;
         this.manager = manager;
         this.economyManager = economyManager;
+        this.rewardGiver = rewardGiver;
         this.messages = messages;
+    }
+
+    /** Active un boost d'xp temporaire (depuis une recompense de type BOOST_XP, quel que soit le module source). */
+    @Override
+    public void activateBooster(Player player, long durationSeconds, double multiplier) {
+        long expiresAt = System.currentTimeMillis() + durationSeconds * 1000L;
+        activeBoosters.put(player.getUniqueId(), new ActiveBooster(multiplier, expiresAt));
+
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("multiplicateur", String.valueOf(multiplier));
+        placeholders.put("duree", String.valueOf(durationSeconds / 60));
+        messages.send(player, "battlepass.booster-active", placeholders);
+    }
+
+    private double currentMultiplier(UUID uuid) {
+        ActiveBooster booster = activeBoosters.get(uuid);
+        if (booster != null && booster.isActive()) {
+            return booster.multiplier();
+        }
+        activeBoosters.remove(uuid);
+        return 1.0;
     }
 
     /** Premium effectif : achete OU accorde par permission (rang, kit VIP vendu via un autre systeme). */
@@ -51,12 +88,13 @@ public class BattlePassService {
         return player.hasPermission(PERMISSION_PREMIUM) || manager.isPremium(player.getUniqueId());
     }
 
-    /** Ajoute de l'xp a un joueur en ligne et le previent s'il passe un ou plusieurs niveaux. */
+    /** Ajoute de l'xp a un joueur en ligne (multipliee par un eventuel boost actif) et le previent s'il passe un ou plusieurs niveaux. */
     public void addXp(Player player, long amount) {
+        long boostedAmount = Math.round(amount * currentMultiplier(player.getUniqueId()));
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             long oldXp = manager.getXp(player.getUniqueId());
             int oldLevel = manager.computeLevel(oldXp);
-            long newXp = manager.addXp(player.getUniqueId(), amount);
+            long newXp = manager.addXp(player.getUniqueId(), boostedAmount);
             int newLevel = manager.computeLevel(newXp);
 
             if (newLevel > oldLevel) {
@@ -178,7 +216,7 @@ public class BattlePassService {
     }
 
     private void giveReward(Player player, BattlePassReward reward) {
-        RewardGiver.give(player, reward.reward(), economyManager, messages);
+        rewardGiver.give(player, reward.reward());
 
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("recompense", reward.displayName());

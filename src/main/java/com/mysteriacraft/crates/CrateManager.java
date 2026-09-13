@@ -3,7 +3,6 @@ package com.mysteriacraft.crates;
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.gui.ItemBuilder;
 import com.mysteriacraft.core.reward.Reward;
-import com.mysteriacraft.core.reward.RewardType;
 import com.mysteriacraft.core.storage.Database;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -120,12 +119,11 @@ public class CrateManager {
 
     private CrateReward parseReward(Map<?, ?> raw) {
         String id = String.valueOf(raw.getOrDefault("id", "recompense"));
-        RewardType type = raw.containsKey("type") && "ECONOMIE".equalsIgnoreCase(String.valueOf(raw.get("type")))
-                ? RewardType.ECONOMIE : RewardType.ITEM;
+        String typeRaw = raw.containsKey("type") ? String.valueOf(raw.get("type")).toUpperCase() : "ITEM";
         double chance = raw.containsKey("chance") ? Double.parseDouble(String.valueOf(raw.get("chance"))) : 1.0;
         Rarity rarity = Rarity.fromString(raw.containsKey("rarete") ? String.valueOf(raw.get("rarete")) : null);
 
-        if (type == RewardType.ECONOMIE) {
+        if (typeRaw.equals("ECONOMIE")) {
             double amount = raw.containsKey("montant") ? Double.parseDouble(String.valueOf(raw.get("montant"))) : 0;
             Material iconMaterial = Material.matchMaterial(String.valueOf(raw.getOrDefault("icone", "GOLD_INGOT")));
             if (iconMaterial == null) {
@@ -138,6 +136,33 @@ public class CrateManager {
                     .lore(List.of("&7Recompense : &e" + amount + "$"))
                     .build();
             Reward reward = Reward.ofEconomy(amount, displayName, displayIcon);
+            return new CrateReward(id, reward, chance, rarity);
+        }
+
+        if (typeRaw.equals("CLE_CAISSE")) {
+            String crateId = String.valueOf(raw.getOrDefault("caisse", ""));
+            int keyAmount = raw.containsKey("quantite") ? Integer.parseInt(String.valueOf(raw.get("quantite"))) : 1;
+            String displayName = raw.containsKey("nom") ? String.valueOf(raw.get("nom"))
+                    : rarity.color() + keyAmount + " cle(s) - " + crateId;
+            Material iconMaterial = Material.matchMaterial(String.valueOf(raw.getOrDefault("icone", "TRIPWIRE_HOOK")));
+            if (iconMaterial == null) {
+                iconMaterial = Material.TRIPWIRE_HOOK;
+            }
+            ItemStack displayIcon = new ItemBuilder(iconMaterial, keyAmount).name(displayName).build();
+            Reward reward = Reward.ofCrateKey(crateId, keyAmount, displayName, displayIcon);
+            return new CrateReward(id, reward, chance, rarity);
+        }
+
+        if (typeRaw.equals("BOOST_XP")) {
+            long durationSeconds = raw.containsKey("duree-secondes") ? Long.parseLong(String.valueOf(raw.get("duree-secondes"))) : 600L;
+            double multiplier = raw.containsKey("multiplicateur") ? Double.parseDouble(String.valueOf(raw.get("multiplicateur"))) : 2.0;
+            String displayName = raw.containsKey("nom") ? String.valueOf(raw.get("nom")) : rarity.color() + "Boost XP x" + multiplier;
+            Material iconMaterial = Material.matchMaterial(String.valueOf(raw.getOrDefault("icone", "NETHER_STAR")));
+            if (iconMaterial == null) {
+                iconMaterial = Material.NETHER_STAR;
+            }
+            ItemStack displayIcon = new ItemBuilder(iconMaterial).name(displayName).build();
+            Reward reward = Reward.ofXpBooster(durationSeconds, multiplier, displayName, displayIcon);
             return new CrateReward(id, reward, chance, rarity);
         }
 

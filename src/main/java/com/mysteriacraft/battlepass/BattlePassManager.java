@@ -1,12 +1,10 @@
 package com.mysteriacraft.battlepass;
 
 import com.mysteriacraft.core.config.ConfigManager;
-import com.mysteriacraft.core.gui.ItemBuilder;
 import com.mysteriacraft.core.reward.Reward;
+import com.mysteriacraft.core.reward.RewardParser;
 import com.mysteriacraft.core.storage.Database;
-import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
 import java.sql.Connection;
@@ -98,29 +96,8 @@ public class BattlePassManager {
     }
 
     private BattlePassReward parseReward(ConfigurationSection section) {
-        if (section == null) {
-            return null;
-        }
-        boolean isEconomie = "ECONOMIE".equalsIgnoreCase(section.getString("type", "ITEM"));
-
-        if (isEconomie) {
-            double amount = section.getDouble("montant", 0);
-            String displayName = (long) amount + "$";
-            ItemStack icon = new ItemBuilder(Material.GOLD_INGOT)
-                    .name("&e" + displayName)
-                    .build();
-            return new BattlePassReward(Reward.ofEconomy(amount, displayName, icon));
-        }
-
-        Material material = Material.matchMaterial(section.getString("materiel", "STONE"));
-        if (material == null) {
-            material = Material.STONE;
-        }
-        int quantity = Math.max(1, section.getInt("quantite", 1));
-        ItemStack item = new ItemStack(material, quantity);
-        String displayName = material.name().replace('_', ' ') + " x" + quantity;
-        ItemStack icon = new ItemBuilder(material, quantity).name("&f" + displayName).build();
-        return new BattlePassReward(Reward.ofItem(item, displayName, icon));
+        Reward reward = RewardParser.parse(section);
+        return reward == null ? null : new BattlePassReward(reward);
     }
 
     public List<BattlePassLevel> getLevels() {
