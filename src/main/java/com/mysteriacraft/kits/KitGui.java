@@ -7,6 +7,7 @@ import com.mysteriacraft.core.gui.MenuHolder;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -17,17 +18,25 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Menu listant tous les kits disponibles. Un clic reclame le kit correspondant.
- * Les kits verrouilles (permission manquante) sont affiches grises avec un cadenas.
+ * Menu listant les kits disponibles, avec pagination (7 kits par page).
+ * Clic gauche = reclamer le kit. Clic droit = previsualiser son contenu reel.
+ * Les kits verrouilles (permission manquante) sont affiches grises.
  */
 public class KitGui extends Menu {
 
     private static final int SIZE = 27;
+    private static final int[] KIT_SLOTS = {10, 11, 12, 13, 14, 15, 16};
+    private static final int PREVIOUS_SLOT = 18;
+    private static final int NEXT_SLOT = 26;
 
     private final KitManager kitManager;
     private final KitService kitService;
     private final MessageManager messages;
     private final Map<Integer, String> slotToKitId = new HashMap<>();
+
+    private Inventory inventory;
+    private List<Kit> kits;
+    private int page = 0;
 
     public KitGui(Player viewer, KitManager kitManager, KitService kitService, MessageManager messages) {
         super(viewer);
@@ -38,30 +47,56 @@ public class KitGui extends Menu {
 
     @Override
     public Inventory build() {
-        slotToKitId.clear();
         MenuHolder holder = new MenuHolder(this);
-        Inventory inventory = Bukkit.createInventory(holder, SIZE, MessageManager.color(messages.raw("kits.titre-gui")));
+        this.inventory = Bukkit.createInventory(holder, SIZE, MessageManager.color(messages.raw("kits.titre-gui")));
         holder.setInventory(inventory);
+        this.kits = new ArrayList<>(kitManager.getKitsSorted());
+        render();
+        return inventory;
+    }
+
+    private int maxPage() {
+        return Math.max(1, (int) Math.ceil(kits.size() / (double) KIT_SLOTS.length));
+    }
+
+    private void render() {
+        slotToKitId.clear();
 
         ItemStack border = new ItemBuilder(Material.GRAY_STAINED_GLASS_PANE).name(" ").build();
         for (int i = 0; i < SIZE; i++) {
             inventory.setItem(i, border);
         }
 
-        List<Kit> kits = new ArrayList<>(kitManager.getKitsSorted());
-        int slot = 10;
-        for (Kit kit : kits) {
-            if (slot > 16) {
-                break; // Menu limite a 7 kits (ligne du milieu) ; au-dela, prevoir une pagination.
+        int firstIndex = page * KIT_SLOTS.length;
+        for (int i = 0; i < KIT_SLOTS.length; i++) {
+            int kitIndex = firstIndex + i;
+            if (kitIndex >= kits.size()) {
+                break;
             }
-
+            Kit kit = kits.get(kitIndex);
             boolean unlocked = !kit.hasPermissionRequirement() || viewer.hasPermission(kit.permission());
-            inventory.setItem(slot, buildKitItem(kit, unlocked));
-            slotToKitId.put(slot, kit.id());
-            slot++;
+            inventory.setItem(KIT_SLOTS[i], buildKitItem(kit, unlocked));
+            slotToKitId.put(KIT_SLOTS[i], kit.id());
         }
 
-        return inventory;
+        int maxPage = maxPage();
+        if (page > 0) {
+            inventory.setItem(PREVIOUS_SLOT, new ItemBuilder(Material.ARROW)
+                    .name(messages.raw("kits.gui-page-precedente")).build());
+        }
+        if (page < maxPage - 1) {
+            inventory.setItem(NEXT_SLOT, new ItemBuilder(Material.ARROW)
+                    .name(messages.raw("kits.gui-page-suivante")).build());
+        }
+
+        Map<String, String> pagePlaceholders = new HashMap<>();
+        pagePlaceholders.put("page", String.valueOf(page + 1));
+        pagePlaceholders.put("max", String.valueOf(maxPage));
+        String pageLabel = messages.raw("kits.gui-page");
+        for (Map.Entry<String, String> entry : pagePlaceholders.entrySet()) {
+            pageLabel = pageLabel.replace("{" + entry.getKey() + "}", entry.getValue());
+        }
+        inventory.setItem(22, new ItemBuilder(Material.PAPER).name(pageLabel).build());
     }
 
     private ItemStack buildKitItem(Kit kit, boolean unlocked) {
@@ -80,13 +115,35 @@ public class KitGui extends Menu {
 
     @Override
     public void handleClick(InventoryClickEvent event) {
-        String kitId = slotToKitId.get(event.getSlot());
+        int slot = event.getSlot();
+
+        if (slot == PREVIOUS_SLOT && page > 0) {
+            page--;
+            render();
+            return;
+        }
+        if (slot == NEXT_SLOT && page < maxPage() - 1) {
+            page++;
+            render();
+            return;
+        }
+
+        String kitId = slotToKitId.get(slot);
         if (kitId == null) {
             return;
         }
         if (!(event.getWhoClicked() instanceof Player player)) {
             return;
         }
+
+        if (event.getClick() == ClickType.RIGHT) {
+            Kit kit = kitManager.getKit(kitId);
+            if (kit != null) {
+                new KitPreviewGui(player, kit, this, messages).open();
+            }
+            return;
+        }
+
         player.closeInventory();
         kitService.claim(player, kitId);
     }

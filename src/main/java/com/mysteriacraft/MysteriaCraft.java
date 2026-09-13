@@ -16,6 +16,7 @@ import com.mysteriacraft.core.gui.MenuListener;
 import com.mysteriacraft.kits.KitManager;
 import com.mysteriacraft.kits.KitService;
 import com.mysteriacraft.kits.commands.KitCommand;
+import com.mysteriacraft.kits.commands.KitReloadCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -87,7 +88,8 @@ public final class MysteriaCraft extends JavaPlugin {
         this.kitManager = new KitManager(this, database, kitsConfig);
         this.kitService = new KitService(this, kitManager, messages);
 
-        getCommand("kit").setExecutor(new KitCommand(kitManager, kitService, messages));
+        getCommand("kit").setExecutor(new KitCommand(this, kitManager, kitService, messages));
+        getCommand("kitreload").setExecutor(new KitReloadCommand(kitsConfig, kitManager, messages));
     }
 
     @Override

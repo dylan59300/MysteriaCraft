@@ -92,6 +92,14 @@ public class KitManager {
         String permission = section.getString("permission", "");
         long cooldownSeconds = section.getLong("cooldown-heures", 24) * 3600L;
 
+        Map<String, Long> cooldownOverrides = new LinkedHashMap<>();
+        ConfigurationSection overridesSection = section.getConfigurationSection("cooldown-permissions");
+        if (overridesSection != null) {
+            for (String perm : overridesSection.getKeys(false)) {
+                cooldownOverrides.put(perm, overridesSection.getLong(perm) * 3600L);
+            }
+        }
+
         List<ItemStack> items = new ArrayList<>();
         List<Map<?, ?>> itemMaps = section.getMapList("items");
         for (Map<?, ?> raw : itemMaps) {
@@ -101,7 +109,7 @@ public class KitManager {
             }
         }
 
-        return new Kit(id, displayName, icon, order, lore, permission, cooldownSeconds, items);
+        return new Kit(id, displayName, icon, order, lore, permission, cooldownSeconds, cooldownOverrides, items);
     }
 
     @SuppressWarnings("unchecked")
@@ -196,6 +204,20 @@ public class KitManager {
             statement.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().severe("Erreur enregistrement cooldown kit '" + kitId + "' pour " + uuid + " : " + e.getMessage());
+        }
+    }
+
+    /** Supprime le cooldown d'un joueur sur un kit (commande admin). A appeler hors du thread principal. */
+    public synchronized boolean resetCooldown(UUID uuid, String kitId) {
+        String delete = "DELETE FROM kits_cooldowns WHERE uuid = ? AND kit_id = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(delete)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, kitId.toLowerCase());
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur reinitialisation cooldown kit '" + kitId + "' pour " + uuid + " : " + e.getMessage());
+            return false;
         }
     }
 

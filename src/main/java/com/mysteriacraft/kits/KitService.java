@@ -3,6 +3,7 @@ package com.mysteriacraft.kits;
 import com.mysteriacraft.core.config.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
@@ -42,9 +43,11 @@ public class KitService {
             return;
         }
 
+        long effectiveCooldownSeconds = effectiveCooldownSeconds(player, kit);
+
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             long lastUsed = kitManager.getLastUsed(player.getUniqueId(), kit.id());
-            long remainingMillis = (lastUsed + kit.cooldownSeconds() * 1000L) - System.currentTimeMillis();
+            long remainingMillis = (lastUsed + effectiveCooldownSeconds * 1000L) - System.currentTimeMillis();
 
             if (lastUsed > 0 && remainingMillis > 0) {
                 Bukkit.getScheduler().runTask(plugin, () -> {
@@ -57,6 +60,35 @@ public class KitService {
             }
 
             Bukkit.getScheduler().runTask(plugin, () -> giveKit(player, kit));
+        });
+    }
+
+    /** Cooldown effectif du joueur pour ce kit : le plus court parmi cooldownSeconds et les permissions possedees. */
+    private long effectiveCooldownSeconds(Player player, Kit kit) {
+        long shortest = kit.cooldownSeconds();
+        for (Map.Entry<String, Long> override : kit.cooldownOverrides().entrySet()) {
+            if (player.hasPermission(override.getKey()) && override.getValue() < shortest) {
+                shortest = override.getValue();
+            }
+        }
+        return shortest;
+    }
+
+    /** Reinitialise le cooldown d'un joueur sur un kit (commande admin). */
+    public void resetCooldown(Player admin, OfflinePlayer target, String kitId) {
+        Kit kit = kitManager.getKit(kitId);
+        if (kit == null) {
+            messages.send(admin, "kits.introuvable");
+            return;
+        }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            boolean removed = kitManager.resetCooldown(target.getUniqueId(), kit.id());
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("kit", kit.displayName());
+                placeholders.put("joueur", target.getName() != null ? target.getName() : target.getUniqueId().toString());
+                messages.send(admin, removed ? "kits.reset-effectue" : "kits.reset-aucun", placeholders);
+            });
         });
     }
 

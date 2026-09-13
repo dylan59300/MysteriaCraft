@@ -2,6 +2,8 @@
 #   MysteriaCraft - Configuration des kits
 # =========================================
 # cooldown-heures : delai avant de pouvoir reclamer le kit a nouveau (24h par defaut).
+# cooldown-permissions : reduit le cooldown pour les joueurs possedant une des permissions listees
+#                        (la plus courte valeur parmi celles possedees par le joueur est retenue).
 # permission : laisser vide ("") pour un kit accessible a tout le monde.
 # items : liste des objets donnes. "enchantements" est optionnel (NOM_ENCHANTEMENT: niveau).
 
@@ -10,13 +12,14 @@ kits:
     nom: "&aKit Debutant"
     icone: CHEST
     ordre: 1
-    permission: ""
+    permission: "mysteriacraft.kit.starter"
     cooldown-heures: 24
     lore:
       - "&7Un kit pour bien commencer"
       - "&7l'aventure sur MysteriaCraft."
       - ""
       - "&eClic gauche pour reclamer"
+      - "&eClic droit pour previsualiser"
     items:
       - materiel: WOODEN_SWORD
         quantite: 1
@@ -31,12 +34,13 @@ kits:
     nom: "&cKit Guerrier"
     icone: IRON_SWORD
     ordre: 2
-    permission: ""
+    permission: "mysteriacraft.kit.guerrier"
     cooldown-heures: 24
     lore:
       - "&7Equipement de combat basique."
       - ""
       - "&eClic gauche pour reclamer"
+      - "&eClic droit pour previsualiser"
     items:
       - materiel: IRON_SWORD
         quantite: 1
@@ -47,16 +51,110 @@ kits:
       - materiel: COOKED_BEEF
         quantite: 8
 
+  mineur:
+    nom: "&8Kit Mineur"
+    icone: DIAMOND_PICKAXE
+    ordre: 3
+    permission: ""
+    cooldown-heures: 24
+    lore:
+      - "&7Pour descendre miner en profondeur."
+      - ""
+      - "&eClic gauche pour reclamer"
+      - "&eClic droit pour previsualiser"
+    items:
+      - materiel: IRON_PICKAXE
+        quantite: 1
+      - materiel: TORCH
+        quantite: 32
+      - materiel: COOKED_CHICKEN
+        quantite: 8
+
+  pecheur:
+    nom: "&bKit Pecheur"
+    icone: FISHING_ROD
+    ordre: 4
+    permission: ""
+    cooldown-heures: 24
+    lore:
+      - "&7De quoi commencer la peche."
+      - ""
+      - "&eClic gauche pour reclamer"
+      - "&eClic droit pour previsualiser"
+    items:
+      - materiel: FISHING_ROD
+        quantite: 1
+      - materiel: COOKED_COD
+        quantite: 8
+
+  batisseur:
+    nom: "&eKit Batisseur"
+    icone: BRICKS
+    ordre: 5
+    permission: ""
+    cooldown-heures: 24
+    lore:
+      - "&7Materiaux de base pour construire."
+      - ""
+      - "&eClic gauche pour reclamer"
+      - "&eClic droit pour previsualiser"
+    items:
+      - materiel: OAK_PLANKS
+        quantite: 64
+      - materiel: COBBLESTONE
+        quantite: 64
+      - materiel: GLASS
+        quantite: 32
+
+  explorateur:
+    nom: "&2Kit Explorateur"
+    icone: COMPASS
+    ordre: 6
+    permission: ""
+    cooldown-heures: 24
+    lore:
+      - "&7Pour partir a l'aventure."
+      - ""
+      - "&eClic gauche pour reclamer"
+      - "&eClic droit pour previsualiser"
+    items:
+      - materiel: COMPASS
+        quantite: 1
+      - materiel: LEATHER_BOOTS
+        quantite: 1
+      - materiel: COOKED_MUTTON
+        quantite: 8
+
+  soigneur:
+    nom: "&dKit Soigneur"
+    icone: POTION
+    ordre: 7
+    permission: ""
+    cooldown-heures: 24
+    lore:
+      - "&7Quelques soins pour la route."
+      - ""
+      - "&eClic gauche pour reclamer"
+      - "&eClic droit pour previsualiser"
+    items:
+      - materiel: GOLDEN_CARROT
+        quantite: 8
+      - materiel: BREAD
+        quantite: 8
+
   vip:
     nom: "&6&lKit VIP"
     icone: DIAMOND_SWORD
-    ordre: 3
+    ordre: 8
     permission: "mysteriacraft.kit.vip"
     cooldown-heures: 24
+    cooldown-permissions:
+      mysteriacraft.kit.cooldown.vip: 12
     lore:
       - "&7Reserve aux joueurs VIP."
       - ""
       - "&eClic gauche pour reclamer"
+      - "&eClic droit pour previsualiser"
     items:
       - materiel: DIAMOND_SWORD
         quantite: 1

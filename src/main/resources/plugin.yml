@@ -28,13 +28,29 @@ commands:
     usage: /<command>
     permission: mysteriacraft.eco.admin
   kit:
-    description: Ouvre le menu des kits ou reclame un kit precis
+    description: Ouvre le menu des kits, reclame un kit precis, ou /kit reset <joueur> <kit> (admin)
     usage: /<command> [nom-du-kit]
+  kitreload:
+    description: Recharge kits.yml
+    usage: /<command>
+    permission: mysteriacraft.kit.admin
 
 permissions:
   mysteriacraft.eco.admin:
     description: Autorise la gestion admin de l'economie
     default: op
+  mysteriacraft.kit.admin:
+    description: Autorise la gestion admin des kits (reload, reset de cooldown)
+    default: op
+  mysteriacraft.kit.starter:
+    description: Donne acces au kit Debutant
+    default: true
+  mysteriacraft.kit.guerrier:
+    description: Donne acces au kit Guerrier
+    default: true
   mysteriacraft.kit.vip:
     description: Donne acces au kit VIP
+    default: false
+  mysteriacraft.kit.cooldown.vip:
+    description: Reduit le cooldown des kits pour les VIP (voir cooldown-permissions dans kits.yml)
     default: false
