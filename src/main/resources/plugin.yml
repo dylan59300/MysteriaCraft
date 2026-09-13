@@ -62,6 +62,13 @@ commands:
     description: Recharge quests.yml ou reinitialise la progression d'un joueur
     usage: /<command> [reset <joueur>]
     permission: mysteriacraft.quests.admin
+  pets:
+    description: Ouvre le menu des pets (achat, invocation)
+    usage: /<command>
+  petsadmin:
+    description: Recharge pets.yml
+    usage: /<command>
+    permission: mysteriacraft.pets.admin
 
 permissions:
   mysteriacraft.eco.admin:
@@ -93,4 +100,7 @@ permissions:
     default: false
   mysteriacraft.quests.admin:
     description: Autorise la gestion admin des quetes (reload)
+    default: op
+  mysteriacraft.pets.admin:
+    description: Autorise la gestion admin des pets (reload)
     default: op

@@ -28,6 +28,7 @@ public class RewardGiver {
     private final MessageManager messages;
 
     private XpBoosterHandler boosterHandler;
+    private PetUnlockHandler petUnlockHandler;
 
     public RewardGiver(Plugin plugin, EconomyManager economyManager, CrateManager crateManager, MessageManager messages) {
         this.plugin = plugin;
@@ -41,8 +42,17 @@ public class RewardGiver {
         void activateBooster(Player player, long durationSeconds, double multiplier);
     }
 
+    /** Petit contrat minimal pour debloquer un pet, implemente par PetService (branche apres coup). */
+    public interface PetUnlockHandler {
+        void unlockFromReward(Player player, String petId);
+    }
+
     public void setBoosterHandler(XpBoosterHandler boosterHandler) {
         this.boosterHandler = boosterHandler;
+    }
+
+    public void setPetUnlockHandler(PetUnlockHandler petUnlockHandler) {
+        this.petUnlockHandler = petUnlockHandler;
     }
 
     public void give(Player player, Reward reward) {
@@ -53,6 +63,11 @@ public class RewardGiver {
             case BOOST_XP -> {
                 if (boosterHandler != null) {
                     boosterHandler.activateBooster(player, reward.boosterDurationSeconds(), reward.boosterMultiplier());
+                }
+            }
+            case PET -> {
+                if (petUnlockHandler != null) {
+                    petUnlockHandler.unlockFromReward(player, reward.petId());
                 }
             }
             case ITEM -> giveItem(player, reward);

@@ -11,5 +11,7 @@ public enum RewardType {
     /** Cle(s) virtuelle(s) pour une caisse precise (module Crates). */
     CLE_CAISSE,
     /** Multiplicateur d'xp BattlePass temporaire. */
-    BOOST_XP
+    BOOST_XP,
+    /** Debloque un pet (module Pets). */
+    PET
 }

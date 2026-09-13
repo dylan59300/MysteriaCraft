@@ -153,6 +153,18 @@ public class CrateManager {
             return new CrateReward(id, reward, chance, rarity);
         }
 
+        if (typeRaw.equals("PET")) {
+            String petId = String.valueOf(raw.getOrDefault("pet-id", ""));
+            String displayName = raw.containsKey("nom") ? String.valueOf(raw.get("nom")) : rarity.color() + "Pet : " + petId;
+            Material iconMaterial = Material.matchMaterial(String.valueOf(raw.getOrDefault("icone", "BONE")));
+            if (iconMaterial == null) {
+                iconMaterial = Material.BONE;
+            }
+            ItemStack displayIcon = new ItemBuilder(iconMaterial).name(displayName).build();
+            Reward reward = Reward.ofPet(petId, displayName, displayIcon);
+            return new CrateReward(id, reward, chance, rarity);
+        }
+
         if (typeRaw.equals("BOOST_XP")) {
             long durationSeconds = raw.containsKey("duree-secondes") ? Long.parseLong(String.valueOf(raw.get("duree-secondes"))) : 600L;
             double multiplier = raw.containsKey("multiplicateur") ? Double.parseDouble(String.valueOf(raw.get("multiplicateur"))) : 2.0;

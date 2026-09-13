@@ -33,6 +33,11 @@ import com.mysteriacraft.quests.commands.QuestsAdminCommand;
 import com.mysteriacraft.quests.commands.QuestsCommand;
 import com.mysteriacraft.quests.listeners.QuestListener;
 import com.mysteriacraft.core.reward.RewardGiver;
+import com.mysteriacraft.pets.PetManager;
+import com.mysteriacraft.pets.PetService;
+import com.mysteriacraft.pets.commands.PetsAdminCommand;
+import com.mysteriacraft.pets.commands.PetsCommand;
+import com.mysteriacraft.pets.listeners.PetJoinQuitListener;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -67,6 +72,10 @@ public final class MysteriaCraft extends JavaPlugin {
     private QuestManager questManager;
     private QuestService questService;
 
+    private ConfigManager petsConfig;
+    private PetManager petManager;
+    private PetService petService;
+
     @Override
     public void onEnable() {
         long start = System.currentTimeMillis();
@@ -96,6 +105,9 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Module Quetes ----
         setupQuests();
+
+        // ---- Module Pets ----
+        setupPets();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -178,8 +190,26 @@ public final class MysteriaCraft extends JavaPlugin {
         getCommand("questsadmin").setExecutor(new QuestsAdminCommand(this, questsConfig, questManager, messages));
     }
 
+    private void setupPets() {
+        this.petsConfig = new ConfigManager(this, "pets.yml");
+        this.petManager = new PetManager(this, database, petsConfig);
+        this.petService = new PetService(this, petManager, economyManager, messages);
+        rewardGiver.setPetUnlockHandler(petService);
+
+        Bukkit.getPluginManager().registerEvents(new PetJoinQuitListener(petService), this);
+
+        getCommand("pets").setExecutor(new PetsCommand(this, petManager, petService, messages));
+        getCommand("petsadmin").setExecutor(new PetsAdminCommand(petsConfig, petManager, messages));
+
+        // Re-invoque le pet actif des joueurs deja connectes (rechargement du plugin)
+        Bukkit.getOnlinePlayers().forEach(petService::respawnSavedPet);
+    }
+
     @Override
     public void onDisable() {
+        if (petService != null) {
+            Bukkit.getOnlinePlayers().forEach(petService::despawnActive);
+        }
         if (database != null) {
             database.close();
         }

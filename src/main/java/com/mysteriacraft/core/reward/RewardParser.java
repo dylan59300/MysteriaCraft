@@ -25,8 +25,20 @@ public final class RewardParser {
             case "ECONOMIE" -> parseEconomie(section);
             case "CLE_CAISSE" -> parseCrateKey(section);
             case "BOOST_XP" -> parseXpBoost(section);
+            case "PET" -> parsePet(section);
             default -> parseItem(section);
         };
+    }
+
+    private static Reward parsePet(ConfigurationSection section) {
+        String petId = section.getString("pet-id", "");
+        String displayName = section.getString("nom", "Pet : " + petId);
+        Material iconMaterial = Material.matchMaterial(section.getString("icone", "BONE"));
+        if (iconMaterial == null) {
+            iconMaterial = Material.BONE;
+        }
+        ItemStack icon = new ItemBuilder(iconMaterial).name("&e" + displayName).build();
+        return Reward.ofPet(petId, displayName, icon);
     }
 
     private static Reward parseEconomie(ConfigurationSection section) {

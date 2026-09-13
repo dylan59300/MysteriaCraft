@@ -10,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
  * - ECONOMIE : economyAmount
  * - CLE_CAISSE : crateId, crateKeyAmount
  * - BOOST_XP : boosterDurationSeconds, boosterMultiplier
+ * - PET : petId
  */
 public record Reward(
         RewardType type,
@@ -19,23 +20,28 @@ public record Reward(
         int crateKeyAmount,
         long boosterDurationSeconds,
         double boosterMultiplier,
+        String petId,
         String displayName,
         ItemStack displayIcon
 ) {
 
     public static Reward ofItem(ItemStack item, String displayName, ItemStack displayIcon) {
-        return new Reward(RewardType.ITEM, item, 0, null, 0, 0, 0, displayName, displayIcon);
+        return new Reward(RewardType.ITEM, item, 0, null, 0, 0, 0, null, displayName, displayIcon);
     }
 
     public static Reward ofEconomy(double amount, String displayName, ItemStack displayIcon) {
-        return new Reward(RewardType.ECONOMIE, null, amount, null, 0, 0, 0, displayName, displayIcon);
+        return new Reward(RewardType.ECONOMIE, null, amount, null, 0, 0, 0, null, displayName, displayIcon);
     }
 
     public static Reward ofCrateKey(String crateId, int amount, String displayName, ItemStack displayIcon) {
-        return new Reward(RewardType.CLE_CAISSE, null, 0, crateId, amount, 0, 0, displayName, displayIcon);
+        return new Reward(RewardType.CLE_CAISSE, null, 0, crateId, amount, 0, 0, null, displayName, displayIcon);
     }
 
     public static Reward ofXpBooster(long durationSeconds, double multiplier, String displayName, ItemStack displayIcon) {
-        return new Reward(RewardType.BOOST_XP, null, 0, null, 0, durationSeconds, multiplier, displayName, displayIcon);
+        return new Reward(RewardType.BOOST_XP, null, 0, null, 0, durationSeconds, multiplier, null, displayName, displayIcon);
+    }
+
+    public static Reward ofPet(String petId, String displayName, ItemStack displayIcon) {
+        return new Reward(RewardType.PET, null, 0, null, 0, 0, 0, petId, displayName, displayIcon);
     }
 }
