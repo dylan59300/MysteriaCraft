@@ -66,8 +66,10 @@ public class MachineListener implements Listener {
             center.getWorld().playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 1f, 0.9f);
         }
 
-        manager.forgetMachine(block.getLocation());
+        // Ordre important : removeHologram() lit l'etat de la machine (encore present dans le
+        // cache) pour retrouver son hologramme ; forgetMachine() supprime cet etat juste apres.
         manager.removeHologram(block);
+        manager.forgetMachine(block.getLocation());
         event.setDropItems(false);
         block.getWorld().dropItemNaturally(block.getLocation(), manager.createMachineItem());
     }

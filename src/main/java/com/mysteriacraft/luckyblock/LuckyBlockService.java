@@ -47,7 +47,8 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
     /** Appele par le listener sur BlockBreakEvent quand le bloc casse est un Lucky Block marque. */
     public void handleBreak(BlockBreakEvent event, LuckyBlockFamily family) {
         Player player = event.getPlayer();
-        // Lu maintenant : une fois le bloc casse, sa PersistentDataContainer disparait avec lui.
+        // Lu maintenant : une fois le bloc reellement casse (event non annule), on desenregistre
+        // sa position (voir LuckyBlockManager#untagBlock) et son bonus de minerais serait perdu.
         double bonusPercent = manager.getBonus(event.getBlock());
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -70,6 +71,7 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
 
             Bukkit.getScheduler().runTask(plugin, () -> {
                 event.setDropItems(false);
+                manager.untagBlock(event.getBlock());
                 if (effect == null) {
                     messages.send(player, "luckyblock.aucun-effet");
                     return;
@@ -108,7 +110,7 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
 
     private void spawnTnt(Location location, int amount) {
         for (int i = 0; i < amount; i++) {
-            Entity entity = location.getWorld().spawnEntity(location.clone().add(0.5, 0.5, 0.5), EntityType.TNT);
+            Entity entity = location.getWorld().spawnEntity(location.clone().add(0.5, 0.5, 0.5), EntityType.PRIMED_TNT);
             if (entity instanceof TNTPrimed tnt) {
                 tnt.setFuseTicks(60);
             }

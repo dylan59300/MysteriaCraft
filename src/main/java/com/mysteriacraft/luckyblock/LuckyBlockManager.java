@@ -6,6 +6,7 @@ import com.mysteriacraft.core.reward.Reward;
 import com.mysteriacraft.core.reward.RewardParser;
 import com.mysteriacraft.core.storage.Database;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -28,32 +29,54 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Charge les familles de Lucky Block depuis luckyblocks.yml, gere le cooldown par joueur et
  * par famille (SQLite), le tirage pondere des effets, la fabrication de l'item (avec sa marque
- * PersistentDataContainer) et l'enregistrement/desenregistrement des recettes de craft.
+ * PersistentDataContainer, valable pour un ItemStack) et l'enregistrement/desenregistrement des
+ * recettes de craft.
+ *
+ * IMPORTANT : contrairement a un ItemStack ou une Entity, un Block "nu" (ex: GOLD_BLOCK) n'a PAS
+ * de PersistentDataContainer sur paper-api 1.20.1 (seuls les blocs avec tile entity, comme les
+ * coffres, en ont un via leur BlockState). L'etat par bloc (famille, bonus de minerais) est donc
+ * suivi via une table SQLite dediee, indexee par position, mise en cache memoire (write-through :
+ * chaque ecriture met a jour le cache puis persiste en base de facon asynchrone).
  */
 public class LuckyBlockManager {
+
+    /** Etat d'un Lucky Block pose : sa famille et son bonus de minerais accumule. */
+    private static final class PlacedBlockState {
+        String familyId;
+        double bonus;
+
+        PlacedBlockState(String familyId, double bonus) {
+            this.familyId = familyId;
+            this.bonus = bonus;
+        }
+    }
 
     private final Plugin plugin;
     private final Database database;
     private final ConfigManager luckyBlocksConfig;
     private final NamespacedKey familyKey;
-    private final NamespacedKey bonusKey;
 
     private final Map<String, LuckyBlockFamily> families = new LinkedHashMap<>();
     private final Map<Material, Double> oreBonuses = new LinkedHashMap<>();
     private double bonusMax = 45.0;
+
+    /** Lucky Blocks actuellement poses dans le monde, indexes par position (charge au demarrage). */
+    private final Map<Location, PlacedBlockState> placedBlocks = new ConcurrentHashMap<>();
 
     public LuckyBlockManager(Plugin plugin, Database database, ConfigManager luckyBlocksConfig) {
         this.plugin = plugin;
         this.database = database;
         this.luckyBlocksConfig = luckyBlocksConfig;
         this.familyKey = new NamespacedKey(plugin, "luckyblock-famille");
-        this.bonusKey = new NamespacedKey(plugin, "luckyblock-bonus");
         createTable();
+        createBlocksTable();
+        loadPlacedBlocks();
         loadFamilies();
         registerRecipes();
     }
@@ -71,6 +94,84 @@ public class LuckyBlockManager {
         } catch (SQLException e) {
             plugin.getLogger().severe("Erreur creation table 'luckyblock_cooldowns' : " + e.getMessage());
         }
+    }
+
+    private void createBlocksTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS luckyblock_blocks (" +
+                "monde TEXT NOT NULL, " +
+                "x INTEGER NOT NULL, " +
+                "y INTEGER NOT NULL, " +
+                "z INTEGER NOT NULL, " +
+                "famille_id TEXT NOT NULL, " +
+                "bonus REAL NOT NULL DEFAULT 0, " +
+                "PRIMARY KEY (monde, x, y, z)" +
+                ");";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur creation table 'luckyblock_blocks' : " + e.getMessage());
+        }
+    }
+
+    private void loadPlacedBlocks() {
+        placedBlocks.clear();
+        String select = "SELECT monde, x, y, z, famille_id, bonus FROM luckyblock_blocks;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select);
+             ResultSet rs = statement.executeQuery()) {
+            while (rs.next()) {
+                org.bukkit.World world = Bukkit.getWorld(rs.getString("monde"));
+                if (world == null) {
+                    continue;
+                }
+                Location location = new Location(world, rs.getInt("x"), rs.getInt("y"), rs.getInt("z"));
+                placedBlocks.put(location, new PlacedBlockState(rs.getString("famille_id"), rs.getDouble("bonus")));
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur chargement des Lucky Blocks poses : " + e.getMessage());
+        }
+        plugin.getLogger().info(placedBlocks.size() + " Lucky Block(s) pose(s) recharge(s) depuis la base.");
+    }
+
+    private void persistBlockAsync(Location location, PlacedBlockState state) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            String upsert = "INSERT INTO luckyblock_blocks (monde, x, y, z, famille_id, bonus) VALUES (?, ?, ?, ?, ?, ?) " +
+                    "ON CONFLICT(monde, x, y, z) DO UPDATE SET famille_id = excluded.famille_id, bonus = excluded.bonus;";
+            Connection connection = database.getConnection();
+            try (PreparedStatement statement = connection.prepareStatement(upsert)) {
+                statement.setString(1, location.getWorld().getName());
+                statement.setInt(2, location.getBlockX());
+                statement.setInt(3, location.getBlockY());
+                statement.setInt(4, location.getBlockZ());
+                statement.setString(5, state.familyId);
+                statement.setDouble(6, state.bonus);
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Erreur sauvegarde Lucky Block pose : " + e.getMessage());
+            }
+        });
+    }
+
+    private void deleteBlockAsync(Location location) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            String delete = "DELETE FROM luckyblock_blocks WHERE monde = ? AND x = ? AND y = ? AND z = ?;";
+            Connection connection = database.getConnection();
+            try (PreparedStatement statement = connection.prepareStatement(delete)) {
+                statement.setString(1, location.getWorld().getName());
+                statement.setInt(2, location.getBlockX());
+                statement.setInt(3, location.getBlockY());
+                statement.setInt(4, location.getBlockZ());
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Erreur suppression Lucky Block pose : " + e.getMessage());
+            }
+        });
+    }
+
+    /** Cle de position (bloc entier, sans decimales) utilisee pour indexer placedBlocks. */
+    private static Location blockKey(Block block) {
+        return new Location(block.getWorld(), block.getX(), block.getY(), block.getZ());
     }
 
     public void loadFamilies() {
@@ -147,9 +248,16 @@ public class LuckyBlockManager {
         return new LuckyBlockFamily(id, displayName, material, order, cooldownSeconds, buyPrice, baseGoodChance, recipe, effects);
     }
 
+    /** Meme limitation que dans CrateManager : getOrDefault(k, "texte") ne compile pas sur une
+     * Map&lt;?, ?&gt; (capture de type inconnue). On relit la valeur brute nous-memes. */
+    private static String getOrDefault(Map<?, ?> map, String key, String fallback) {
+        Object value = map.get(key);
+        return value != null ? String.valueOf(value) : fallback;
+    }
+
     @SuppressWarnings("unchecked")
     private LuckyBlockEffect parseEffect(Map<?, ?> raw) {
-        EffectKind kind = EffectKind.fromString(String.valueOf(raw.getOrDefault("type", "BON")));
+        EffectKind kind = EffectKind.fromString(getOrDefault(raw, "type", "BON"));
         double chance = raw.containsKey("chance") ? Double.parseDouble(String.valueOf(raw.get("chance"))) : 1.0;
 
         if (kind == EffectKind.BON) {
@@ -162,19 +270,19 @@ public class LuckyBlockManager {
             return new LuckyBlockEffect(EffectKind.BON, chance, reward.displayName(), reward, null, null, 0, 0);
         }
 
-        BadEffectType badType = BadEffectType.fromString(String.valueOf(raw.getOrDefault("action", "TNT")));
+        BadEffectType badType = BadEffectType.fromString(getOrDefault(raw, "action", "TNT"));
         return switch (badType) {
             case TNT -> {
                 int amount = raw.containsKey("quantite") ? Integer.parseInt(String.valueOf(raw.get("quantite"))) : 1;
                 yield new LuckyBlockEffect(EffectKind.MAUVAIS, chance, "TNT x" + amount, null, badType, null, amount, 0);
             }
             case MOBS -> {
-                String mob = String.valueOf(raw.getOrDefault("mob", "ZOMBIE"));
+                String mob = getOrDefault(raw, "mob", "ZOMBIE");
                 int amount = raw.containsKey("quantite") ? Integer.parseInt(String.valueOf(raw.get("quantite"))) : 1;
                 yield new LuckyBlockEffect(EffectKind.MAUVAIS, chance, amount + "x " + mob, null, badType, mob, amount, 0);
             }
             case POTION -> {
-                String potionType = String.valueOf(raw.getOrDefault("effet-potion", "POISON"));
+                String potionType = getOrDefault(raw, "effet-potion", "POISON");
                 long durationSeconds = raw.containsKey("duree-secondes") ? Long.parseLong(String.valueOf(raw.get("duree-secondes"))) : 5L;
                 int amplifier = raw.containsKey("amplificateur") ? Integer.parseInt(String.valueOf(raw.get("amplificateur"))) : 0;
                 yield new LuckyBlockEffect(EffectKind.MAUVAIS, chance, potionType, null, badType, potionType,
@@ -260,15 +368,20 @@ public class LuckyBlockManager {
     }
 
     public double getBonus(Block block) {
-        Double value = block.getPersistentDataContainer().get(bonusKey, PersistentDataType.DOUBLE);
-        return value == null ? 0.0 : value;
+        PlacedBlockState state = placedBlocks.get(blockKey(block));
+        return state == null ? 0.0 : state.bonus;
     }
 
-    /** Ajoute un bonus au bloc (plafonne a bonus-minerais-max). Renvoie le nouveau total. */
+    /** Ajoute un bonus au bloc (plafonne a bonus-minerais-max). Renvoie le nouveau total (0 si ce
+     * bloc n'est pas/plus un Lucky Block connu). */
     public double addBonus(Block block, double amount) {
-        double newTotal = Math.min(bonusMax, getBonus(block) + amount);
-        block.getPersistentDataContainer().set(bonusKey, PersistentDataType.DOUBLE, newTotal);
-        return newTotal;
+        PlacedBlockState state = placedBlocks.get(blockKey(block));
+        if (state == null) {
+            return 0.0;
+        }
+        state.bonus = Math.min(bonusMax, state.bonus + amount);
+        persistBlockAsync(blockKey(block), state);
+        return state.bonus;
     }
 
     public double getBonusMax() {
@@ -313,15 +426,27 @@ public class LuckyBlockManager {
         return meta.getPersistentDataContainer().get(familyKey, PersistentDataType.STRING);
     }
 
-    /** Marque un bloc pose comme etant un Lucky Block de cette famille (PersistentDataContainer, extension Paper sur Block). */
+    /** Marque un bloc pose comme etant un Lucky Block de cette famille (suivi par position, voir
+     * la table 'luckyblock_blocks' : un Block "nu" n'a pas de PersistentDataContainer propre). */
     public void tagBlock(Block block, String familyId) {
-        block.getPersistentDataContainer().set(familyKey, PersistentDataType.STRING, familyId);
+        Location key = blockKey(block);
+        PlacedBlockState state = new PlacedBlockState(familyId, 0.0);
+        placedBlocks.put(key, state);
+        persistBlockAsync(key, state);
+    }
+
+    /** A appeler quand un Lucky Block est reellement retire du monde (casse non annulee), pour
+     * ne pas laisser une position marquee indefiniment. */
+    public void untagBlock(Block block) {
+        Location key = blockKey(block);
+        placedBlocks.remove(key);
+        deleteBlockAsync(key);
     }
 
     /** Renvoie la famille d'un bloc pose, ou null si ce n'est pas un Lucky Block marque. */
     public LuckyBlockFamily getFamilyOfBlock(Block block) {
-        String id = block.getPersistentDataContainer().get(familyKey, PersistentDataType.STRING);
-        return getFamily(id);
+        PlacedBlockState state = placedBlocks.get(blockKey(block));
+        return state == null ? null : getFamily(state.familyId);
     }
 
     // ---- Recettes de craft ----

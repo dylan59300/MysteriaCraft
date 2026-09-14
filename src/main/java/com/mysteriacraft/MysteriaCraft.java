@@ -268,7 +268,7 @@ public final class MysteriaCraft extends JavaPlugin {
         getCommand("customitem").setExecutor(new CustomItemCommand(customItemsConfig, customItemManager, customItemService, messages));
 
         // Machine a Transformation : minerai -> Lucky Block (module luckyblock deja initialise avant celui-ci).
-        this.machineManager = new MachineManager(this, customItemsConfig);
+        this.machineManager = new MachineManager(this, database, customItemsConfig);
         this.machineService = new MachineService(this, machineManager, customItemManager, luckyBlockManager, questService, messages);
         Bukkit.getPluginManager().registerEvents(new MachineListener(machineManager, machineService, messages), this);
         getCommand("machine").setExecutor(new MachineCommand(customItemsConfig, machineManager, messages));
@@ -279,7 +279,7 @@ public final class MysteriaCraft extends JavaPlugin {
 
     private void setupGenerators() {
         this.generatorsConfig = new ConfigManager(this, "generateurs.yml");
-        this.generatorManager = new GeneratorManager(this, generatorsConfig);
+        this.generatorManager = new GeneratorManager(this, database, generatorsConfig);
         this.generatorService = new GeneratorService(generatorManager, customItemManager, economyManager, messages);
         rewardGiver.setGeneratorGiveHandler(generatorService);
 

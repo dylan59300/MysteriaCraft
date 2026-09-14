@@ -117,15 +117,23 @@ public class CrateManager {
                 drawsPerOpen, keyPrice, pityThreshold, rewards);
     }
 
+    /** section.getMapList()/raw.get() renvoient des Map&lt;?, ?&gt; : getOrDefault(k, "texte") ne
+     * compile pas dessus (le compilateur ne peut pas prouver qu'un String correspond au type
+     * capture de la valeur). On relit donc la valeur brute et on gere le defaut nous-memes. */
+    private static String getOrDefault(Map<?, ?> map, String key, String fallback) {
+        Object value = map.get(key);
+        return value != null ? String.valueOf(value) : fallback;
+    }
+
     private CrateReward parseReward(Map<?, ?> raw) {
-        String id = String.valueOf(raw.getOrDefault("id", "recompense"));
+        String id = getOrDefault(raw, "id", "recompense");
         String typeRaw = raw.containsKey("type") ? String.valueOf(raw.get("type")).toUpperCase() : "ITEM";
         double chance = raw.containsKey("chance") ? Double.parseDouble(String.valueOf(raw.get("chance"))) : 1.0;
         Rarity rarity = Rarity.fromString(raw.containsKey("rarete") ? String.valueOf(raw.get("rarete")) : null);
 
         if (typeRaw.equals("ECONOMIE")) {
             double amount = raw.containsKey("montant") ? Double.parseDouble(String.valueOf(raw.get("montant"))) : 0;
-            Material iconMaterial = Material.matchMaterial(String.valueOf(raw.getOrDefault("icone", "GOLD_INGOT")));
+            Material iconMaterial = Material.matchMaterial(getOrDefault(raw, "icone", "GOLD_INGOT"));
             if (iconMaterial == null) {
                 iconMaterial = Material.GOLD_INGOT;
             }
@@ -140,11 +148,11 @@ public class CrateManager {
         }
 
         if (typeRaw.equals("CLE_CAISSE")) {
-            String crateId = String.valueOf(raw.getOrDefault("caisse", ""));
+            String crateId = getOrDefault(raw, "caisse", "");
             int keyAmount = raw.containsKey("quantite") ? Integer.parseInt(String.valueOf(raw.get("quantite"))) : 1;
             String displayName = raw.containsKey("nom") ? String.valueOf(raw.get("nom"))
-                    : rarity.color() + keyAmount + " cle(s) - " + crateId;
-            Material iconMaterial = Material.matchMaterial(String.valueOf(raw.getOrDefault("icone", "TRIPWIRE_HOOK")));
+                    : rarity.color() + "" + keyAmount + " cle(s) - " + crateId;
+            Material iconMaterial = Material.matchMaterial(getOrDefault(raw, "icone", "TRIPWIRE_HOOK"));
             if (iconMaterial == null) {
                 iconMaterial = Material.TRIPWIRE_HOOK;
             }
@@ -154,9 +162,9 @@ public class CrateManager {
         }
 
         if (typeRaw.equals("PET")) {
-            String petId = String.valueOf(raw.getOrDefault("pet-id", ""));
+            String petId = getOrDefault(raw, "pet-id", "");
             String displayName = raw.containsKey("nom") ? String.valueOf(raw.get("nom")) : rarity.color() + "Pet : " + petId;
-            Material iconMaterial = Material.matchMaterial(String.valueOf(raw.getOrDefault("icone", "BONE")));
+            Material iconMaterial = Material.matchMaterial(getOrDefault(raw, "icone", "BONE"));
             if (iconMaterial == null) {
                 iconMaterial = Material.BONE;
             }
@@ -166,9 +174,9 @@ public class CrateManager {
         }
 
         if (typeRaw.equals("LUCKYBLOCK")) {
-            String familyId = String.valueOf(raw.getOrDefault("famille", ""));
+            String familyId = getOrDefault(raw, "famille", "");
             String displayName = raw.containsKey("nom") ? String.valueOf(raw.get("nom")) : rarity.color() + "Lucky Block : " + familyId;
-            Material iconMaterial = Material.matchMaterial(String.valueOf(raw.getOrDefault("icone", "GOLD_BLOCK")));
+            Material iconMaterial = Material.matchMaterial(getOrDefault(raw, "icone", "GOLD_BLOCK"));
             if (iconMaterial == null) {
                 iconMaterial = Material.GOLD_BLOCK;
             }
@@ -178,10 +186,10 @@ public class CrateManager {
         }
 
         if (typeRaw.equals("OBJET_CUSTOM")) {
-            String customItemId = String.valueOf(raw.getOrDefault("item-id", ""));
+            String customItemId = getOrDefault(raw, "item-id", "");
             int amount = raw.containsKey("quantite") ? Integer.parseInt(String.valueOf(raw.get("quantite"))) : 1;
             String displayName = raw.containsKey("nom") ? String.valueOf(raw.get("nom")) : rarity.color() + "Objet custom : " + customItemId;
-            Material iconMaterial = Material.matchMaterial(String.valueOf(raw.getOrDefault("icone", "IRON_INGOT")));
+            Material iconMaterial = Material.matchMaterial(getOrDefault(raw, "icone", "IRON_INGOT"));
             if (iconMaterial == null) {
                 iconMaterial = Material.IRON_INGOT;
             }
@@ -190,11 +198,24 @@ public class CrateManager {
             return new CrateReward(id, reward, chance, rarity);
         }
 
+        if (typeRaw.equals("GENERATEUR")) {
+            String generatorTypeId = getOrDefault(raw, "type-id", "");
+            int amount = raw.containsKey("quantite") ? Integer.parseInt(String.valueOf(raw.get("quantite"))) : 1;
+            String displayName = raw.containsKey("nom") ? String.valueOf(raw.get("nom")) : rarity.color() + "Generateur : " + generatorTypeId;
+            Material iconMaterial = Material.matchMaterial(getOrDefault(raw, "icone", "IRON_ORE"));
+            if (iconMaterial == null) {
+                iconMaterial = Material.IRON_ORE;
+            }
+            ItemStack displayIcon = new ItemBuilder(iconMaterial, amount).name(displayName).build();
+            Reward reward = Reward.ofGenerator(generatorTypeId, amount, displayName, displayIcon);
+            return new CrateReward(id, reward, chance, rarity);
+        }
+
         if (typeRaw.equals("BOOST_XP")) {
             long durationSeconds = raw.containsKey("duree-secondes") ? Long.parseLong(String.valueOf(raw.get("duree-secondes"))) : 600L;
             double multiplier = raw.containsKey("multiplicateur") ? Double.parseDouble(String.valueOf(raw.get("multiplicateur"))) : 2.0;
             String displayName = raw.containsKey("nom") ? String.valueOf(raw.get("nom")) : rarity.color() + "Boost XP x" + multiplier;
-            Material iconMaterial = Material.matchMaterial(String.valueOf(raw.getOrDefault("icone", "NETHER_STAR")));
+            Material iconMaterial = Material.matchMaterial(getOrDefault(raw, "icone", "NETHER_STAR"));
             if (iconMaterial == null) {
                 iconMaterial = Material.NETHER_STAR;
             }

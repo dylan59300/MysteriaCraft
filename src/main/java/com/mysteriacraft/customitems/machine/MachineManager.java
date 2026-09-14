@@ -2,10 +2,12 @@ package com.mysteriacraft.customitems.machine;
 
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
+import com.mysteriacraft.core.storage.Database;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
@@ -17,6 +19,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,9 +34,13 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Charge la configuration de la Machine a Transformation (tiers structurels, minerais acceptes
  * -> famille de Lucky Block cible, types de carburant, amelioration) et fabrique/marque son bloc.
- * L'etat de chaque machine posee (tier actuel, charges de carburant restantes, cooldown actif,
- * bonus de reussite, horodatage de derniere utilisation) est stocke directement sur le bloc via
- * PersistentDataContainer (extension Paper).
+ *
+ * IMPORTANT : contrairement a un ItemStack ou une Entity, un Block "nu" (ex: IRON_BLOCK) n'a PAS
+ * de PersistentDataContainer sur paper-api 1.20.1 (seuls les blocs avec tile entity, comme les
+ * coffres, en ont un via leur BlockState). L'etat de chaque machine posee (tier actuel, charges
+ * de carburant, cooldown actif, bonus de reussite, hologramme) est donc suivi via une table
+ * SQLite dediee indexee par position, mise en cache memoire (write-through : chaque ecriture met
+ * a jour le cache puis persiste en base de facon asynchrone).
  */
 public class MachineManager {
 
@@ -53,18 +63,24 @@ public class MachineManager {
                                long cooldownSeconds, int fuelGaugeMax, String kitItemId) {
     }
 
+    /** Etat persiste d'une machine posee, indexe par position. -1 sur activeCooldownSeconds
+     * signifie "jamais ravitaillee/changee de tier depuis sa pose" (utilise le cooldown du tier). */
+    private static final class MachineState {
+        String tierId;
+        int fuel;
+        long lastUseMillis;
+        long activeCooldownSeconds = -1;
+        double bonusReussite;
+        UUID hologramUuid;
+    }
+
     private final Plugin plugin;
+    private final Database database;
     private final ConfigManager customItemsConfig;
     private final NamespacedKey machineKey;
-    private final NamespacedKey tierKey;
-    private final NamespacedKey fuelKey;
-    private final NamespacedKey lastUseKey;
-    private final NamespacedKey activeCooldownKey;
-    private final NamespacedKey bonusReussiteKey;
-    private final NamespacedKey hologramKey;
 
-    /** Machines actuellement posees dans le monde, pour l'effet de particules ambiant (perdu au redemarrage). */
-    private final Set<Location> activeMachines = ConcurrentHashMap.newKeySet();
+    /** Machines actuellement posees, indexees par position (chargees au demarrage depuis la base). */
+    private final Map<Location, MachineState> machines = new ConcurrentHashMap<>();
 
     /** LinkedHashMap : l'ordre de declaration dans machine-transformation.tiers fixe la progression
      * (le 1er tier declare est le tier de base, chaque tier suivant necessite le kit du precedent). */
@@ -86,17 +102,119 @@ public class MachineManager {
             BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN
     };
 
-    public MachineManager(Plugin plugin, ConfigManager customItemsConfig) {
+    public MachineManager(Plugin plugin, Database database, ConfigManager customItemsConfig) {
         this.plugin = plugin;
+        this.database = database;
         this.customItemsConfig = customItemsConfig;
         this.machineKey = new NamespacedKey(plugin, "machine-transformation");
-        this.tierKey = new NamespacedKey(plugin, "machine-tier");
-        this.fuelKey = new NamespacedKey(plugin, "machine-carburant");
-        this.lastUseKey = new NamespacedKey(plugin, "machine-derniere-utilisation");
-        this.activeCooldownKey = new NamespacedKey(plugin, "machine-cooldown-actif");
-        this.bonusReussiteKey = new NamespacedKey(plugin, "machine-bonus-reussite");
-        this.hologramKey = new NamespacedKey(plugin, "machine-hologramme");
+        createTable();
+        loadMachines();
         loadConfig();
+    }
+
+    private void createTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS machines (" +
+                "monde TEXT NOT NULL, " +
+                "x INTEGER NOT NULL, " +
+                "y INTEGER NOT NULL, " +
+                "z INTEGER NOT NULL, " +
+                "tier_id TEXT NOT NULL, " +
+                "carburant INTEGER NOT NULL DEFAULT 0, " +
+                "derniere_utilisation INTEGER NOT NULL DEFAULT 0, " +
+                "cooldown_actif INTEGER NOT NULL DEFAULT -1, " +
+                "bonus_reussite REAL NOT NULL DEFAULT 0, " +
+                "hologramme_uuid TEXT, " +
+                "PRIMARY KEY (monde, x, y, z)" +
+                ");";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur creation table 'machines' : " + e.getMessage());
+        }
+    }
+
+    private void loadMachines() {
+        machines.clear();
+        String select = "SELECT monde, x, y, z, tier_id, carburant, derniere_utilisation, cooldown_actif, "
+                + "bonus_reussite, hologramme_uuid FROM machines;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select);
+             ResultSet rs = statement.executeQuery()) {
+            while (rs.next()) {
+                World world = Bukkit.getWorld(rs.getString("monde"));
+                if (world == null) {
+                    continue;
+                }
+                Location location = new Location(world, rs.getInt("x"), rs.getInt("y"), rs.getInt("z"));
+                MachineState state = new MachineState();
+                state.tierId = rs.getString("tier_id");
+                state.fuel = rs.getInt("carburant");
+                state.lastUseMillis = rs.getLong("derniere_utilisation");
+                state.activeCooldownSeconds = rs.getLong("cooldown_actif");
+                state.bonusReussite = rs.getDouble("bonus_reussite");
+                String hologramRaw = rs.getString("hologramme_uuid");
+                if (hologramRaw != null) {
+                    try {
+                        state.hologramUuid = UUID.fromString(hologramRaw);
+                    } catch (IllegalArgumentException ignored) {
+                        // UUID corrompu : l'hologramme sera simplement recree au besoin.
+                    }
+                }
+                machines.put(location, state);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur chargement des machines posees : " + e.getMessage());
+        }
+        plugin.getLogger().info(machines.size() + " Machine(s) a Transformation rechargee(s) depuis la base.");
+    }
+
+    private void persistAsync(Location location, MachineState state) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            String upsert = "INSERT INTO machines (monde, x, y, z, tier_id, carburant, derniere_utilisation, "
+                    + "cooldown_actif, bonus_reussite, hologramme_uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    + "ON CONFLICT(monde, x, y, z) DO UPDATE SET tier_id = excluded.tier_id, "
+                    + "carburant = excluded.carburant, derniere_utilisation = excluded.derniere_utilisation, "
+                    + "cooldown_actif = excluded.cooldown_actif, bonus_reussite = excluded.bonus_reussite, "
+                    + "hologramme_uuid = excluded.hologramme_uuid;";
+            Connection connection = database.getConnection();
+            try (PreparedStatement statement = connection.prepareStatement(upsert)) {
+                statement.setString(1, location.getWorld().getName());
+                statement.setInt(2, location.getBlockX());
+                statement.setInt(3, location.getBlockY());
+                statement.setInt(4, location.getBlockZ());
+                statement.setString(5, state.tierId);
+                statement.setInt(6, state.fuel);
+                statement.setLong(7, state.lastUseMillis);
+                statement.setLong(8, state.activeCooldownSeconds);
+                statement.setDouble(9, state.bonusReussite);
+                statement.setString(10, state.hologramUuid != null ? state.hologramUuid.toString() : null);
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Erreur sauvegarde machine : " + e.getMessage());
+            }
+        });
+    }
+
+    private void deleteAsync(Location location) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            String delete = "DELETE FROM machines WHERE monde = ? AND x = ? AND y = ? AND z = ?;";
+            Connection connection = database.getConnection();
+            try (PreparedStatement statement = connection.prepareStatement(delete)) {
+                statement.setString(1, location.getWorld().getName());
+                statement.setInt(2, location.getBlockX());
+                statement.setInt(3, location.getBlockY());
+                statement.setInt(4, location.getBlockZ());
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Erreur suppression machine : " + e.getMessage());
+            }
+        });
+    }
+
+    /** Cle de position (bloc entier, sans decimales) utilisee pour indexer machines. */
+    private static Location blockKey(Block block) {
+        return new Location(block.getWorld(), block.getX(), block.getY(), block.getZ());
     }
 
     public void loadConfig() {
@@ -222,10 +340,10 @@ public class MachineManager {
         return null;
     }
 
-    /** Le tier actuel de ce bloc (celui stocke en PDC), ou le tier de base si non defini/invalide. */
+    /** Le tier actuel de ce bloc, ou le tier de base si non defini/invalide/inconnu. */
     public MachineTier getBlockTier(Block block) {
-        String id = block.getPersistentDataContainer().get(tierKey, PersistentDataType.STRING);
-        MachineTier tier = id != null ? getTier(id) : null;
+        MachineState state = machines.get(blockKey(block));
+        MachineTier tier = state != null ? getTier(state.tierId) : null;
         return tier != null ? tier : getBaseTier();
     }
 
@@ -235,28 +353,13 @@ public class MachineManager {
      * reinitialise a celui du nouveau tier pour que l'amelioration soit immediatement ressentie.
      */
     public void setTier(Block block, MachineTier tier) {
-        // Sauvegarde defensive avant de changer le materiau du bloc, au cas ou cela affecterait
-        // le PersistentDataContainer associe a cette position.
-        int fuel = getFuel(block);
-        long lastUse = getLastUseMillis(block);
-        double bonus = getBonusReussite(block);
-        String hologramUuid = block.getPersistentDataContainer().get(hologramKey, PersistentDataType.STRING);
+        Location key = blockKey(block);
+        MachineState state = machines.computeIfAbsent(key, k -> new MachineState());
+        state.tierId = tier.id();
+        state.activeCooldownSeconds = tier.cooldownSeconds();
 
         block.setType(tier.block());
-
-        block.getPersistentDataContainer().set(machineKey, PersistentDataType.BYTE, (byte) 1);
-        block.getPersistentDataContainer().set(tierKey, PersistentDataType.STRING, tier.id());
-        setFuel(block, fuel);
-        if (lastUse > 0) {
-            block.getPersistentDataContainer().set(lastUseKey, PersistentDataType.LONG, lastUse);
-        }
-        setActiveCooldownSeconds(block, tier.cooldownSeconds());
-        if (bonus > 0) {
-            block.getPersistentDataContainer().set(bonusReussiteKey, PersistentDataType.DOUBLE, bonus);
-        }
-        if (hologramUuid != null) {
-            block.getPersistentDataContainer().set(hologramKey, PersistentDataType.STRING, hologramUuid);
-        }
+        persistAsync(key, state);
     }
 
     // ---- Carburant ----
@@ -385,17 +488,17 @@ public class MachineManager {
         return item;
     }
 
-    /** Marque un bloc pose comme etant la Machine a Transformation (au tier de base), l'enregistre
-     * pour les particules ambiantes et fait apparaitre son hologramme d'etat. */
+    /** Marque un bloc pose comme etant la Machine a Transformation (au tier de base) et fait
+     * apparaitre son hologramme d'etat. */
     public void tagBlock(Block block) {
         setTier(block, getBaseTier());
-        activeMachines.add(block.getLocation());
         spawnHologram(block);
     }
 
-    /** A appeler quand une machine est cassee, pour arreter ses particules ambiantes. */
+    /** A appeler quand une machine est cassee, pour arreter son suivi (accumulation/particules/hologramme). */
     public void forgetMachine(Location location) {
-        activeMachines.remove(location);
+        machines.remove(location);
+        deleteAsync(location);
     }
 
     // ---- Hologramme d'etat (ArmorStand invisible affichant charges/cooldown/bonus) ----
@@ -403,6 +506,11 @@ public class MachineManager {
     /** Fait apparaitre l'hologramme au-dessus du bloc, s'il n'en a pas deja un (ex: rechargement du plugin). */
     public void spawnHologram(Block block) {
         if (getHologram(block) != null) {
+            return;
+        }
+        Location key = blockKey(block);
+        MachineState state = machines.get(key);
+        if (state == null) {
             return;
         }
         Location location = block.getLocation().add(0.5, 1.4, 0.5);
@@ -415,21 +523,18 @@ public class MachineManager {
         stand.setCustomNameVisible(true);
         stand.setCustomName(MessageManager.color("&b&lMachine a Transformation"));
         stand.setPersistent(true);
-        block.getPersistentDataContainer().set(hologramKey, PersistentDataType.STRING, stand.getUniqueId().toString());
+        state.hologramUuid = stand.getUniqueId();
+        persistAsync(key, state);
     }
 
     /** Hologramme associe a cette machine, ou null s'il n'existe pas (jamais cree ou deja retire). */
     public ArmorStand getHologram(Block block) {
-        String raw = block.getPersistentDataContainer().get(hologramKey, PersistentDataType.STRING);
-        if (raw == null) {
+        MachineState state = machines.get(blockKey(block));
+        if (state == null || state.hologramUuid == null) {
             return null;
         }
-        try {
-            Entity entity = Bukkit.getEntity(UUID.fromString(raw));
-            return entity instanceof ArmorStand stand ? stand : null;
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+        Entity entity = Bukkit.getEntity(state.hologramUuid);
+        return entity instanceof ArmorStand stand ? stand : null;
     }
 
     /** Retire l'hologramme de cette machine (a appeler quand le bloc est casse). */
@@ -438,16 +543,19 @@ public class MachineManager {
         if (stand != null) {
             stand.remove();
         }
-        block.getPersistentDataContainer().remove(hologramKey);
+        MachineState state = machines.get(blockKey(block));
+        if (state != null) {
+            state.hologramUuid = null;
+        }
     }
 
-    /** Emplacements de toutes les machines connues depuis le demarrage du plugin (effet de particules ambiant). */
+    /** Emplacements de toutes les machines connues (chargees au demarrage + posees depuis). */
     public Set<Location> getActiveMachineLocations() {
-        return activeMachines;
+        return machines.keySet();
     }
 
     public boolean isMachineBlock(Block block) {
-        return block.getPersistentDataContainer().has(machineKey, PersistentDataType.BYTE);
+        return machines.containsKey(blockKey(block));
     }
 
     public boolean isMachineItem(ItemStack item) {
@@ -457,15 +565,21 @@ public class MachineManager {
         return item.getItemMeta().getPersistentDataContainer().has(machineKey, PersistentDataType.BYTE);
     }
 
-    // ---- Etat de la machine (carburant, cooldown, bonus), stocke sur le bloc ----
+    // ---- Etat de la machine (carburant, cooldown, bonus), stocke par position ----
 
     public int getFuel(Block block) {
-        Integer value = block.getPersistentDataContainer().get(fuelKey, PersistentDataType.INTEGER);
-        return value == null ? 0 : value;
+        MachineState state = machines.get(blockKey(block));
+        return state == null ? 0 : state.fuel;
     }
 
     public void setFuel(Block block, int amount) {
-        block.getPersistentDataContainer().set(fuelKey, PersistentDataType.INTEGER, Math.max(0, amount));
+        Location key = blockKey(block);
+        MachineState state = machines.get(key);
+        if (state == null) {
+            return;
+        }
+        state.fuel = Math.max(0, amount);
+        persistAsync(key, state);
     }
 
     /** Ajoute des charges de carburant au bloc. Renvoie le nouveau total. */
@@ -482,21 +596,36 @@ public class MachineManager {
     /** Cooldown actuellement applique par cette machine (herite du dernier carburant utilise, ou
      * du tier actuel si jamais ravitaillee depuis sa pose/son dernier changement de tier). */
     public long getActiveCooldownSeconds(Block block) {
-        Long value = block.getPersistentDataContainer().get(activeCooldownKey, PersistentDataType.LONG);
-        return value != null ? value : getBlockTier(block).cooldownSeconds();
+        MachineState state = machines.get(blockKey(block));
+        if (state == null || state.activeCooldownSeconds < 0) {
+            return getBlockTier(block).cooldownSeconds();
+        }
+        return state.activeCooldownSeconds;
     }
 
     public void setActiveCooldownSeconds(Block block, long seconds) {
-        block.getPersistentDataContainer().set(activeCooldownKey, PersistentDataType.LONG, Math.max(0, seconds));
+        Location key = blockKey(block);
+        MachineState state = machines.get(key);
+        if (state == null) {
+            return;
+        }
+        state.activeCooldownSeconds = Math.max(0, seconds);
+        persistAsync(key, state);
     }
 
     public long getLastUseMillis(Block block) {
-        Long value = block.getPersistentDataContainer().get(lastUseKey, PersistentDataType.LONG);
-        return value == null ? 0L : value;
+        MachineState state = machines.get(blockKey(block));
+        return state == null ? 0L : state.lastUseMillis;
     }
 
     public void markUsedNow(Block block) {
-        block.getPersistentDataContainer().set(lastUseKey, PersistentDataType.LONG, System.currentTimeMillis());
+        Location key = blockKey(block);
+        MachineState state = machines.get(key);
+        if (state == null) {
+            return;
+        }
+        state.lastUseMillis = System.currentTimeMillis();
+        persistAsync(key, state);
     }
 
     /** Millisecondes restantes avant la fin du cooldown (0 ou negatif = disponible). */
@@ -510,15 +639,21 @@ public class MachineManager {
 
     /** Bonus de reussite accumule sur cette machine grace aux ameliorations (0 par defaut). */
     public double getBonusReussite(Block block) {
-        Double value = block.getPersistentDataContainer().get(bonusReussiteKey, PersistentDataType.DOUBLE);
-        return value == null ? 0.0 : value;
+        MachineState state = machines.get(blockKey(block));
+        return state == null ? 0.0 : state.bonusReussite;
     }
 
-    /** Ajoute du bonus de reussite (plafonne a bonus-max). Renvoie le nouveau total. */
+    /** Ajoute du bonus de reussite (plafonne a bonus-max). Renvoie le nouveau total (0 si ce bloc
+     * n'est pas/plus une machine connue). */
     public double addBonusReussite(Block block, double amount) {
-        double newTotal = Math.min(bonusMax, getBonusReussite(block) + amount);
-        block.getPersistentDataContainer().set(bonusReussiteKey, PersistentDataType.DOUBLE, newTotal);
-        return newTotal;
+        Location key = blockKey(block);
+        MachineState state = machines.get(key);
+        if (state == null) {
+            return 0.0;
+        }
+        state.bonusReussite = Math.min(bonusMax, state.bonusReussite + amount);
+        persistAsync(key, state);
+        return state.bonusReussite;
     }
 
     /** Chance de reussite effective de cette machine (chance du tier + bonus d'amelioration), plafonnee a 100%. */
