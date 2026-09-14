@@ -17,5 +17,7 @@ public enum RewardType {
     /** Donne un item Lucky Block marque (module LuckyBlock). */
     LUCKYBLOCK,
     /** Donne un minerai/objet custom (module Custom Items). */
-    OBJET_CUSTOM
+    OBJET_CUSTOM,
+    /** Donne un Generateur d'Argent d'un type precis (module Generateurs). */
+    GENERATEUR
 }

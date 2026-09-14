@@ -28,8 +28,21 @@ public final class RewardParser {
             case "PET" -> parsePet(section);
             case "LUCKYBLOCK" -> parseLuckyBlock(section);
             case "OBJET_CUSTOM" -> parseCustomItem(section);
+            case "GENERATEUR" -> parseGenerator(section);
             default -> parseItem(section);
         };
+    }
+
+    private static Reward parseGenerator(ConfigurationSection section) {
+        String generatorTypeId = section.getString("type-id", "");
+        int amount = Math.max(1, section.getInt("quantite", 1));
+        String displayName = section.getString("nom", "Generateur : " + generatorTypeId);
+        Material iconMaterial = Material.matchMaterial(section.getString("icone", "IRON_ORE"));
+        if (iconMaterial == null) {
+            iconMaterial = Material.IRON_ORE;
+        }
+        ItemStack icon = new ItemBuilder(iconMaterial, amount).name("&e" + displayName).build();
+        return Reward.ofGenerator(generatorTypeId, amount, displayName, icon);
     }
 
     private static Reward parseCustomItem(ConfigurationSection section) {

@@ -84,9 +84,10 @@ commands:
     usage: /<command> <give <joueur> [quantite]|reload>
     permission: mysteriacraft.machine.admin
   generateur:
-    description: Donne un Generateur d'Argent ou recharge sa config (admin)
-    usage: /<command> <give <joueur> <fer|or|diamant> [quantite]|reload>
-    permission: mysteriacraft.generateur.admin
+    description: Liste vos generateurs actifs, ou donne/recharge (admin)
+    usage: /<command> <liste|give <joueur> <fer|or|diamant> [quantite]|reload>
+    # Pas de "permission:" ici : /generateur liste doit rester accessible a tout joueur.
+    # give/reload sont verifies manuellement dans le code (mysteriacraft.generateur.admin).
 
 permissions:
   mysteriacraft.eco.admin:

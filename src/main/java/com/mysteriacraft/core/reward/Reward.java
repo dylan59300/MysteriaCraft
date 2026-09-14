@@ -13,6 +13,7 @@ import org.bukkit.inventory.ItemStack;
  * - PET : petId
  * - LUCKYBLOCK : luckyBlockFamilyId
  * - OBJET_CUSTOM : customItemId (+ crateKeyAmount reutilise comme quantite)
+ * - GENERATEUR : customItemId reutilise comme id de type de generateur (+ crateKeyAmount reutilise comme quantite)
  */
 public record Reward(
         RewardType type,
@@ -55,5 +56,9 @@ public record Reward(
 
     public static Reward ofCustomItem(String customItemId, int amount, String displayName, ItemStack displayIcon) {
         return new Reward(RewardType.OBJET_CUSTOM, null, 0, null, amount, 0, 0, null, null, customItemId, displayName, displayIcon);
+    }
+
+    public static Reward ofGenerator(String generatorTypeId, int amount, String displayName, ItemStack displayIcon) {
+        return new Reward(RewardType.GENERATEUR, null, 0, null, amount, 0, 0, null, null, generatorTypeId, displayName, displayIcon);
     }
 }

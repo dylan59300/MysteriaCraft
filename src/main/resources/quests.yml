@@ -7,7 +7,8 @@
 # cible : materiau (BREAK_BLOCK/PLACE_BLOCK/CRAFT_ITEM/CONSUME_ITEM), type d'entite (KILL_MOB) ou
 #         id de famille Lucky Block (MACHINE_TRANSFORM). Absent = tout compte (FISH, MACHINE_TRANSFORM).
 # xp : ajoutee automatiquement au BattlePass a la completion.
-# recompense : ITEM, ECONOMIE, CLE_CAISSE (caisse + quantite) ou BOOST_XP (duree-secondes + multiplicateur).
+# recompense : ITEM, ECONOMIE, CLE_CAISSE (caisse + quantite), BOOST_XP (duree-secondes +
+#              multiplicateur), PET, LUCKYBLOCK, OBJET_CUSTOM ou GENERATEUR (type-id + quantite).
 #              Donnee automatiquement a la completion (optionnel).
 
 quotidiennes:

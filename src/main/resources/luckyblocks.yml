@@ -11,8 +11,9 @@
 # recette : ingredients d'un craft shapeless (n'importe quel agencement dans la table).
 #
 # effets[].type : BON | MAUVAIS
-# effets[].recompense (si BON) : ITEM, ECONOMIE, CLE_CAISSE, BOOST_XP, PET ou LUCKYBLOCK (meme
-#                                 format que crates.yml/battlepass.yml/quests.yml).
+# effets[].recompense (si BON) : ITEM, ECONOMIE, CLE_CAISSE, BOOST_XP, PET, LUCKYBLOCK,
+#                                 OBJET_CUSTOM ou GENERATEUR (meme format que
+#                                 crates.yml/battlepass.yml/quests.yml).
 # effets[].action (si MAUVAIS) : TNT | MOBS | POTION | FOUDRE
 
 # Bonus de minerais : placer un de ces blocs contre un Lucky Block (ou l'inverse) augmente sa

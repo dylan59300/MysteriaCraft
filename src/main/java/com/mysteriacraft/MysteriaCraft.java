@@ -280,12 +280,14 @@ public final class MysteriaCraft extends JavaPlugin {
     private void setupGenerators() {
         this.generatorsConfig = new ConfigManager(this, "generateurs.yml");
         this.generatorManager = new GeneratorManager(this, generatorsConfig);
-        this.generatorService = new GeneratorService(generatorManager, economyManager, messages);
+        this.generatorService = new GeneratorService(generatorManager, customItemManager, economyManager, messages);
+        rewardGiver.setGeneratorGiveHandler(generatorService);
 
-        Bukkit.getPluginManager().registerEvents(new GeneratorListener(generatorManager, generatorService), this);
-        getCommand("generateur").setExecutor(new GeneratorCommand(generatorsConfig, generatorManager, messages));
+        Bukkit.getPluginManager().registerEvents(new GeneratorListener(generatorManager, generatorService, messages), this);
+        getCommand("generateur").setExecutor(new GeneratorCommand(generatorsConfig, generatorManager, economyManager, messages));
 
-        // Recalcul du stock accumule + rafraichissement de l'hologramme (frequence configurable, generateurs.yml).
+        // Recalcul du stock accumule + auto-collecte (hopper) + rafraichissement de l'hologramme
+        // (frequence configurable, generateurs.yml: tick-secondes).
         long periodTicks = generatorManager.getTickSeconds() * 20L;
         Bukkit.getScheduler().runTaskTimer(this, generatorService::tickGenerators, periodTicks, periodTicks);
     }

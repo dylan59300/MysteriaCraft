@@ -297,3 +297,24 @@ items:
       ingredients:
         D: DIAMOND
         G: GOLD_BLOCK
+
+  boost_generateur:
+    nom: "&d&lBoost de Generateur"
+    lore:
+      - "&7Clic-droit sur un Generateur d'Argent"
+      - "&7pour augmenter durablement son rythme"
+      - "&7de production."
+    item-de-base: EMERALD
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 4 emeraudes + 4 lingots d'or autour d'un diamant.
+    recette:
+      forme:
+        - "EGE"
+        - "GDG"
+        - "EGE"
+      ingredients:
+        E: EMERALD
+        G: GOLD_INGOT
+        D: DIAMOND

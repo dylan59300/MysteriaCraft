@@ -31,6 +31,7 @@ public class RewardGiver {
     private PetUnlockHandler petUnlockHandler;
     private LuckyBlockGiveHandler luckyBlockGiveHandler;
     private CustomItemGiveHandler customItemGiveHandler;
+    private GeneratorGiveHandler generatorGiveHandler;
 
     public RewardGiver(Plugin plugin, EconomyManager economyManager, CrateManager crateManager, MessageManager messages) {
         this.plugin = plugin;
@@ -59,6 +60,11 @@ public class RewardGiver {
         void giveCustomItem(Player player, String customItemId, int amount);
     }
 
+    /** Petit contrat minimal pour donner un Generateur d'Argent, implemente par GeneratorService. */
+    public interface GeneratorGiveHandler {
+        void giveGenerator(Player player, String generatorTypeId, int amount);
+    }
+
     public void setBoosterHandler(XpBoosterHandler boosterHandler) {
         this.boosterHandler = boosterHandler;
     }
@@ -73,6 +79,10 @@ public class RewardGiver {
 
     public void setCustomItemGiveHandler(CustomItemGiveHandler customItemGiveHandler) {
         this.customItemGiveHandler = customItemGiveHandler;
+    }
+
+    public void setGeneratorGiveHandler(GeneratorGiveHandler generatorGiveHandler) {
+        this.generatorGiveHandler = generatorGiveHandler;
     }
 
     public void give(Player player, Reward reward) {
@@ -98,6 +108,11 @@ public class RewardGiver {
             case OBJET_CUSTOM -> {
                 if (customItemGiveHandler != null) {
                     customItemGiveHandler.giveCustomItem(player, reward.customItemId(), Math.max(1, reward.crateKeyAmount()));
+                }
+            }
+            case GENERATEUR -> {
+                if (generatorGiveHandler != null) {
+                    generatorGiveHandler.giveGenerator(player, reward.customItemId(), Math.max(1, reward.crateKeyAmount()));
                 }
             }
             case ITEM -> giveItem(player, reward);

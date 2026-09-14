@@ -1,5 +1,6 @@
 package com.mysteriacraft.economy.generator.listeners;
 
+import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.economy.generator.GeneratorManager;
 import com.mysteriacraft.economy.generator.GeneratorService;
 import org.bukkit.block.Block;
@@ -12,18 +13,24 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * Marque un Generateur d'Argent a sa pose, recupere automatiquement son stock pour le joueur
- * qui le casse avant de le faire retomber en item, et delegue le clic-droit dessus au GeneratorService.
+ * Marque un Generateur d'Argent a sa pose (en respectant la limite par joueur), recupere
+ * automatiquement son stock pour le joueur qui le casse avant de le faire retomber en item,
+ * et delegue le clic-droit dessus au GeneratorService.
  */
 public class GeneratorListener implements Listener {
 
     private final GeneratorManager manager;
     private final GeneratorService service;
+    private final MessageManager messages;
 
-    public GeneratorListener(GeneratorManager manager, GeneratorService service) {
+    public GeneratorListener(GeneratorManager manager, GeneratorService service, MessageManager messages) {
         this.manager = manager;
         this.service = service;
+        this.messages = messages;
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -36,7 +43,17 @@ public class GeneratorListener implements Listener {
         if (type == null) {
             return;
         }
-        manager.tagBlock(event.getBlockPlaced(), type);
+
+        int max = manager.getMaxPerPlayer();
+        if (max > 0 && manager.countOwnedGenerators(event.getPlayer().getUniqueId()) >= max) {
+            event.setCancelled(true);
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("max", String.valueOf(max));
+            messages.send(event.getPlayer(), "generateur.limite-atteinte", placeholders);
+            return;
+        }
+
+        manager.tagBlock(event.getBlockPlaced(), type, event.getPlayer().getUniqueId());
     }
 
     @EventHandler(ignoreCancelled = true)

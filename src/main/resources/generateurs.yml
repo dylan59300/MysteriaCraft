@@ -7,12 +7,17 @@
 # tout l'argent stocke, credite directement sur votre solde (module Economie).
 # Casser un generateur recupere automatiquement son stock pour vous avant qu'il ne tombe en item :
 # rien n'est jamais perdu.
+# Coller un hopper a une face du generateur active l'AUTO-COLLECTE : l'argent genere est credite
+# en continu au proprietaire (celui qui a pose le bloc) sans avoir a cliquer. Aucune monnaie
+# physique n'existe dans ce plugin : le hopper sert de detecteur, pas de transporteur d'argent.
 #
 # montant : argent genere pour un cycle complet (intervalle-secondes).
 # intervalle-secondes : duree necessaire pour generer "montant" en integralite.
 # stockage-max : plafond d'argent que le generateur peut stocker avant de devoir etre recupere
 #                (par defaut = montant, soit 1 cycle complet ; augmentez pour laisser plus de
 #                marge aux joueurs qui ne repassent pas regulierement).
+# obtenable-en-recompense-uniquement : purement informatif (ajoute une ligne de lore) ; n'empeche
+#                                       pas un admin de le donner via /generateur give.
 generateurs:
   fer:
     nom: "&7Generateur de Fer"
@@ -35,6 +40,31 @@ generateurs:
     intervalle-secondes: 1800    # 30 minutes
     stockage-max: 500000
 
+  legendaire:
+    nom: "&5&lGenerateur Legendaire"
+    bloc: NETHERITE_BLOCK
+    montant: 1000000
+    intervalle-secondes: 900     # 15 minutes
+    stockage-max: 1000000
+    obtenable-en-recompense-uniquement: true
+
 # Frequence (en secondes) a laquelle le stock de chaque generateur pose est recalcule et son
-# hologramme mis a jour, meme sans interaction du joueur.
+# hologramme mis a jour, meme sans interaction du joueur (auto-collecte comprise).
 tick-secondes: 5
+
+# Limite du nombre de generateurs actifs qu'un meme joueur peut poser (0 = illimite). Bloque la
+# pose au-dela de cette limite. Limitation connue : le comptage ne suit que les generateurs vus
+# depuis le dernier demarrage du plugin (comme les autres effets ambiants de MysteriaCraft).
+max-generateurs-par-joueur: 30
+
+# % preleve sur chaque recuperation (clic-droit, casse, ou auto-collecte via hopper), quel que
+# soit le type de generateur. 0 = pas de taxe.
+taxe-recuperation-pourcent: 5
+
+# Amelioration de rythme : objet custom consommable (voir custom_items.yml) qui augmente
+# durablement le rythme de generation d'UN generateur precis (independant de son type de base),
+# jusqu'a bonus-max. Se cumule avec le type de base (ex: +10% par utilisation, jusqu'a +50%).
+amelioration:
+  item-id: boost_generateur
+  bonus-par-amelioration: 10
+  bonus-max: 50
