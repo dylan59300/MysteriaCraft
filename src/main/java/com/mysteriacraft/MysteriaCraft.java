@@ -12,6 +12,10 @@ import com.mysteriacraft.economy.commands.EcoReloadCommand;
 import com.mysteriacraft.economy.commands.PayCommand;
 import com.mysteriacraft.economy.commands.PayConfirmCommand;
 import com.mysteriacraft.economy.listeners.EconomyJoinQuitListener;
+import com.mysteriacraft.economy.generator.GeneratorManager;
+import com.mysteriacraft.economy.generator.GeneratorService;
+import com.mysteriacraft.economy.generator.commands.GeneratorCommand;
+import com.mysteriacraft.economy.generator.listeners.GeneratorListener;
 import com.mysteriacraft.core.gui.MenuListener;
 import com.mysteriacraft.kits.KitManager;
 import com.mysteriacraft.kits.KitService;
@@ -67,6 +71,10 @@ public final class MysteriaCraft extends JavaPlugin {
 
     private EconomyManager economyManager;
     private PendingPaymentManager pendingPaymentManager;
+
+    private ConfigManager generatorsConfig;
+    private GeneratorManager generatorManager;
+    private GeneratorService generatorService;
 
     private ConfigManager kitsConfig;
     private KitManager kitManager;
@@ -137,6 +145,9 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Module Custom Items ----
         setupCustomItems();
+
+        // ---- Module Generateurs d'Argent ----
+        setupGenerators();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -264,6 +275,19 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // Effet de particules ambiant (densite/couleur selon le niveau de carburant), toutes les 5 secondes.
         Bukkit.getScheduler().runTaskTimer(this, machineService::tickAmbientParticles, 100L, 100L);
+    }
+
+    private void setupGenerators() {
+        this.generatorsConfig = new ConfigManager(this, "generateurs.yml");
+        this.generatorManager = new GeneratorManager(this, generatorsConfig);
+        this.generatorService = new GeneratorService(generatorManager, economyManager, messages);
+
+        Bukkit.getPluginManager().registerEvents(new GeneratorListener(generatorManager, generatorService), this);
+        getCommand("generateur").setExecutor(new GeneratorCommand(generatorsConfig, generatorManager, messages));
+
+        // Recalcul du stock accumule + rafraichissement de l'hologramme (frequence configurable, generateurs.yml).
+        long periodTicks = generatorManager.getTickSeconds() * 20L;
+        Bukkit.getScheduler().runTaskTimer(this, generatorService::tickGenerators, periodTicks, periodTicks);
     }
 
     @Override

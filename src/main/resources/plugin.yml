@@ -83,6 +83,10 @@ commands:
     description: Donne la Machine a Transformation ou recharge sa config (admin)
     usage: /<command> <give <joueur> [quantite]|reload>
     permission: mysteriacraft.machine.admin
+  generateur:
+    description: Donne un Generateur d'Argent ou recharge sa config (admin)
+    usage: /<command> <give <joueur> <fer|or|diamant> [quantite]|reload>
+    permission: mysteriacraft.generateur.admin
 
 permissions:
   mysteriacraft.eco.admin:
@@ -126,4 +130,7 @@ permissions:
     default: op
   mysteriacraft.machine.admin:
     description: Autorise la gestion admin de la Machine a Transformation (give, reload)
+    default: op
+  mysteriacraft.generateur.admin:
+    description: Autorise la gestion admin des Generateurs d'Argent (give, reload)
     default: op

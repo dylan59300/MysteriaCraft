@@ -1,0 +1,40 @@
+# =========================================
+#   MysteriaCraft - Configuration des Generateurs d'Argent
+# =========================================
+# Un generateur pose (voir /generateur give <joueur> <type> [quantite]) accumule automatiquement
+# de l'argent au fil du temps REEL (meme hors-ligne : le calcul se base sur l'horloge, pas sur un
+# tick programme), jusqu'a un plafond de stockage (stockage-max). Clic-droit dessus pour recuperer
+# tout l'argent stocke, credite directement sur votre solde (module Economie).
+# Casser un generateur recupere automatiquement son stock pour vous avant qu'il ne tombe en item :
+# rien n'est jamais perdu.
+#
+# montant : argent genere pour un cycle complet (intervalle-secondes).
+# intervalle-secondes : duree necessaire pour generer "montant" en integralite.
+# stockage-max : plafond d'argent que le generateur peut stocker avant de devoir etre recupere
+#                (par defaut = montant, soit 1 cycle complet ; augmentez pour laisser plus de
+#                marge aux joueurs qui ne repassent pas regulierement).
+generateurs:
+  fer:
+    nom: "&7Generateur de Fer"
+    bloc: IRON_ORE
+    montant: 100000
+    intervalle-secondes: 18000   # 5 heures
+    stockage-max: 100000
+
+  or:
+    nom: "&6Generateur d'Or"
+    bloc: GOLD_ORE
+    montant: 200000
+    intervalle-secondes: 3600    # 1 heure
+    stockage-max: 200000
+
+  diamant:
+    nom: "&bGenerateur de Diamant"
+    bloc: DIAMOND_ORE
+    montant: 500000
+    intervalle-secondes: 1800    # 30 minutes
+    stockage-max: 500000
+
+# Frequence (en secondes) a laquelle le stock de chaque generateur pose est recalcule et son
+# hologramme mis a jour, meme sans interaction du joueur.
+tick-secondes: 5
