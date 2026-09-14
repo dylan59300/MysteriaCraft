@@ -7,6 +7,16 @@
 #                   Liste vide/absente = pas de source naturelle, uniquement obtenable en
 #                   recompense (crate/battlepass/quete/luckyblock via "type: OBJET_CUSTOM").
 # prix-vente : 0 = non revendable via /customitem sell.
+# caisse-auto : si true, cet item est automatiquement ajoute au tirage de TOUTES les caisses
+#               (module Crates) sans avoir a l'ajouter a la main dans crates.yml - y compris les
+#               caisses ajoutees plus tard. Vaut true PAR DEFAUT pour les items SANS source
+#               naturelle (minerais-source vide, donc deja "reward-only" par nature), false sinon
+#               (les minerais qui tombent deja en minant n'ont pas besoin d'etre aussi en caisse).
+#               Peut toujours etre force explicitement dans les deux sens.
+# caisse-chance : poids relatif utilise pour le tirage pondere de la caisse (echelle comparable
+#                 aux "chance" de crates.yml, generalement entre 2 et 50). Defaut : 2 (rare).
+# caisse-rarete : COMMUNE|RARE|EPIQUE|LEGENDAIRE, purement visuel (couleur du nom en caisse). Defaut : RARE.
+# caisse-quantite : quantite donnee quand cet item est tire en caisse. Defaut : 1.
 
 # Machine a Transformation : un bloc pose (voir /machine give ou /machine preset) sur lequel on
 # clique-droit avec un minerai vanilla en main. chance-reussite % du tier actuel (+ bonus
@@ -63,10 +73,26 @@ machine-transformation:
       cooldown-secondes: 30
       jauge-carburant-max: 50
       kit-item-id: kit_or
+    mythique:
+      nom: "&d&lMythique"
+      bloc: BEACON
+      chance-reussite: 60
+      cooldown-secondes: 20
+      jauge-carburant-max: 75
+      kit-item-id: kit_mythique
   auto-alimentation: true
   carburant-uniquement-si-echec: false
   hologramme-segments: 10
   hologramme-compact: false
+  # Bonus de chance TEMPORAIRE qui s'accumule a chaque reussite CONSECUTIVE d'une machine (remis a
+  # 0 des le premier echec) : recompense les series de bonnes transformations sans etre permanent.
+  # bonus-par-succes: 0 (ou section absente) desactive completement le systeme.
+  streak:
+    bonus-par-succes: 2
+    bonus-max: 20
+  # % du lot de minerais consomme RENDU (au joueur en clic-droit, dans le conteneur de sortie en
+  # auto-alimentation) quand la transformation echoue. 0 = desactive (le lot est integralement perdu).
+  recyclage-pourcent: 20
   carburants:
     carburant:
       charges: 5
@@ -74,6 +100,16 @@ machine-transformation:
     carburant_ameliore:
       charges: 12
       cooldown-secondes: 5
+    carburant_legendaire:
+      charges: 25
+      cooldown-secondes: 1
+  # Objet consommable (obtenable-en-recompense-uniquement) qui, en clic-droit (pas besoin de viser
+  # une machine), active pour le joueur X secondes durant lesquelles TOUTES ses transformations
+  # manuelles (clic-droit) sont gratuites : plus de consommation de charge ni de blocage "sans carburant".
+  # Ne s'applique PAS a l'auto-alimentation (qui n'a pas de joueur associe a une machine posee).
+  boost-carburant-illimite:
+    item-id: carburant_illimite
+    duree-secondes: 86400
   # Amelioration de machine : objet custom consommable qui augmente durablement la chance de
   # reussite d'UNE machine (stockee sur son bloc), jusqu'a bonus-max.
   amelioration:
@@ -195,6 +231,7 @@ items:
     minerais-source: []
     chance-drop: 0
     prix-vente: 500
+    caisse-rarete: LEGENDAIRE
 
   carburant:
     nom: "&6Carburant de Machine"
@@ -237,6 +274,36 @@ items:
         B: BLAZE_POWDER
         L: GLOWSTONE
 
+  carburant_legendaire:
+    nom: "&5&lCarburant Legendaire"
+    lore:
+      - "&7La version la plus puissante du"
+      - "&7carburant de Machine a Transformation :"
+      - "&7enormement de charges, cooldown quasi nul."
+      - "&7Uniquement obtenable en recompense"
+      - "&7(crate, battlepass, quete, luckyblock)."
+    item-de-base: DRAGON_BREATH
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    caisse-rarete: EPIQUE
+    caisse-chance: 3
+
+  carburant_illimite:
+    nom: "&e&lCarburant Illimite (24h)"
+    lore:
+      - "&7Clic-droit (pas besoin de viser une machine)"
+      - "&7pour rendre GRATUITES toutes vos"
+      - "&7transformations manuelles pendant 24h."
+      - "&7Uniquement obtenable en recompense"
+      - "&7(crate, battlepass, quete, luckyblock)."
+    item-de-base: HEART_OF_THE_SEA
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    caisse-rarete: LEGENDAIRE
+    caisse-chance: 1
+
   amelioration_machine:
     nom: "&d&lAmelioration de Machine"
     lore:
@@ -257,6 +324,7 @@ items:
         D: DIAMOND
         G: GOLD_INGOT
         N: NETHERITE_SCRAP
+    caisse-rarete: RARE
 
   kit_argent:
     nom: "&fKit d'Amelioration Argent"
@@ -268,6 +336,7 @@ items:
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
+    caisse-rarete: COMMUNE
     # Craftable a l'etabli : 8 lingots d'or autour d'un bloc de fer.
     recette:
       forme:
@@ -288,6 +357,7 @@ items:
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
+    caisse-rarete: RARE
     # Craftable a l'etabli : 8 diamants autour d'un bloc d'or.
     recette:
       forme:
@@ -297,6 +367,28 @@ items:
       ingredients:
         D: DIAMOND
         G: GOLD_BLOCK
+
+  kit_mythique:
+    nom: "&d&lKit d'Amelioration Mythique"
+    lore:
+      - "&7Clic-droit sur une Machine a Transformation"
+      - "&7au tier Or pour la faire passer"
+      - "&7au tier Mythique."
+    item-de-base: NETHERITE_INGOT
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    caisse-rarete: LEGENDAIRE
+    caisse-chance: 1
+    # Craftable a l'etabli : 8 lingots de netherite autour d'une etoile du Nether.
+    recette:
+      forme:
+        - "NNN"
+        - "NEN"
+        - "NNN"
+      ingredients:
+        N: NETHERITE_INGOT
+        E: NETHER_STAR
 
   boost_generateur:
     nom: "&d&lBoost de Generateur"
@@ -308,6 +400,7 @@ items:
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
+    caisse-rarete: RARE
     # Craftable a l'etabli : 4 emeraudes + 4 lingots d'or autour d'un diamant.
     recette:
       forme:

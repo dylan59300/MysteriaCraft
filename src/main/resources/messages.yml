@@ -197,7 +197,7 @@ customitem:
   recettes-titre: "&6&l=== Recettes d'items custom ==="
 
 machine:
-  usage: "&cUsage : /machine <give <joueur> [quantite]|preset|reload>"
+  usage: "&cUsage : /machine <give <joueur> [quantite]|preset|reload|stats>"
   aucun-item: "&cVous devez tenir un minerai en main pour utiliser la machine."
   minerai-non-accepte: "&cCe minerai n'est pas accepte par la machine."
   minerai-insuffisant: "&cIl faut au moins &e{quantite}x {minerai} &cen main pour lancer une transformation."
@@ -219,6 +219,18 @@ machine:
   tier-max: "&cCette machine est deja au tier maximum : &e{tier}&c."
   tier-mauvais-kit: "&cCe kit ne correspond pas au tier suivant de cette machine. &7Actuellement : &e{tier-actuel}&7, suivant : &e{tier-suivant}&7."
   tier-ameliore: "&d&lMachine amelioree au tier {tier} ! &7Chance : &e{chance}% &7- Cooldown de base : &e{cooldown}"
+  apercu: "&b&lApercu : &7ce minerai ciblerait la caisse &e{caisse} &7(&e{chance}%&7 de reussite, streak actuel : &e{streak}&7)."
+  recyclage: "&7Recyclage : &e{quantite}x {minerai} &7ont ete recuperes malgre l'echec."
+  boost-carburant-active: "&e&lCarburant illimite active ! &7Vos transformations manuelles a la machine sont gratuites pendant &e{duree}&7."
+  stats-titre: "&b&lStatistiques Machine"
+  stats-essais-nom: "&e&lTentatives"
+  stats-essais-ligne: "&7Total : &e{essais} &7transformation(s) tentee(s)"
+  stats-taux-nom: "&b&lTaux de reussite"
+  stats-reussites-ligne: "&7Reussites : &a{reussites}"
+  stats-taux-ligne: "&7Taux reel : &e{taux}%"
+  stats-favori-nom: "&6&lMinerai favori"
+  stats-favori-ligne: "&7Utilise &e{essais} &7fois"
+  stats-favori-aucun: "&7Aucune transformation tentee pour l'instant."
 
 generateur:
   usage: "&cUsage : /generateur <liste|give <joueur> <fer|or|diamant> [quantite]|reload>"

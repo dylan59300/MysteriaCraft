@@ -15,6 +15,13 @@ import java.util.Map;
  * @param recipeShape forme de la recette (1 a 3 lignes de 1 a 3 caracteres, espace = case vide),
  *                     vide si l'item n'est pas craftable a l'etabli.
  * @param recipeIngredients association caractere de la forme -> materiau vanilla requis.
+ * @param crateAuto si true, ajoute automatiquement cet item au tirage de toutes les caisses
+ *                  (module Crates), y compris les caisses ajoutees plus tard, sans avoir besoin
+ *                  de l'ajouter a la main dans crates.yml. Voir CrateManager#syncAutoCustomItemRewards.
+ * @param crateChance poids relatif utilise pour le tirage pondere quand crateAuto est actif.
+ * @param crateRarity rarete visuelle (texte brut : COMMUNE/RARE/EPIQUE/LEGENDAIRE, parse par
+ *                    crates.Rarity) affichee pour cet item quand il est tire en caisse.
+ * @param crateQuantity quantite donnee quand cet item est tire en caisse.
  */
 public record CustomItemDefinition(
         String id,
@@ -25,7 +32,11 @@ public record CustomItemDefinition(
         double dropChance,
         double sellPrice,
         List<String> recipeShape,
-        Map<Character, Material> recipeIngredients
+        Map<Character, Material> recipeIngredients,
+        boolean crateAuto,
+        double crateChance,
+        String crateRarity,
+        int crateQuantity
 ) {
 
     public boolean hasNaturalSource() {

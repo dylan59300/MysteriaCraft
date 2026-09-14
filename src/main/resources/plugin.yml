@@ -80,9 +80,10 @@ commands:
     description: Gere les minerais/objets custom (give admin, sell, reload admin)
     usage: /<command> <give <joueur> <id> [quantite]|sell <id>|reload>
   machine:
-    description: Donne la Machine a Transformation ou recharge sa config (admin)
-    usage: /<command> <give <joueur> [quantite]|reload>
-    permission: mysteriacraft.machine.admin
+    description: Donne/recharge la Machine a Transformation (admin), ou affiche vos stats
+    usage: /<command> <give <joueur> [quantite]|preset|reload|stats>
+    # Pas de "permission:" ici : /machine stats doit rester accessible a tout joueur (les
+    # sous-commandes admin restent protegees dans le code par mysteriacraft.machine.admin).
   generateur:
     description: Liste vos generateurs actifs, ou donne/recharge (admin)
     usage: /<command> <liste|give <joueur> <fer|or|diamant> [quantite]|reload>
@@ -130,7 +131,7 @@ permissions:
     description: Autorise la gestion admin des items custom (give, reload)
     default: op
   mysteriacraft.machine.admin:
-    description: Autorise la gestion admin de la Machine a Transformation (give, reload)
+    description: Autorise la gestion admin de la Machine a Transformation (give, preset, reload)
     default: op
   mysteriacraft.generateur.admin:
     description: Autorise la gestion admin des Generateurs d'Argent (give, reload)

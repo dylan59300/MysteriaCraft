@@ -3,6 +3,7 @@ package com.mysteriacraft.customitems.machine.commands;
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.customitems.machine.MachineManager;
+import com.mysteriacraft.customitems.machine.gui.MachineStatsGui;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -18,6 +19,7 @@ import java.util.Map;
 
 /**
  * /machine give <joueur> [quantite] | preset | reload (admin uniquement)
+ * /machine stats (ouvert a tous les joueurs : affiche ses propres statistiques)
  */
 public class MachineCommand implements CommandExecutor {
 
@@ -33,12 +35,23 @@ public class MachineCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!sender.hasPermission("mysteriacraft.machine.admin")) {
-            messages.send(sender, "general.pas-de-permission");
-            return true;
-        }
         if (args.length == 0) {
             messages.send(sender, "machine.usage");
+            return true;
+        }
+
+        // Ouvert a tous les joueurs (pas de permission admin) : affiche les stats du joueur lui-meme.
+        if (args[0].equalsIgnoreCase("stats")) {
+            if (!(sender instanceof Player player)) {
+                messages.send(sender, "general.commande-joueur-uniquement");
+                return true;
+            }
+            new MachineStatsGui(player, manager, messages).open();
+            return true;
+        }
+
+        if (!sender.hasPermission("mysteriacraft.machine.admin")) {
+            messages.send(sender, "general.pas-de-permission");
             return true;
         }
 

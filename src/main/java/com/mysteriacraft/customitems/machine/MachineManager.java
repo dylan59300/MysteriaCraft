@@ -72,6 +72,15 @@ public class MachineManager {
         long activeCooldownSeconds = -1;
         double bonusReussite;
         UUID hologramUuid;
+        /** Nombre de reussites CONSECUTIVES (remis a 0 au premier echec), pour le bonus de streak. */
+        int streak;
+    }
+
+    /** Agregat des statistiques d'un joueur sur toutes ses machines confondues. */
+    public record PlayerStats(int totalEssais, int totalReussites, Material minerauFavori, int essaisMinerauFavori) {
+        public double tauxReussite() {
+            return totalEssais == 0 ? 0.0 : (100.0 * totalReussites / totalEssais);
+        }
     }
 
     private final Plugin plugin;
@@ -98,6 +107,17 @@ public class MachineManager {
      * de traitement de l'auto-alimentation (le 1er minerai present dans le coffre d'entree est traite en premier). */
     private final Map<Material, String> acceptedOres = new LinkedHashMap<>();
 
+    /** Bonus de reussite temporaire accumule par reussite consecutive (remis a 0 au premier echec). */
+    private double streakBonusPerSuccess = 0.0;
+    private double streakBonusMax = 0.0;
+    /** % du lot de minerais rendu au joueur/conteneur de sortie en cas d'echec (0 = desactive). */
+    private double recyclagePourcent = 0.0;
+
+    /** Boost "carburant illimite" actif par joueur (uuid -> timestamp d'expiration en ms), charge au demarrage. */
+    private final Map<UUID, Long> fuelBoosts = new ConcurrentHashMap<>();
+    private String fuelBoostItemId = "carburant_illimite";
+    private long fuelBoostDurationSeconds = 86400L;
+
     private static final BlockFace[] ADJACENT_FACES = {
             BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN
     };
@@ -108,7 +128,10 @@ public class MachineManager {
         this.customItemsConfig = customItemsConfig;
         this.machineKey = new NamespacedKey(plugin, "machine-transformation");
         createTable();
+        createFuelBoostTable();
+        createStatsTable();
         loadMachines();
+        loadFuelBoosts();
         loadConfig();
     }
 
@@ -124,6 +147,7 @@ public class MachineManager {
                 "cooldown_actif INTEGER NOT NULL DEFAULT -1, " +
                 "bonus_reussite REAL NOT NULL DEFAULT 0, " +
                 "hologramme_uuid TEXT, " +
+                "streak INTEGER NOT NULL DEFAULT 0, " +
                 "PRIMARY KEY (monde, x, y, z)" +
                 ");";
         Connection connection = database.getConnection();
@@ -132,12 +156,49 @@ public class MachineManager {
         } catch (SQLException e) {
             plugin.getLogger().severe("Erreur creation table 'machines' : " + e.getMessage());
         }
+        // Migration : une base creee AVANT l'ajout du streak n'a pas cette colonne (CREATE TABLE IF
+        // NOT EXISTS ne la rajoute pas toute seule). Ignore silencieusement si elle existe deja.
+        try (PreparedStatement statement = connection.prepareStatement(
+                "ALTER TABLE machines ADD COLUMN streak INTEGER NOT NULL DEFAULT 0;")) {
+            statement.executeUpdate();
+        } catch (SQLException ignored) {
+            // Colonne deja presente : rien a faire.
+        }
+    }
+
+    private void createFuelBoostTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS machine_boost_carburant (" +
+                "uuid TEXT NOT NULL PRIMARY KEY, " +
+                "expiration INTEGER NOT NULL" +
+                ");";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur creation table 'machine_boost_carburant' : " + e.getMessage());
+        }
+    }
+
+    private void createStatsTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS machine_stats (" +
+                "uuid TEXT NOT NULL, " +
+                "materiau TEXT NOT NULL, " +
+                "essais INTEGER NOT NULL DEFAULT 0, " +
+                "reussites INTEGER NOT NULL DEFAULT 0, " +
+                "PRIMARY KEY (uuid, materiau)" +
+                ");";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur creation table 'machine_stats' : " + e.getMessage());
+        }
     }
 
     private void loadMachines() {
         machines.clear();
         String select = "SELECT monde, x, y, z, tier_id, carburant, derniere_utilisation, cooldown_actif, "
-                + "bonus_reussite, hologramme_uuid FROM machines;";
+                + "bonus_reussite, hologramme_uuid, streak FROM machines;";
         Connection connection = database.getConnection();
         try (PreparedStatement statement = connection.prepareStatement(select);
              ResultSet rs = statement.executeQuery()) {
@@ -153,6 +214,7 @@ public class MachineManager {
                 state.lastUseMillis = rs.getLong("derniere_utilisation");
                 state.activeCooldownSeconds = rs.getLong("cooldown_actif");
                 state.bonusReussite = rs.getDouble("bonus_reussite");
+                state.streak = rs.getInt("streak");
                 String hologramRaw = rs.getString("hologramme_uuid");
                 if (hologramRaw != null) {
                     try {
@@ -172,11 +234,11 @@ public class MachineManager {
     private void persistAsync(Location location, MachineState state) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             String upsert = "INSERT INTO machines (monde, x, y, z, tier_id, carburant, derniere_utilisation, "
-                    + "cooldown_actif, bonus_reussite, hologramme_uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    + "cooldown_actif, bonus_reussite, hologramme_uuid, streak) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                     + "ON CONFLICT(monde, x, y, z) DO UPDATE SET tier_id = excluded.tier_id, "
                     + "carburant = excluded.carburant, derniere_utilisation = excluded.derniere_utilisation, "
                     + "cooldown_actif = excluded.cooldown_actif, bonus_reussite = excluded.bonus_reussite, "
-                    + "hologramme_uuid = excluded.hologramme_uuid;";
+                    + "hologramme_uuid = excluded.hologramme_uuid, streak = excluded.streak;";
             Connection connection = database.getConnection();
             try (PreparedStatement statement = connection.prepareStatement(upsert)) {
                 statement.setString(1, location.getWorld().getName());
@@ -189,6 +251,7 @@ public class MachineManager {
                 statement.setLong(8, state.activeCooldownSeconds);
                 statement.setDouble(9, state.bonusReussite);
                 statement.setString(10, state.hologramUuid != null ? state.hologramUuid.toString() : null);
+                statement.setInt(11, state.streak);
                 statement.executeUpdate();
             } catch (SQLException e) {
                 plugin.getLogger().severe("Erreur sauvegarde machine : " + e.getMessage());
@@ -215,6 +278,151 @@ public class MachineManager {
     /** Cle de position (bloc entier, sans decimales) utilisee pour indexer machines. */
     private static Location blockKey(Block block) {
         return new Location(block.getWorld(), block.getX(), block.getY(), block.getZ());
+    }
+
+    private void loadFuelBoosts() {
+        fuelBoosts.clear();
+        String select = "SELECT uuid, expiration FROM machine_boost_carburant;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select);
+             ResultSet rs = statement.executeQuery()) {
+            long now = System.currentTimeMillis();
+            while (rs.next()) {
+                long expiration = rs.getLong("expiration");
+                if (expiration <= now) {
+                    continue;
+                }
+                try {
+                    fuelBoosts.put(UUID.fromString(rs.getString("uuid")), expiration);
+                } catch (IllegalArgumentException ignored) {
+                    // UUID corrompu : ce boost est simplement ignore.
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur chargement des boosts 'carburant illimite' : " + e.getMessage());
+        }
+    }
+
+    private void persistFuelBoostAsync(UUID uuid, long expiration) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            String upsert = "INSERT INTO machine_boost_carburant (uuid, expiration) VALUES (?, ?) "
+                    + "ON CONFLICT(uuid) DO UPDATE SET expiration = excluded.expiration;";
+            Connection connection = database.getConnection();
+            try (PreparedStatement statement = connection.prepareStatement(upsert)) {
+                statement.setString(1, uuid.toString());
+                statement.setLong(2, expiration);
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Erreur sauvegarde boost 'carburant illimite' pour " + uuid + " : " + e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Active (ou prolonge, en remplacant sa duree restante) le boost "carburant illimite" d'un
+     * joueur : tant qu'il est actif, ses transformations manuelles (clic-droit) ne consomment plus
+     * de charge de carburant et ne sont jamais bloquees par manque de carburant.
+     */
+    public void activateFuelBoost(UUID uuid, long durationSeconds) {
+        long expiration = System.currentTimeMillis() + durationSeconds * 1000L;
+        fuelBoosts.put(uuid, expiration);
+        persistFuelBoostAsync(uuid, expiration);
+    }
+
+    public String getFuelBoostItemId() {
+        return fuelBoostItemId;
+    }
+
+    public long getFuelBoostDurationSeconds() {
+        return fuelBoostDurationSeconds;
+    }
+
+    public boolean hasActiveFuelBoost(UUID uuid) {
+        Long expiration = fuelBoosts.get(uuid);
+        if (expiration == null) {
+            return false;
+        }
+        if (expiration <= System.currentTimeMillis()) {
+            fuelBoosts.remove(uuid);
+            return false;
+        }
+        return true;
+    }
+
+    /** Millisecondes restantes du boost "carburant illimite" de ce joueur (0 si inactif). */
+    public long getFuelBoostRemainingMillis(UUID uuid) {
+        Long expiration = fuelBoosts.get(uuid);
+        return expiration == null ? 0L : Math.max(0L, expiration - System.currentTimeMillis());
+    }
+
+    // ---- Statistiques joueur (essais/reussites par minerai, pour le menu /machine stats) ----
+
+    /**
+     * Enregistre une tentative de transformation manuelle pour ce joueur/minerai. Ecrit en
+     * SYNCHRONE (comme QuestService#registerProgress) : evite tout acces concurrent a la
+     * Connection SQLite partagee avec les autres ecritures synchrones de cette meme transformation.
+     */
+    public synchronized void recordAttempt(UUID uuid, Material material, boolean success) {
+        String select = "SELECT essais, reussites FROM machine_stats WHERE uuid = ? AND materiau = ?;";
+        int essais = 0;
+        int reussites = 0;
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, material.name());
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    essais = rs.getInt("essais");
+                    reussites = rs.getInt("reussites");
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture stats machine pour " + uuid + " : " + e.getMessage());
+        }
+
+        essais++;
+        if (success) {
+            reussites++;
+        }
+
+        String upsert = "INSERT INTO machine_stats (uuid, materiau, essais, reussites) VALUES (?, ?, ?, ?) "
+                + "ON CONFLICT(uuid, materiau) DO UPDATE SET essais = excluded.essais, reussites = excluded.reussites;";
+        try (PreparedStatement statement = connection.prepareStatement(upsert)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, material.name());
+            statement.setInt(3, essais);
+            statement.setInt(4, reussites);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur sauvegarde stats machine pour " + uuid + " : " + e.getMessage());
+        }
+    }
+
+    /** Statistiques agregees (tous minerais confondus) d'un joueur, plus son minerai le plus utilise. */
+    public synchronized PlayerStats getPlayerStats(UUID uuid) {
+        String select = "SELECT materiau, essais, reussites FROM machine_stats WHERE uuid = ?;";
+        int totalEssais = 0;
+        int totalReussites = 0;
+        Material favori = null;
+        int favoriEssais = -1;
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    int essais = rs.getInt("essais");
+                    totalEssais += essais;
+                    totalReussites += rs.getInt("reussites");
+                    if (essais > favoriEssais) {
+                        favoriEssais = essais;
+                        favori = Material.matchMaterial(rs.getString("materiau"));
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture stats machine agregees pour " + uuid + " : " + e.getMessage());
+        }
+        return new PlayerStats(totalEssais, totalReussites, favori, Math.max(0, favoriEssais));
     }
 
     public void loadConfig() {
@@ -284,6 +492,22 @@ public class MachineManager {
         carburantSeulementSiEchec = section.getBoolean("carburant-uniquement-si-echec", false);
         hologramSegments = Math.max(1, section.getInt("hologramme-segments", 10));
         hologramCompact = section.getBoolean("hologramme-compact", false);
+
+        ConfigurationSection streakSection = section.getConfigurationSection("streak");
+        if (streakSection != null) {
+            streakBonusPerSuccess = Math.max(0, streakSection.getDouble("bonus-par-succes", 0));
+            streakBonusMax = Math.max(0, streakSection.getDouble("bonus-max", 0));
+        } else {
+            streakBonusPerSuccess = 0.0;
+            streakBonusMax = 0.0;
+        }
+        recyclagePourcent = Math.max(0, Math.min(100, section.getDouble("recyclage-pourcent", 0)));
+
+        ConfigurationSection boostSection = section.getConfigurationSection("boost-carburant-illimite");
+        if (boostSection != null) {
+            fuelBoostItemId = boostSection.getString("item-id", "carburant_illimite").toLowerCase();
+            fuelBoostDurationSeconds = Math.max(1, boostSection.getLong("duree-secondes", 86400L));
+        }
 
         ConfigurationSection ores = section.getConfigurationSection("minerais");
         if (ores != null) {
@@ -656,8 +880,52 @@ public class MachineManager {
         return state.bonusReussite;
     }
 
-    /** Chance de reussite effective de cette machine (chance du tier + bonus d'amelioration), plafonnee a 100%. */
+    /** Chance de reussite effective de cette machine (chance du tier + bonus d'amelioration +
+     * bonus de streak en cours), plafonnee a 100%. */
     public double getEffectiveChance(Block block) {
-        return Math.min(100.0, getBlockTier(block).chance() + getBonusReussite(block));
+        return Math.min(100.0, getBlockTier(block).chance() + getBonusReussite(block) + getStreakBonus(block));
+    }
+
+    // ---- Streak (reussites consecutives) ----
+
+    public int getStreak(Block block) {
+        MachineState state = machines.get(blockKey(block));
+        return state == null ? 0 : state.streak;
+    }
+
+    /** Bonus de chance actuellement accorde par le streak en cours (0 si desactive en config ou streak nul). */
+    public double getStreakBonus(Block block) {
+        if (streakBonusPerSuccess <= 0) {
+            return 0.0;
+        }
+        return Math.min(streakBonusMax, getStreak(block) * streakBonusPerSuccess);
+    }
+
+    /** A appeler apres une transformation reussie : incremente le streak. Renvoie le nouveau streak. */
+    public int incrementStreak(Block block) {
+        Location key = blockKey(block);
+        MachineState state = machines.get(key);
+        if (state == null) {
+            return 0;
+        }
+        state.streak++;
+        persistAsync(key, state);
+        return state.streak;
+    }
+
+    /** A appeler apres une transformation echouee : remet le streak a 0. */
+    public void resetStreak(Block block) {
+        Location key = blockKey(block);
+        MachineState state = machines.get(key);
+        if (state == null || state.streak == 0) {
+            return;
+        }
+        state.streak = 0;
+        persistAsync(key, state);
+    }
+
+    /** % du lot de minerais rendu en cas d'echec (0 = recyclage desactive). */
+    public double getRecyclagePourcent() {
+        return recyclagePourcent;
     }
 }

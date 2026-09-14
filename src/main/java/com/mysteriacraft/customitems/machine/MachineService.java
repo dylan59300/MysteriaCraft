@@ -95,7 +95,32 @@ public class MachineService {
             return;
         }
 
+        // Apercu (sneak + clic-droit) : montre la famille ciblee et la chance actuelle SANS rien
+        // consommer ni lancer de jet de chance. Ne s'applique qu'aux minerais acceptes ; sinon on
+        // laisse attemptTransformation() emettre le message "minerai non accepte" habituel.
+        if (player.isSneaking() && manager.getTargetFamily(inHand.getType()) != null) {
+            previewTransformation(player, machineBlock, inHand.getType());
+            return;
+        }
+
         attemptTransformation(player, machineBlock, inHand);
+    }
+
+    /** Apercu (clic-droit + sneak) : affiche la famille ciblee et la chance de reussite actuelle
+     * (tier + bonus d'amelioration + streak en cours) sans rien consommer. */
+    private void previewTransformation(Player player, Block machineBlock, Material ore) {
+        String familyId = manager.getTargetFamily(ore);
+        LuckyBlockFamily family = familyId != null ? luckyBlockManager.getFamily(familyId) : null;
+        if (family == null) {
+            messages.send(player, "machine.famille-introuvable");
+            return;
+        }
+
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("caisse", family.displayName());
+        placeholders.put("chance", String.valueOf((int) manager.getEffectiveChance(machineBlock)));
+        placeholders.put("streak", String.valueOf(manager.getStreak(machineBlock)));
+        messages.send(player, "machine.apercu", placeholders);
     }
 
     private void showStatus(Player player, Block machineBlock) {
@@ -206,7 +231,11 @@ public class MachineService {
             return;
         }
 
-        if (manager.getFuel(machineBlock) <= 0) {
+        // Boost "carburant illimite" actif (voir machine-transformation.boost-carburant-illimite) :
+        // ignore completement l'etat du carburant de CETTE machine pour ce joueur.
+        boolean unlimitedFuel = manager.hasActiveFuelBoost(player.getUniqueId());
+
+        if (!unlimitedFuel && manager.getFuel(machineBlock) <= 0) {
             Map<String, String> placeholders = new HashMap<>();
             placeholders.put("carburant", defaultFuelName());
             messages.send(player, "machine.sans-carburant", placeholders);
@@ -238,11 +267,12 @@ public class MachineService {
 
         // Consomme MINERAIS_PAR_TRANSFORMATION exemplaires du minerai (1 seul jet de chance pour le lot)
         // et relance le cooldown. Le carburant n'est consomme tout de suite que si le mode economique
-        // (carburant-uniquement-si-echec) est desactive.
+        // (carburant-uniquement-si-echec) est desactive, et jamais si le boost "carburant illimite" est actif.
+        Material ore = inHand.getType();
         int remaining = inHand.getAmount() - MINERAIS_PAR_TRANSFORMATION;
         player.getInventory().setItemInMainHand(remaining > 0 ? withAmount(inHand, remaining) : null);
         boolean economyMode = manager.isConsumeFuelOnFailureOnly();
-        if (!economyMode) {
+        if (!unlimitedFuel && !economyMode) {
             manager.consumeCharge(machineBlock);
         }
         manager.markUsedNow(machineBlock);
@@ -250,8 +280,11 @@ public class MachineService {
         Location effectLocation = machineBlock.getLocation().add(0.5, 1.0, 0.5);
         double chance = manager.getEffectiveChance(machineBlock);
         boolean success = ThreadLocalRandom.current().nextDouble(100.0) < chance;
+        manager.recordAttempt(player.getUniqueId(), ore, success);
 
         if (success) {
+            manager.incrementStreak(machineBlock);
+
             ItemStack reward = luckyBlockManager.createItem(family);
             Map<Integer, ItemStack> leftovers = player.getInventory().addItem(reward);
             if (!leftovers.isEmpty()) {
@@ -267,12 +300,25 @@ public class MachineService {
 
             questService.registerProgress(player, QuestType.MACHINE_TRANSFORM, family.id(), 1);
         } else {
-            if (economyMode) {
+            manager.resetStreak(machineBlock);
+            if (!unlimitedFuel && economyMode) {
                 manager.consumeCharge(machineBlock);
             }
             effectLocation.getWorld().spawnParticle(Particle.SMOKE_NORMAL, effectLocation, 20, 0.4, 0.4, 0.4);
             player.playSound(effectLocation, Sound.ENTITY_ITEM_BREAK, 1f, 0.7f);
             messages.send(player, "machine.echec");
+
+            int recycled = (int) Math.floor(MINERAIS_PAR_TRANSFORMATION * manager.getRecyclagePourcent() / 100.0);
+            if (recycled > 0) {
+                ItemStack recycledStack = new ItemStack(ore, recycled);
+                Map<Integer, ItemStack> recycledLeftovers = player.getInventory().addItem(recycledStack);
+                recycledLeftovers.values().forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
+
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("quantite", String.valueOf(recycled));
+                placeholders.put("minerai", ore.name());
+                messages.send(player, "machine.recyclage", placeholders);
+            }
         }
         updateHologram(machineBlock);
     }
@@ -386,16 +432,27 @@ public class MachineService {
         Location effectLocation = machineBlock.getLocation().add(0.5, 1.0, 0.5);
         boolean success = ThreadLocalRandom.current().nextDouble(100.0) < manager.getEffectiveChance(machineBlock);
         if (success) {
+            manager.incrementStreak(machineBlock);
+
             ItemStack reward = luckyBlockManager.createItem(family);
             Map<Integer, ItemStack> leftovers = outputInventory.addItem(reward);
             leftovers.values().forEach(leftover ->
                     containers.output().getWorld().dropItemNaturally(containers.output().getLocation(), leftover));
             playAutoFeedEffects(effectLocation, true);
         } else {
+            manager.resetStreak(machineBlock);
             if (economyMode) {
                 manager.consumeCharge(machineBlock);
             }
             playAutoFeedEffects(effectLocation, false);
+
+            int recycled = (int) Math.floor(MINERAIS_PAR_TRANSFORMATION * manager.getRecyclagePourcent() / 100.0);
+            if (recycled > 0) {
+                ItemStack recycledStack = new ItemStack(match, recycled);
+                Map<Integer, ItemStack> recycledLeftovers = outputInventory.addItem(recycledStack);
+                recycledLeftovers.values().forEach(leftover ->
+                        containers.output().getWorld().dropItemNaturally(containers.output().getLocation(), leftover));
+            }
         }
         updateHologram(machineBlock);
     }
@@ -433,9 +490,8 @@ public class MachineService {
         }
 
         MachineManager.MachineTier tier = manager.getBlockTier(machineBlock);
-        int fuel = manager.getFuel(machineBlock);
-        String fuelBar = fuelGaugeBar(fuel, tier);
-        String ligne1 = "&b&lMachine &7[" + tier.displayName() + "&7] &7| &e" + fuel + " " + fuelBar
+        String fuelBar = fuelGaugeBar(manager.getFuel(machineBlock), tier);
+        String ligne1 = "&b&lMachine &7[" + tier.displayName() + "&7] &7| " + fuelBar
                 + " &7| &e" + chance + "% &7| " + cooldownBar;
         stand.setCustomName(MessageManager.color(ligne1 + autoFeedSuffix(machineBlock)));
     }

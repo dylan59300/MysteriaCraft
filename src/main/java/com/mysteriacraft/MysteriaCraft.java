@@ -262,15 +262,19 @@ public final class MysteriaCraft extends JavaPlugin {
         this.customItemManager = new CustomItemManager(this, customItemsConfig);
         this.customItemService = new CustomItemService(customItemManager, economyManager, messages);
         rewardGiver.setCustomItemGiveHandler(customItemService);
+        // Le module Crates est initialise AVANT celui-ci : on lui branche maintenant le module
+        // Custom Items pour qu'il synchronise les items "caisse-auto" dans toutes ses caisses.
+        crateManager.setCustomItemManager(customItemManager);
 
         Bukkit.getPluginManager().registerEvents(new CustomItemListener(customItemService), this);
 
-        getCommand("customitem").setExecutor(new CustomItemCommand(customItemsConfig, customItemManager, customItemService, messages));
+        getCommand("customitem").setExecutor(
+                new CustomItemCommand(customItemsConfig, customItemManager, customItemService, crateManager, messages));
 
         // Machine a Transformation : minerai -> Lucky Block (module luckyblock deja initialise avant celui-ci).
         this.machineManager = new MachineManager(this, database, customItemsConfig);
         this.machineService = new MachineService(this, machineManager, customItemManager, luckyBlockManager, questService, messages);
-        Bukkit.getPluginManager().registerEvents(new MachineListener(machineManager, machineService, messages), this);
+        Bukkit.getPluginManager().registerEvents(new MachineListener(machineManager, machineService, customItemManager, messages), this);
         getCommand("machine").setExecutor(new MachineCommand(customItemsConfig, machineManager, messages));
 
         // Effet de particules ambiant (densite/couleur selon le niveau de carburant), toutes les 5 secondes.

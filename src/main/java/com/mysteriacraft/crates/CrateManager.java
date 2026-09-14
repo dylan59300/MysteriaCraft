@@ -3,7 +3,10 @@ package com.mysteriacraft.crates;
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.gui.ItemBuilder;
 import com.mysteriacraft.core.reward.Reward;
+import com.mysteriacraft.core.reward.RewardType;
 import com.mysteriacraft.core.storage.Database;
+import com.mysteriacraft.customitems.CustomItemDefinition;
+import com.mysteriacraft.customitems.CustomItemManager;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
@@ -15,9 +18,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -32,6 +37,10 @@ public class CrateManager {
     private final ConfigManager cratesConfig;
 
     private final Map<String, Crate> crates = new LinkedHashMap<>();
+
+    /** Branche apres coup via setCustomItemManager() : le module Custom Items est initialise
+     * APRES Crates (voir MysteriaCraft#onEnable), donc indisponible au moment du premier chargement. */
+    private CustomItemManager customItemManager;
 
     public CrateManager(Plugin plugin, Database database, ConfigManager cratesConfig) {
         this.plugin = plugin;
@@ -88,6 +97,56 @@ public class CrateManager {
             }
         }
         plugin.getLogger().info(crates.size() + " caisse(s) chargee(s) depuis crates.yml.");
+        syncAutoCustomItemRewards();
+    }
+
+    /**
+     * Branche le module Custom Items (indisponible a la construction de CrateManager, voir le
+     * commentaire du champ) et effectue immediatement une premiere synchronisation.
+     */
+    public void setCustomItemManager(CustomItemManager customItemManager) {
+        this.customItemManager = customItemManager;
+        syncAutoCustomItemRewards();
+    }
+
+    /**
+     * Ajoute automatiquement au tirage de CHAQUE caisse chargee tout item custom marque
+     * "caisse-auto" (voir custom_items.yml) qui n'y figure pas deja explicitement (identifie par
+     * son item-id, pour ne jamais dupliquer un ajout manuel). Appele a chaque (re)chargement de
+     * crates.yml et a chaque fois que le module Custom Items est (re)charge : une nouvelle caisse
+     * comme un nouvel item custom sont donc pris en compte sans aucune manipulation de crates.yml.
+     * Idempotent : rappeler cette methode plusieurs fois ne cree jamais de doublon.
+     */
+    private void syncAutoCustomItemRewards() {
+        if (customItemManager == null) {
+            return;
+        }
+        List<CustomItemDefinition> autoItems = customItemManager.getItemsSorted().stream()
+                .filter(CustomItemDefinition::crateAuto)
+                .toList();
+        if (autoItems.isEmpty()) {
+            return;
+        }
+
+        for (Crate crate : crates.values()) {
+            Set<String> existingCustomItemIds = new HashSet<>();
+            for (CrateReward reward : crate.rewards()) {
+                if (reward.type() == RewardType.OBJET_CUSTOM) {
+                    existingCustomItemIds.add(reward.reward().customItemId().toLowerCase());
+                }
+            }
+
+            for (CustomItemDefinition definition : autoItems) {
+                if (existingCustomItemIds.contains(definition.id().toLowerCase())) {
+                    continue;
+                }
+                Rarity rarity = Rarity.fromString(definition.crateRarity());
+                ItemStack icon = customItemManager.createItem(definition, definition.crateQuantity());
+                Reward reward = Reward.ofCustomItem(definition.id(), definition.crateQuantity(),
+                        definition.displayName(), icon);
+                crate.rewards().add(new CrateReward(definition.id() + "-auto", reward, definition.crateChance(), rarity));
+            }
+        }
     }
 
     private Crate parseCrate(String id, ConfigurationSection section) {
