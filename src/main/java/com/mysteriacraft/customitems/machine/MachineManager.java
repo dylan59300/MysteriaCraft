@@ -18,7 +18,6 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,8 +38,9 @@ public class MachineManager {
     public record FuelType(String itemId, int charges, long cooldownSeconds) {
     }
 
-    /** Les 2 conteneurs adjacents utilises par l'auto-alimentation (peuvent etre le meme bloc s'il n'y en a qu'un seul). */
-    public record AdjacentContainers(Block input, Block output) {
+    /** Les 2 conteneurs adjacents utilises par l'auto-alimentation (peuvent etre le meme bloc s'il n'y en a qu'un seul),
+     * avec la face de la machine sur laquelle chacun est colle (pour l'affichage sur l'hologramme). */
+    public record AdjacentContainers(Block input, BlockFace inputFace, Block output, BlockFace outputFace) {
     }
 
     private final Plugin plugin;
@@ -64,7 +64,9 @@ public class MachineManager {
     private double bonusMax = 30.0;
     private boolean autoAlimentation = true;
     private boolean carburantSeulementSiEchec = false;
-    private final Map<Material, String> acceptedOres = new HashMap<>();
+    /** LinkedHashMap : l'ordre de declaration dans machine-transformation.minerais fixe la priorite
+     * de traitement de l'auto-alimentation (le 1er minerai present dans le coffre d'entree est traite en premier). */
+    private final Map<Material, String> acceptedOres = new LinkedHashMap<>();
 
     private static final BlockFace[] ADJACENT_FACES = {
             BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN
@@ -195,21 +197,39 @@ public class MachineManager {
      * et le second de sortie, pour separer minerais et recompenses. Renvoie null si aucun n'est colle.
      */
     public AdjacentContainers getAdjacentContainers(Block machineBlock) {
-        List<Block> found = new ArrayList<>();
+        List<Block> foundBlocks = new ArrayList<>();
+        List<BlockFace> foundFaces = new ArrayList<>();
         for (BlockFace face : ADJACENT_FACES) {
             Block relative = machineBlock.getRelative(face);
             Material type = relative.getType();
             if (type == Material.CHEST || type == Material.TRAPPED_CHEST
                     || type == Material.BARREL || type == Material.HOPPER) {
-                found.add(relative);
+                foundBlocks.add(relative);
+                foundFaces.add(face);
             }
         }
-        if (found.isEmpty()) {
+        if (foundBlocks.isEmpty()) {
             return null;
         }
-        Block input = found.get(0);
-        Block output = found.size() > 1 ? found.get(1) : input;
-        return new AdjacentContainers(input, output);
+        Block input = foundBlocks.get(0);
+        BlockFace inputFace = foundFaces.get(0);
+        boolean hasSeparateOutput = foundBlocks.size() > 1;
+        Block output = hasSeparateOutput ? foundBlocks.get(1) : input;
+        BlockFace outputFace = hasSeparateOutput ? foundFaces.get(1) : inputFace;
+        return new AdjacentContainers(input, inputFace, output, outputFace);
+    }
+
+    /** Traduit une face en francais, pour l'afficher sur l'hologramme de la machine. */
+    public static String faceLabel(BlockFace face) {
+        return switch (face) {
+            case NORTH -> "Nord";
+            case SOUTH -> "Sud";
+            case EAST -> "Est";
+            case WEST -> "Ouest";
+            case UP -> "Haut";
+            case DOWN -> "Bas";
+            default -> face.name();
+        };
     }
 
     /** Famille de Lucky Block cible pour ce minerai, ou null si non accepte par la machine. */

@@ -275,57 +275,64 @@ public class MachineService {
 
         Inventory inputInventory = inputContainer.getInventory();
         Inventory outputInventory = outputContainer.getInventory();
-        ItemStack[] contents = inputInventory.getContents();
 
-        for (int slot = 0; slot < contents.length; slot++) {
-            ItemStack stack = contents[slot];
-            if (stack == null || stack.getType() == Material.AIR) {
-                continue;
+        // Parcourt les minerais acceptes dans leur ORDRE DE PRIORITE (celui declare dans
+        // machine-transformation.minerais), pas l'ordre des cases du coffre : le premier minerai
+        // prioritaire present dans l'entree est traite en premier, quelle que soit sa case.
+        Material match = null;
+        int slot = -1;
+        for (Material candidate : manager.getAcceptedMaterials()) {
+            int candidateSlot = inputInventory.first(candidate);
+            if (candidateSlot >= 0) {
+                match = candidate;
+                slot = candidateSlot;
+                break;
             }
-            String familyId = manager.getTargetFamily(stack.getType());
-            if (familyId == null) {
-                continue;
-            }
-            LuckyBlockFamily family = luckyBlockManager.getFamily(familyId);
-            if (family == null) {
-                continue;
-            }
-
-            if (stack.getAmount() > 1) {
-                stack.setAmount(stack.getAmount() - 1);
-                inputInventory.setItem(slot, stack);
-            } else {
-                inputInventory.setItem(slot, null);
-            }
-
-            boolean economyMode = manager.isConsumeFuelOnFailureOnly();
-            if (!economyMode) {
-                manager.consumeCharge(machineBlock);
-            }
-            manager.markUsedNow(machineBlock);
-
-            Location effectLocation = machineBlock.getLocation().add(0.5, 1.0, 0.5);
-            boolean success = ThreadLocalRandom.current().nextDouble(100.0) < manager.getEffectiveChance(machineBlock);
-            if (success) {
-                ItemStack reward = luckyBlockManager.createItem(family);
-                Map<Integer, ItemStack> leftovers = outputInventory.addItem(reward);
-                leftovers.values().forEach(leftover ->
-                        containers.output().getWorld().dropItemNaturally(containers.output().getLocation(), leftover));
-                playAutoFeedEffects(effectLocation, true);
-            } else {
-                if (economyMode) {
-                    manager.consumeCharge(machineBlock);
-                }
-                playAutoFeedEffects(effectLocation, false);
-            }
-            updateHologram(machineBlock);
-            return; // 1 minerai par cooldown ecoule, meme cadence que l'utilisation manuelle
         }
 
-        // Aucun minerai accepte trouve dans l'entree : petit indicateur visuel de reapprovisionnement.
-        Location warningLocation = containers.input().getLocation().add(0.5, 1.1, 0.5);
-        containers.input().getWorld().spawnParticle(Particle.REDSTONE, warningLocation, 6, 0.2, 0.1, 0.2, 0.0,
-                new Particle.DustOptions(Color.RED, 1.2f));
+        if (match == null) {
+            // Aucun minerai accepte trouve dans l'entree : petit indicateur visuel de reapprovisionnement.
+            Location warningLocation = containers.input().getLocation().add(0.5, 1.1, 0.5);
+            containers.input().getWorld().spawnParticle(Particle.REDSTONE, warningLocation, 6, 0.2, 0.1, 0.2, 0.0,
+                    new Particle.DustOptions(Color.RED, 1.2f));
+            return;
+        }
+
+        String familyId = manager.getTargetFamily(match);
+        LuckyBlockFamily family = familyId != null ? luckyBlockManager.getFamily(familyId) : null;
+        if (family == null) {
+            return;
+        }
+
+        ItemStack stack = inputInventory.getItem(slot);
+        if (stack.getAmount() > 1) {
+            stack.setAmount(stack.getAmount() - 1);
+            inputInventory.setItem(slot, stack);
+        } else {
+            inputInventory.setItem(slot, null);
+        }
+
+        boolean economyMode = manager.isConsumeFuelOnFailureOnly();
+        if (!economyMode) {
+            manager.consumeCharge(machineBlock);
+        }
+        manager.markUsedNow(machineBlock);
+
+        Location effectLocation = machineBlock.getLocation().add(0.5, 1.0, 0.5);
+        boolean success = ThreadLocalRandom.current().nextDouble(100.0) < manager.getEffectiveChance(machineBlock);
+        if (success) {
+            ItemStack reward = luckyBlockManager.createItem(family);
+            Map<Integer, ItemStack> leftovers = outputInventory.addItem(reward);
+            leftovers.values().forEach(leftover ->
+                    containers.output().getWorld().dropItemNaturally(containers.output().getLocation(), leftover));
+            playAutoFeedEffects(effectLocation, true);
+        } else {
+            if (economyMode) {
+                manager.consumeCharge(machineBlock);
+            }
+            playAutoFeedEffects(effectLocation, false);
+        }
+        updateHologram(machineBlock);
     }
 
     private void playAutoFeedEffects(Location location, boolean success) {
@@ -339,7 +346,8 @@ public class MachineService {
         }
     }
 
-    /** Met a jour le texte de l'hologramme de cette machine (charges, chance, cooldown restant). */
+    /** Met a jour le texte de l'hologramme de cette machine (charges, chance, cooldown restant,
+     * et faces d'entree/sortie de l'auto-alimentation si des conteneurs sont colles). */
     private void updateHologram(Block machineBlock) {
         ArmorStand stand = manager.getHologram(machineBlock);
         if (stand == null) {
@@ -350,8 +358,22 @@ public class MachineService {
         long remaining = manager.getRemainingCooldownMillis(machineBlock);
         String etat = remaining > 0 ? "&c" + formatDuration(remaining) : "&aPrete";
 
-        stand.setCustomName(MessageManager.color(
-                "&b&lMachine &7| &e" + fuel + " carburant &7| &e" + chance + "% &7| " + etat));
+        String ligne1 = "&b&lMachine &7| &e" + fuel + " carburant &7| &e" + chance + "% &7| " + etat;
+        stand.setCustomName(MessageManager.color(ligne1 + autoFeedSuffix(machineBlock)));
+    }
+
+    /** "&7| &aEntree: Nord &7| &6Sortie: Sud" (ou juste "Entree/Sortie: Nord" si un seul conteneur colle), vide sinon. */
+    private String autoFeedSuffix(Block machineBlock) {
+        MachineManager.AdjacentContainers containers = manager.getAdjacentContainers(machineBlock);
+        if (containers == null) {
+            return "";
+        }
+        String inputLabel = MachineManager.faceLabel(containers.inputFace());
+        if (containers.inputFace() == containers.outputFace()) {
+            return " &7| &bE/S: " + inputLabel;
+        }
+        String outputLabel = MachineManager.faceLabel(containers.outputFace());
+        return " &7| &aEntree: " + inputLabel + " &7| &6Sortie: " + outputLabel;
     }
 
     /** Envoie un compte a rebours en actionbar tant que le cooldown de cette machine n'est pas ecoule. */

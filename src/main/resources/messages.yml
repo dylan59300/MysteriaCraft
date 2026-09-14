@@ -197,7 +197,7 @@ customitem:
   recettes-titre: "&6&l=== Recettes d'items custom ==="
 
 machine:
-  usage: "&cUsage : /machine <give <joueur> [quantite]|reload>"
+  usage: "&cUsage : /machine <give <joueur> [quantite]|preset|reload>"
   aucun-item: "&cVous devez tenir un minerai en main pour utiliser la machine."
   minerai-non-accepte: "&cCe minerai n'est pas accepte par la machine."
   famille-introuvable: "&cErreur : la famille de Lucky Block ciblee n'existe pas (verifiez la config)."
@@ -213,3 +213,5 @@ machine:
   amelioration-effectuee: "&d&lMachine amelioree ! &7Bonus de reussite : &e+{bonus}% &7(&e{chance}%&7 de reussite totale)."
   amelioration-max: "&cCette machine a deja atteint son bonus de reussite maximum."
   protection-cooldown: "&cImpossible de casser cette machine pendant qu'elle recharge ! &7(maintenez shift pour forcer)"
+  preset-obstrue: "&cImpossible d'installer le preset : la machine et ses 2 coffres ont besoin de 3 emplacements libres devant vous."
+  preset-installee: "&a&lUsine installee ! &aMachine + coffre d'entree + coffre de sortie prets a l'emploi."
