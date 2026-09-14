@@ -17,22 +17,31 @@ import java.util.Map;
 
 /**
  * Charge la configuration de la Machine a Transformation (bloc, minerais acceptes -> famille
- * de Lucky Block cible, chance de reussite) et fabrique/marque son bloc.
+ * de Lucky Block cible, chance de reussite, carburant, cooldown) et fabrique/marque son bloc.
+ * L'etat de chaque machine posee (charges de carburant restantes, horodatage de derniere
+ * utilisation) est stocke directement sur le bloc via PersistentDataContainer (extension Paper).
  */
 public class MachineManager {
 
     private final Plugin plugin;
     private final ConfigManager customItemsConfig;
     private final NamespacedKey machineKey;
+    private final NamespacedKey fuelKey;
+    private final NamespacedKey lastUseKey;
 
     private Material blockMaterial = Material.IRON_BLOCK;
     private double successChance = 20.0;
+    private long cooldownSeconds = 60L;
+    private String fuelItemId = "carburant";
+    private int chargesPerFuel = 5;
     private final Map<Material, String> acceptedOres = new HashMap<>();
 
     public MachineManager(Plugin plugin, ConfigManager customItemsConfig) {
         this.plugin = plugin;
         this.customItemsConfig = customItemsConfig;
         this.machineKey = new NamespacedKey(plugin, "machine-transformation");
+        this.fuelKey = new NamespacedKey(plugin, "machine-carburant");
+        this.lastUseKey = new NamespacedKey(plugin, "machine-derniere-utilisation");
         loadConfig();
     }
 
@@ -47,6 +56,9 @@ public class MachineManager {
         Material material = Material.matchMaterial(section.getString("bloc", "IRON_BLOCK"));
         blockMaterial = material != null ? material : Material.IRON_BLOCK;
         successChance = section.getDouble("chance-reussite", 20.0);
+        cooldownSeconds = section.getLong("cooldown-secondes", 60L);
+        fuelItemId = section.getString("carburant-item-id", "carburant");
+        chargesPerFuel = Math.max(1, section.getInt("charges-par-carburant", 5));
 
         ConfigurationSection ores = section.getConfigurationSection("minerais");
         if (ores != null) {
@@ -60,7 +72,7 @@ public class MachineManager {
             }
         }
         plugin.getLogger().info("Machine a Transformation : " + acceptedOres.size() + " minerai(s) accepte(s), "
-                + successChance + "% de reussite.");
+                + successChance + "% de reussite, cooldown " + cooldownSeconds + "s, carburant '" + fuelItemId + "'.");
     }
 
     public Material getBlockMaterial() {
@@ -69,6 +81,18 @@ public class MachineManager {
 
     public double getSuccessChance() {
         return successChance;
+    }
+
+    public long getCooldownSeconds() {
+        return cooldownSeconds;
+    }
+
+    public String getFuelItemId() {
+        return fuelItemId;
+    }
+
+    public int getChargesPerFuel() {
+        return chargesPerFuel;
     }
 
     /** Famille de Lucky Block cible pour ce minerai, ou null si non accepte par la machine. */
@@ -97,7 +121,9 @@ public class MachineManager {
                     MessageManager.color("&7Clic-droit avec un minerai en main"),
                     MessageManager.color("&7pour tenter de le transformer"),
                     MessageManager.color("&7en Lucky Block."),
-                    MessageManager.color("&7Chance de reussite : &e" + (int) successChance + "%")
+                    MessageManager.color("&7Chance de reussite : &e" + (int) successChance + "%"),
+                    MessageManager.color("&7Necessite du carburant pour fonctionner."),
+                    MessageManager.color("&7Clic a vide pour voir son etat.")
             ));
             meta.getPersistentDataContainer().set(machineKey, PersistentDataType.BYTE, (byte) 1);
             item.setItemMeta(meta);
@@ -105,7 +131,7 @@ public class MachineManager {
         return item;
     }
 
-    /** Marque un bloc pose comme etant la Machine a Transformation. */
+    /** Marque un bloc pose comme etant la Machine a Transformation (charges/cooldown a 0 par defaut). */
     public void tagBlock(Block block) {
         block.getPersistentDataContainer().set(machineKey, PersistentDataType.BYTE, (byte) 1);
     }
@@ -119,5 +145,45 @@ public class MachineManager {
             return false;
         }
         return item.getItemMeta().getPersistentDataContainer().has(machineKey, PersistentDataType.BYTE);
+    }
+
+    // ---- Etat de la machine (carburant, cooldown), stocke sur le bloc ----
+
+    public int getFuel(Block block) {
+        Integer value = block.getPersistentDataContainer().get(fuelKey, PersistentDataType.INTEGER);
+        return value == null ? 0 : value;
+    }
+
+    public void setFuel(Block block, int amount) {
+        block.getPersistentDataContainer().set(fuelKey, PersistentDataType.INTEGER, Math.max(0, amount));
+    }
+
+    /** Ajoute des charges de carburant au bloc. Renvoie le nouveau total. */
+    public int addFuel(Block block, int amount) {
+        int newTotal = getFuel(block) + amount;
+        setFuel(block, newTotal);
+        return newTotal;
+    }
+
+    public void consumeCharge(Block block) {
+        setFuel(block, getFuel(block) - 1);
+    }
+
+    public long getLastUseMillis(Block block) {
+        Long value = block.getPersistentDataContainer().get(lastUseKey, PersistentDataType.LONG);
+        return value == null ? 0L : value;
+    }
+
+    public void markUsedNow(Block block) {
+        block.getPersistentDataContainer().set(lastUseKey, PersistentDataType.LONG, System.currentTimeMillis());
+    }
+
+    /** Millisecondes restantes avant la fin du cooldown (0 ou negatif = disponible). */
+    public long getRemainingCooldownMillis(Block block) {
+        long lastUse = getLastUseMillis(block);
+        if (lastUse == 0L) {
+            return 0L;
+        }
+        return (lastUse + cooldownSeconds * 1000L) - System.currentTimeMillis();
     }
 }

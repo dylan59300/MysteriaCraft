@@ -9,11 +9,18 @@
 # prix-vente : 0 = non revendable via /customitem sell.
 
 # Machine a Transformation : un bloc pose (voir /machine give) sur lequel on clique-droit avec
-# un minerai vanilla en main. chance-reussite % de le transformer en cle... en Lucky Block de la
-# famille indiquee (module LuckyBlock). En cas d'echec, le minerai est simplement perdu.
+# un minerai vanilla en main. chance-reussite % de le transformer en Lucky Block de la famille
+# indiquee (module LuckyBlock). En cas d'echec, le minerai est simplement perdu.
+# carburant-item-id : id (dans "items" ci-dessous) de l'objet custom a utiliser comme carburant.
+#                     Clic-droit sur la machine avec ce carburant en main la ravitaille.
+# charges-par-carburant : nombre de tentatives autorisees par unite de carburant consommee.
+# cooldown-secondes : delai minimum entre deux tentatives sur LA MEME machine (tous joueurs confondus).
 machine-transformation:
   bloc: IRON_BLOCK
   chance-reussite: 20
+  cooldown-secondes: 60
+  carburant-item-id: carburant
+  charges-par-carburant: 5
   minerais:
     COAL: commune
     RAW_IRON: commune
@@ -136,3 +143,14 @@ items:
     minerais-source: []
     chance-drop: 0
     prix-vente: 500
+
+  carburant:
+    nom: "&6Carburant de Machine"
+    lore:
+      - "&7Alimente la Machine a Transformation."
+      - "&7Clic-droit sur la machine pour la ravitailler."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500011
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0

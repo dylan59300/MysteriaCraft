@@ -203,3 +203,8 @@ machine:
   echec: "&c&lTransformation echouee... &7Le minerai a ete perdu."
   give-effectue: "&a{joueur} a recu &e{quantite}x Machine a Transformation&a."
   reload: "&aLa configuration de la machine a ete rechargee."
+  sans-carburant: "&cCette machine n'a plus de carburant ! &7Alimentez-la avec : &e{carburant}"
+  cooldown: "&cLa machine doit encore recharger : &e{temps}&c."
+  ravitaillee: "&a&lMachine ravitaillee ! &a+&e{charges} &acharges &7(total : &e{total}&7)."
+  statut-pret: "&b&lEtat machine : &7carburant &e{carburant} &7charge(s) &7- &aPrete a l'emploi !"
+  statut-en-attente: "&b&lEtat machine : &7carburant &e{carburant} &7charge(s) &7- &cRecharge : &e{cooldown}&c restant"

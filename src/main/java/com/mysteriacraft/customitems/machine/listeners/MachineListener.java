@@ -56,6 +56,6 @@ public class MachineListener implements Listener {
             return;
         }
         event.setCancelled(true);
-        service.attemptTransformation(event.getPlayer(), block);
+        service.handleInteract(event.getPlayer(), block);
     }
 }

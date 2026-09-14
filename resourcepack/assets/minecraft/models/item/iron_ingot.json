@@ -13,6 +13,7 @@
     { "predicate": { "custom_model_data": 500007 }, "model": "mysteriacraft:item/gem_opale" },
     { "predicate": { "custom_model_data": 500008 }, "model": "mysteriacraft:item/gem_amethyste" },
     { "predicate": { "custom_model_data": 500009 }, "model": "mysteriacraft:item/gem_peridot" },
-    { "predicate": { "custom_model_data": 500010 }, "model": "mysteriacraft:item/gem_jade" }
+    { "predicate": { "custom_model_data": 500010 }, "model": "mysteriacraft:item/gem_jade" },
+    { "predicate": { "custom_model_data": 500011 }, "model": "mysteriacraft:item/gem_carburant" }
   ]
 }

@@ -82,7 +82,7 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
     private void applyEffect(Player player, Location location, LuckyBlockEffect effect) {
         if (effect.kind() == EffectKind.BON) {
             rewardGiver.give(player, effect.reward());
-            location.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, location.clone().add(0.5, 0.5, 0.5), 30, 0.5, 0.5, 0.5);
+            location.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, location.clone().add(0.5, 0.5, 0.5), 30, 0.5, 0.5, 0.5);
             player.playSound(location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
 
             Map<String, String> placeholders = new HashMap<>();
