@@ -16,11 +16,14 @@
 # incassable : si true, l'item ne perd jamais de durabilite.
 
 # Machine a Transformation : un bloc pose (voir /machine give ou /machine preset) sur lequel on
-# clique-droit avec un minerai vanilla en main. chance-reussite % du tier actuel (+ bonus
-# d'amelioration, voir "amelioration" ci-dessous) de le transformer en Lucky Block de la famille
-# indiquee (module LuckyBlock). En cas d'echec, le minerai est simplement perdu.
+# clique-droit avec un minerai vanilla en main. CHAQUE minerai insere (1 minerai = 1 charge = 1
+# loot, plus de lot de 10) donne TOUJOURS une recompense, jamais rien de perdu. chance-luckyblock
+# % du tier actuel (+ bonus d'amelioration, voir "amelioration" ci-dessous) determine seulement SI
+# la recompense est le Lucky Block de la famille ciblee (module LuckyBlock) ou, le reste du temps,
+# un item custom aleatoire pioche parmi TOUS ceux charges depuis ce fichier (voir "items"), tirage
+# equitable entre chacun d'eux.
 # tiers : paliers STRUCTURELS de la machine (Bronze/Argent/Or...), chacun avec son propre bloc,
-#         sa propre chance de reussite, son propre cooldown de base et sa propre jauge de
+#         sa propre chance-luckyblock de base, son propre cooldown de base et sa propre jauge de
 #         carburant affichee. Le PREMIER tier declare est celui donne par /machine give et
 #         /machine preset (pas de kit-item-id). Chaque tier SUIVANT necessite le kit-item-id
 #         (objet custom, voir "items" ci-dessous) correspondant, utilise en clic-droit sur une
@@ -35,61 +38,55 @@
 # auto-alimentation : si true, coller un coffre/coffre piege/baril/hopper a la machine (n'importe
 #                      quelle face) lui permet de piocher automatiquement les minerais acceptes
 #                      dedans (1 par cooldown ecoule) sans avoir a cliquer. Avec un seul conteneur
-#                      colle, il sert aussi de sortie pour les Lucky Blocks obtenus ; avec 2
+#                      colle, il sert aussi de sortie pour les recompenses obtenues ; avec 2
 #                      conteneurs ou plus colles, le 1er (ordre nord/sud/est/ouest/haut/bas) sert
 #                      d'entree et le 2eme de sortie, pour separer minerais et recompenses.
-# carburant-uniquement-si-echec : si true, le carburant n'est consomme QUE quand la transformation
-#                                  echoue (mode economique optionnel, desactive par defaut).
 # hologramme-segments : nombre de blocs "■" dans la barre de progression du cooldown affichee sur
 #                        l'hologramme et en actionbar (10 par defaut).
 # hologramme-jauge-carburant-max : valeur PAR DEFAUT (utilisee si un tier ne definit pas la sienne)
 #                                   de niveau de carburant correspondant a une jauge pleine sur
 #                                   l'hologramme (purement visuel, ne limite pas le stock reel).
 # hologramme-compact : si true, l'hologramme n'affiche que l'essentiel (barre de cooldown + %
-#                       de reussite), sans le nom/tier de la machine ni le detail carburant/entree-sortie.
+#                       chance-luckyblock), sans le nom/tier de la machine ni le detail carburant/entree-sortie.
 machine-transformation:
   hologramme-jauge-carburant-max: 20
   tiers:
     bronze:
       nom: "&7Bronze"
       bloc: IRON_BLOCK
-      chance-reussite: 20
+      chance-luckyblock: 20
       cooldown-secondes: 60
       jauge-carburant-max: 20
     argent:
       nom: "&fArgent"
       bloc: GOLD_BLOCK
-      chance-reussite: 30
+      chance-luckyblock: 30
       cooldown-secondes: 45
       jauge-carburant-max: 35
       kit-item-id: kit_argent
     or:
       nom: "&6&lOr"
       bloc: DIAMOND_BLOCK
-      chance-reussite: 45
+      chance-luckyblock: 45
       cooldown-secondes: 30
       jauge-carburant-max: 50
       kit-item-id: kit_or
     mythique:
       nom: "&d&lMythique"
       bloc: BEACON
-      chance-reussite: 60
+      chance-luckyblock: 60
       cooldown-secondes: 20
       jauge-carburant-max: 75
       kit-item-id: kit_mythique
   auto-alimentation: true
-  carburant-uniquement-si-echec: false
   hologramme-segments: 10
   hologramme-compact: false
-  # Bonus de chance TEMPORAIRE qui s'accumule a chaque reussite CONSECUTIVE d'une machine (remis a
-  # 0 des le premier echec) : recompense les series de bonnes transformations sans etre permanent.
-  # bonus-par-succes: 0 (ou section absente) desactive completement le systeme.
+  # Bonus de chance-luckyblock TEMPORAIRE qui s'accumule a chaque Lucky Block obtenu CONSECUTIF sur
+  # une machine (remis a 0 des qu'un item custom sort a la place) : recompense les series de gros
+  # gains sans etre permanent. bonus-par-succes: 0 (ou section absente) desactive completement le systeme.
   streak:
     bonus-par-succes: 2
     bonus-max: 20
-  # % du lot de minerais consomme RENDU (au joueur en clic-droit, dans le conteneur de sortie en
-  # auto-alimentation) quand la transformation echoue. 0 = desactive (le lot est integralement perdu).
-  recyclage-pourcent: 20
   carburants:
     carburant:
       charges: 5
@@ -107,8 +104,8 @@ machine-transformation:
   boost-carburant-illimite:
     item-id: carburant_illimite
     duree-secondes: 86400
-  # Amelioration de machine : objet custom consommable qui augmente durablement la chance de
-  # reussite d'UNE machine (stockee sur son bloc), jusqu'a bonus-max.
+  # Amelioration de machine : objet custom consommable qui augmente durablement la chance-luckyblock
+  # d'UNE machine (stockee sur son bloc), jusqu'a bonus-max.
   amelioration:
     item-id: amelioration_machine
     bonus-par-amelioration: 5

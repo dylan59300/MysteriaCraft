@@ -249,7 +249,13 @@ public class LuckyBlockManager {
             }
         }
 
-        return new LuckyBlockFamily(id, displayName, material, order, buyPrice, baseGoodChance, recipe, effects);
+        // Famille saisonniere optionnelle (Halloween, Noel...) : actif-du/actif-au (format "MM-jj").
+        // Absent des deux cotes = famille permanente (comportement par defaut, inchange).
+        String actifDu = section.contains("actif-du") ? section.getString("actif-du") : null;
+        String actifAu = section.contains("actif-au") ? section.getString("actif-au") : null;
+
+        return new LuckyBlockFamily(id, displayName, material, order, buyPrice, baseGoodChance, recipe, effects,
+                actifDu, actifAu);
     }
 
     /** Meme limitation que sur les Map issues de getMapList() : getOrDefault(k, "texte") ne compile pas sur une
@@ -309,8 +315,17 @@ public class LuckyBlockManager {
         return section;
     }
 
+    /** Familles a afficher dans le GUI/shop : toutes les permanentes + les saisonnieres
+     * ACTUELLEMENT dans leur periode (voir LuckyBlockFamily#isActiveNow). Une famille saisonniere
+     * hors periode reste crafte/donnee/cassable normalement (voir getFamily), elle disparait juste
+     * de la vitrine tant que sa saison n'est pas active. */
     public List<LuckyBlockFamily> getFamiliesSorted() {
-        List<LuckyBlockFamily> sorted = new ArrayList<>(families.values());
+        List<LuckyBlockFamily> sorted = new ArrayList<>();
+        for (LuckyBlockFamily family : families.values()) {
+            if (family.isActiveNow()) {
+                sorted.add(family);
+            }
+        }
         sorted.sort(Comparator.comparingInt(LuckyBlockFamily::order));
         return sorted;
     }
@@ -455,10 +470,15 @@ public class LuckyBlockManager {
 
     // ---- Recettes de craft ----
 
+    /** (Re)enregistre les recettes de craft de toutes les familles ACTUELLEMENT actives (une
+     * famille saisonniere hors periode n'est pas craftable, seulement obtenable via
+     * /luckyblockadmin give ou en recompense). Appele au demarrage et a /luckyblockadmin reload :
+     * pour qu'une famille saisonniere redevienne craftable/non-craftable exactement au jour dit
+     * sans redemarrer le serveur, relancez simplement /luckyblockadmin reload ce jour-la. */
     public void registerRecipes() {
         unregisterRecipes();
         for (LuckyBlockFamily family : families.values()) {
-            if (family.recipe().isEmpty()) {
+            if (family.recipe().isEmpty() || !family.isActiveNow()) {
                 continue;
             }
             try {

@@ -148,6 +148,10 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
             messages.send(player, "luckyblock.non-achetable");
             return;
         }
+        if (!family.isActiveNow()) {
+            messages.send(player, "luckyblock.hors-saison");
+            return;
+        }
 
         double totalPrice = family.buyPrice() * quantity;
         if (!economyManager.has(player.getUniqueId(), totalPrice) || !economyManager.withdraw(player.getUniqueId(), totalPrice)) {

@@ -36,18 +36,15 @@ import java.util.concurrent.ThreadLocalRandom;
  * Traite l'utilisation de la Machine a Transformation :
  * - clic-droit avec un carburant (voir machine-transformation.carburants) en main -> ravitaille
  *   la machine (ajoute des charges et applique le cooldown de ce type de carburant) ;
- * - clic-droit avec l'objet d'amelioration en main -> augmente durablement la chance de reussite ;
- * - clic-droit a vide -> affiche l'etat (carburant restant, cooldown, bonus de reussite) ;
- * - clic-droit avec au moins MINERAIS_PAR_TRANSFORMATION minerais acceptes en main -> tente la
- *   transformation si du carburant est disponible et que le cooldown (par machine) est ecoule ;
- *   le lot de minerais est consomme dans tous les cas (1 seule charge de carburant, 1 seul jet de
- *   chance pour tout le lot), avec "chance-reussite" (+ bonus) % de le transformer en Lucky Block.
- *   En cas d'echec, il est perdu.
+ * - clic-droit avec l'objet d'amelioration en main -> augmente durablement la chance-luckyblock ;
+ * - clic-droit a vide -> affiche l'etat (carburant restant, cooldown, chance-luckyblock) ;
+ * - clic-droit avec un minerai accepte en main -> echange 1 minerai contre 1 loot des que du
+ *   carburant est disponible et que le cooldown (par machine) est ecoule : TOUJOURS une
+ *   recompense, jamais d'echec ni de perte. "chance-luckyblock" (+ bonus) % de chance d'obtenir
+ *   le Lucky Block de la famille ciblee ; le reste du temps, un item custom aleatoire pioche
+ *   parmi TOUS ceux charges depuis custom_items.yml.
  */
 public class MachineService {
-
-    /** Quantite de minerai consommee pour UNE transformation (= 1 charge de carburant, 1 seul jet de chance). */
-    private static final int MINERAIS_PAR_TRANSFORMATION = 10;
 
     private final Plugin plugin;
     private final MachineManager manager;
@@ -257,39 +254,27 @@ public class MachineService {
             return;
         }
 
-        if (inHand.getAmount() < MINERAIS_PAR_TRANSFORMATION) {
-            Map<String, String> placeholders = new HashMap<>();
-            placeholders.put("quantite", String.valueOf(MINERAIS_PAR_TRANSFORMATION));
-            placeholders.put("minerai", inHand.getType().name());
-            messages.send(player, "machine.minerai-insuffisant", placeholders);
-            return;
-        }
-
-        // Consomme MINERAIS_PAR_TRANSFORMATION exemplaires du minerai (1 seul jet de chance pour le lot)
-        // et relance le cooldown. Le carburant n'est consomme tout de suite que si le mode economique
-        // (carburant-uniquement-si-echec) est desactive, et jamais si le boost "carburant illimite" est actif.
+        // Echange 1 minerai contre 1 loot (plus de lot de 10) et relance le cooldown. Le carburant
+        // est toujours consomme (sauf boost "carburant illimite" actif) puisque chaque echange
+        // donne desormais TOUJOURS une recompense.
         Material ore = inHand.getType();
-        int remaining = inHand.getAmount() - MINERAIS_PAR_TRANSFORMATION;
+        int remaining = inHand.getAmount() - 1;
         player.getInventory().setItemInMainHand(remaining > 0 ? withAmount(inHand, remaining) : null);
-        boolean economyMode = manager.isConsumeFuelOnFailureOnly();
-        if (!unlimitedFuel && !economyMode) {
+        if (!unlimitedFuel) {
             manager.consumeCharge(machineBlock);
         }
         manager.markUsedNow(machineBlock);
 
         Location effectLocation = machineBlock.getLocation().add(0.5, 1.0, 0.5);
         double chance = manager.getEffectiveChance(machineBlock);
-        boolean success = ThreadLocalRandom.current().nextDouble(100.0) < chance;
-        manager.recordAttempt(player.getUniqueId(), ore, success);
+        boolean gotLuckyBlock = ThreadLocalRandom.current().nextDouble(100.0) < chance;
+        manager.recordAttempt(player.getUniqueId(), ore, gotLuckyBlock);
 
-        if (success) {
+        if (gotLuckyBlock) {
             manager.incrementStreak(machineBlock);
 
             ItemStack reward = luckyBlockManager.createItem(family);
-            Map<Integer, ItemStack> leftovers = player.getInventory().addItem(reward);
-            if (!leftovers.isEmpty()) {
-                leftovers.values().forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
-            }
+            giveItem(player, reward);
 
             effectLocation.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, effectLocation, 25, 0.4, 0.4, 0.4);
             player.playSound(effectLocation, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.3f);
@@ -301,26 +286,44 @@ public class MachineService {
             questService.registerProgress(player, QuestType.MACHINE_TRANSFORM, family.id(), 1);
         } else {
             manager.resetStreak(machineBlock);
-            if (!unlimitedFuel && economyMode) {
-                manager.consumeCharge(machineBlock);
-            }
-            effectLocation.getWorld().spawnParticle(Particle.SMOKE_NORMAL, effectLocation, 20, 0.4, 0.4, 0.4);
-            player.playSound(effectLocation, Sound.ENTITY_ITEM_BREAK, 1f, 0.7f);
-            messages.send(player, "machine.echec");
 
-            int recycled = (int) Math.floor(MINERAIS_PAR_TRANSFORMATION * manager.getRecyclagePourcent() / 100.0);
-            if (recycled > 0) {
-                ItemStack recycledStack = new ItemStack(ore, recycled);
-                Map<Integer, ItemStack> recycledLeftovers = player.getInventory().addItem(recycledStack);
-                recycledLeftovers.values().forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
-
+            CustomItemDefinition itemDefinition = pickRandomCustomItem();
+            if (itemDefinition == null) {
+                // Aucun item custom charge (config vide) : on retombe quand meme sur le Lucky Block
+                // pour ne jamais rien perdre.
+                giveItem(player, luckyBlockManager.createItem(family));
+                effectLocation.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, effectLocation, 25, 0.4, 0.4, 0.4);
+                player.playSound(effectLocation, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.3f);
                 Map<String, String> placeholders = new HashMap<>();
-                placeholders.put("quantite", String.valueOf(recycled));
-                placeholders.put("minerai", ore.name());
-                messages.send(player, "machine.recyclage", placeholders);
+                placeholders.put("caisse", family.displayName());
+                messages.send(player, "machine.reussite", placeholders);
+                questService.registerProgress(player, QuestType.MACHINE_TRANSFORM, family.id(), 1);
+            } else {
+                giveItem(player, customItemManager.createItem(itemDefinition));
+                effectLocation.getWorld().spawnParticle(Particle.END_ROD, effectLocation, 20, 0.4, 0.4, 0.4);
+                player.playSound(effectLocation, Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1f);
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("item", itemDefinition.displayName());
+                messages.send(player, "machine.reussite-item", placeholders);
             }
         }
         updateHologram(machineBlock);
+    }
+
+    /** Pioche un item custom au hasard parmi TOUS ceux charges depuis custom_items.yml, ou null si aucun. */
+    private CustomItemDefinition pickRandomCustomItem() {
+        List<CustomItemDefinition> items = customItemManager.getItemsSorted();
+        if (items.isEmpty()) {
+            return null;
+        }
+        return items.get(ThreadLocalRandom.current().nextInt(items.size()));
+    }
+
+    private void giveItem(Player player, ItemStack item) {
+        Map<Integer, ItemStack> leftovers = player.getInventory().addItem(item);
+        if (!leftovers.isEmpty()) {
+            leftovers.values().forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
+        }
     }
 
     /**
@@ -358,11 +361,11 @@ public class MachineService {
 
     /**
      * Auto-alimentation : si un/des conteneur(s) sont colles a la machine, pioche automatiquement
-     * MINERAIS_PAR_TRANSFORMATION minerais acceptes dans le conteneur d'entree des que le cooldown
-     * est ecoule (et qu'il reste du carburant), et depose le Lucky Block obtenu (en cas de reussite)
-     * dans le conteneur de sortie. Purement automatique, aucun joueur n'est implique. Si aucun
-     * minerai accepte n'est trouve en quantite suffisante dans l'entree, un petit indicateur
-     * (poudre rouge) apparait au-dessus pour signaler qu'il faut la reapprovisionner.
+     * 1 minerai accepte dans le conteneur d'entree des que le cooldown est ecoule (et qu'il reste
+     * du carburant), et depose TOUJOURS une recompense (Lucky Block ou item custom aleatoire) dans
+     * le conteneur de sortie. Purement automatique, aucun joueur n'est implique. Si aucun minerai
+     * accepte n'est trouve dans l'entree, un petit indicateur (poudre rouge) apparait au-dessus
+     * pour signaler qu'il faut la reapprovisionner.
      */
     private void tickAutoFeed(Block machineBlock) {
         if (!manager.isAutoAlimentationEnabled()) {
@@ -386,13 +389,12 @@ public class MachineService {
         // Parcourt les minerais acceptes dans leur ORDRE DE PRIORITE (celui declare dans
         // machine-transformation.minerais), pas l'ordre des cases du coffre : le premier minerai
         // prioritaire present dans l'entree est traite en premier, quelle que soit sa case.
-        // Ne retient que les piles d'au moins MINERAIS_PAR_TRANSFORMATION minerais : impossible de lancer
-        // une transformation partielle depuis un conteneur, comme pour le clic-droit manuel.
+        // 1 minerai = 1 loot : une seule unite suffit pour declencher un echange.
         Material match = null;
         int slot = -1;
         for (Material candidate : manager.getAcceptedMaterials()) {
             int candidateSlot = inputInventory.first(candidate);
-            if (candidateSlot >= 0 && inputInventory.getItem(candidateSlot).getAmount() >= MINERAIS_PAR_TRANSFORMATION) {
+            if (candidateSlot >= 0) {
                 match = candidate;
                 slot = candidateSlot;
                 break;
@@ -400,8 +402,7 @@ public class MachineService {
         }
 
         if (match == null) {
-            // Aucun minerai accepte (en quantite suffisante) trouve dans l'entree : petit indicateur
-            // visuel de reapprovisionnement.
+            // Aucun minerai accepte trouve dans l'entree : petit indicateur visuel de reapprovisionnement.
             Location warningLocation = containers.input().getLocation().add(0.5, 1.1, 0.5);
             containers.input().getWorld().spawnParticle(Particle.REDSTONE, warningLocation, 6, 0.2, 0.1, 0.2, 0.0,
                     new Particle.DustOptions(Color.RED, 1.2f));
@@ -415,7 +416,7 @@ public class MachineService {
         }
 
         ItemStack stack = inputInventory.getItem(slot);
-        int remainingInStack = stack.getAmount() - MINERAIS_PAR_TRANSFORMATION;
+        int remainingInStack = stack.getAmount() - 1;
         if (remainingInStack > 0) {
             stack.setAmount(remainingInStack);
             inputInventory.setItem(slot, stack);
@@ -423,48 +424,43 @@ public class MachineService {
             inputInventory.setItem(slot, null);
         }
 
-        boolean economyMode = manager.isConsumeFuelOnFailureOnly();
-        if (!economyMode) {
-            manager.consumeCharge(machineBlock);
-        }
+        manager.consumeCharge(machineBlock);
         manager.markUsedNow(machineBlock);
 
         Location effectLocation = machineBlock.getLocation().add(0.5, 1.0, 0.5);
-        boolean success = ThreadLocalRandom.current().nextDouble(100.0) < manager.getEffectiveChance(machineBlock);
-        if (success) {
+        boolean gotLuckyBlock = ThreadLocalRandom.current().nextDouble(100.0) < manager.getEffectiveChance(machineBlock);
+        if (gotLuckyBlock) {
             manager.incrementStreak(machineBlock);
 
             ItemStack reward = luckyBlockManager.createItem(family);
             Map<Integer, ItemStack> leftovers = outputInventory.addItem(reward);
             leftovers.values().forEach(leftover ->
                     containers.output().getWorld().dropItemNaturally(containers.output().getLocation(), leftover));
-            playAutoFeedEffects(effectLocation, true);
+            playAutoFeedEffects(effectLocation, false);
         } else {
             manager.resetStreak(machineBlock);
-            if (economyMode) {
-                manager.consumeCharge(machineBlock);
-            }
-            playAutoFeedEffects(effectLocation, false);
 
-            int recycled = (int) Math.floor(MINERAIS_PAR_TRANSFORMATION * manager.getRecyclagePourcent() / 100.0);
-            if (recycled > 0) {
-                ItemStack recycledStack = new ItemStack(match, recycled);
-                Map<Integer, ItemStack> recycledLeftovers = outputInventory.addItem(recycledStack);
-                recycledLeftovers.values().forEach(leftover ->
-                        containers.output().getWorld().dropItemNaturally(containers.output().getLocation(), leftover));
-            }
+            CustomItemDefinition itemDefinition = pickRandomCustomItem();
+            ItemStack reward = itemDefinition != null
+                    ? customItemManager.createItem(itemDefinition) : luckyBlockManager.createItem(family);
+            Map<Integer, ItemStack> leftovers = outputInventory.addItem(reward);
+            leftovers.values().forEach(leftover ->
+                    containers.output().getWorld().dropItemNaturally(containers.output().getLocation(), leftover));
+            playAutoFeedEffects(effectLocation, itemDefinition != null);
         }
         updateHologram(machineBlock);
     }
 
-    private void playAutoFeedEffects(Location location, boolean success) {
+    /** Effet de particules a chaque echange auto-alimente reussi (toujours une recompense) :
+     * villageois content pour un Lucky Block, END_ROD pour un item custom. */
+    private void playAutoFeedEffects(Location location, boolean isCustomItem) {
         World world = location.getWorld();
-        if (success) {
+        if (isCustomItem) {
+            world.spawnParticle(Particle.END_ROD, location, 20, 0.4, 0.4, 0.4);
+            world.playSound(location, Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1f);
+        } else {
             world.spawnParticle(Particle.VILLAGER_HAPPY, location, 25, 0.4, 0.4, 0.4);
             world.playSound(location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.3f);
-        } else {
-            world.spawnParticle(Particle.SMOKE_NORMAL, location, 20, 0.4, 0.4, 0.4);
-            world.playSound(location, Sound.ENTITY_ITEM_BREAK, 1f, 0.7f);
         }
     }
 

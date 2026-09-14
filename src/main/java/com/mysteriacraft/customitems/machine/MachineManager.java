@@ -55,9 +55,10 @@ public class MachineManager {
 
     /**
      * Un palier structurel de machine (Bronze/Argent/Or...) : son propre materiau de bloc, sa
-     * chance de reussite et son cooldown de base, sa jauge de carburant affichee, et l'id de
-     * l'objet custom ("kit") qui permet d'y acceder DEPUIS le tier precedent. kitItemId est null
-     * pour le tout premier tier (celui donne par /machine give, aucun kit necessaire).
+     * chance-luckyblock (probabilite d'obtenir le Lucky Block cible plutot qu'un item custom
+     * aleatoire) et son cooldown de base, sa jauge de carburant affichee, et l'id de l'objet
+     * custom ("kit") qui permet d'y acceder DEPUIS le tier precedent. kitItemId est null pour le
+     * tout premier tier (celui donne par /machine give, aucun kit necessaire).
      */
     public record MachineTier(String id, String displayName, Material block, double chance,
                                long cooldownSeconds, int fuelGaugeMax, String kitItemId) {
@@ -72,7 +73,8 @@ public class MachineManager {
         long activeCooldownSeconds = -1;
         double bonusReussite;
         UUID hologramUuid;
-        /** Nombre de reussites CONSECUTIVES (remis a 0 au premier echec), pour le bonus de streak. */
+        /** Nombre de Lucky Blocks CONSECUTIFS obtenus (remis a 0 des qu'un item custom sort a la
+         * place), pour le bonus de streak. */
         int streak;
     }
 
@@ -99,7 +101,6 @@ public class MachineManager {
     private double bonusPerUpgrade = 5.0;
     private double bonusMax = 30.0;
     private boolean autoAlimentation = true;
-    private boolean carburantSeulementSiEchec = false;
     private int hologramSegments = 10;
     private int hologramFuelGaugeMaxDefault = 20;
     private boolean hologramCompact = false;
@@ -107,11 +108,10 @@ public class MachineManager {
      * de traitement de l'auto-alimentation (le 1er minerai present dans le coffre d'entree est traite en premier). */
     private final Map<Material, String> acceptedOres = new LinkedHashMap<>();
 
-    /** Bonus de reussite temporaire accumule par reussite consecutive (remis a 0 au premier echec). */
+    /** Bonus de chance-luckyblock temporaire accumule par Lucky Block consecutif (remis a 0 des
+     * qu'un item custom sort a la place). */
     private double streakBonusPerSuccess = 0.0;
     private double streakBonusMax = 0.0;
-    /** % du lot de minerais rendu au joueur/conteneur de sortie en cas d'echec (0 = desactive). */
-    private double recyclagePourcent = 0.0;
 
     /** Boost "carburant illimite" actif par joueur (uuid -> timestamp d'expiration en ms), charge au demarrage. */
     private final Map<UUID, Long> fuelBoosts = new ConcurrentHashMap<>();
@@ -450,7 +450,7 @@ public class MachineManager {
                     block = Material.IRON_BLOCK;
                 }
                 String displayName = tierSection.getString("nom", tierId);
-                double chance = tierSection.getDouble("chance-reussite", 20.0);
+                double chance = tierSection.getDouble("chance-luckyblock", 20.0);
                 long cooldown = Math.max(0, tierSection.getLong("cooldown-secondes", 60L));
                 int fuelGaugeMax = Math.max(1, tierSection.getInt("jauge-carburant-max", hologramFuelGaugeMaxDefault));
                 String kitItemId = tierSection.contains("kit-item-id")
@@ -489,7 +489,6 @@ public class MachineManager {
         }
 
         autoAlimentation = section.getBoolean("auto-alimentation", true);
-        carburantSeulementSiEchec = section.getBoolean("carburant-uniquement-si-echec", false);
         hologramSegments = Math.max(1, section.getInt("hologramme-segments", 10));
         hologramCompact = section.getBoolean("hologramme-compact", false);
 
@@ -501,7 +500,6 @@ public class MachineManager {
             streakBonusPerSuccess = 0.0;
             streakBonusMax = 0.0;
         }
-        recyclagePourcent = Math.max(0, Math.min(100, section.getDouble("recyclage-pourcent", 0)));
 
         ConfigurationSection boostSection = section.getConfigurationSection("boost-carburant-illimite");
         if (boostSection != null) {
@@ -619,11 +617,6 @@ public class MachineManager {
         return autoAlimentation;
     }
 
-    /** Si true, le carburant n'est consomme que quand la transformation echoue (mode economique). */
-    public boolean isConsumeFuelOnFailureOnly() {
-        return carburantSeulementSiEchec;
-    }
-
     public int getHologramSegments() {
         return hologramSegments;
     }
@@ -699,10 +692,11 @@ public class MachineManager {
             meta.setDisplayName(MessageManager.color("&b&lMachine a Transformation"));
             meta.setLore(List.of(
                     MessageManager.color("&7Clic-droit avec un minerai en main"),
-                    MessageManager.color("&7pour tenter de le transformer"),
-                    MessageManager.color("&7en Lucky Block."),
+                    MessageManager.color("&7pour l'echanger : 1 minerai = 1 loot,"),
+                    MessageManager.color("&7toujours une recompense (Lucky Block"),
+                    MessageManager.color("&7ou item custom aleatoire)."),
                     MessageManager.color("&7Tier : " + baseTier.displayName()
-                            + " &7(&e" + (int) baseTier.chance() + "%&7 de reussite)"),
+                            + " &7(&e" + (int) baseTier.chance() + "%&7 de chance Lucky Block)"),
                     MessageManager.color("&7Necessite du carburant pour fonctionner."),
                     MessageManager.color("&7Clic a vide pour voir son etat.")
             ));
@@ -861,14 +855,14 @@ public class MachineManager {
         return (lastUse + getActiveCooldownSeconds(block) * 1000L) - System.currentTimeMillis();
     }
 
-    /** Bonus de reussite accumule sur cette machine grace aux ameliorations (0 par defaut). */
+    /** Bonus de chance-luckyblock accumule sur cette machine grace aux ameliorations (0 par defaut). */
     public double getBonusReussite(Block block) {
         MachineState state = machines.get(blockKey(block));
         return state == null ? 0.0 : state.bonusReussite;
     }
 
-    /** Ajoute du bonus de reussite (plafonne a bonus-max). Renvoie le nouveau total (0 si ce bloc
-     * n'est pas/plus une machine connue). */
+    /** Ajoute du bonus de chance-luckyblock (plafonne a bonus-max). Renvoie le nouveau total (0 si
+     * ce bloc n'est pas/plus une machine connue). */
     public double addBonusReussite(Block block, double amount) {
         Location key = blockKey(block);
         MachineState state = machines.get(key);
@@ -880,8 +874,9 @@ public class MachineManager {
         return state.bonusReussite;
     }
 
-    /** Chance de reussite effective de cette machine (chance du tier + bonus d'amelioration +
-     * bonus de streak en cours), plafonnee a 100%. */
+    /** Chance effective (chance du tier + bonus d'amelioration + bonus de streak en cours),
+     * plafonnee a 100%, d'obtenir le Lucky Block cible plutot qu'un item custom aleatoire a
+     * chaque minerai insere dans cette machine. */
     public double getEffectiveChance(Block block) {
         return Math.min(100.0, getBlockTier(block).chance() + getBonusReussite(block) + getStreakBonus(block));
     }
@@ -913,7 +908,7 @@ public class MachineManager {
         return state.streak;
     }
 
-    /** A appeler apres une transformation echouee : remet le streak a 0. */
+    /** A appeler quand un item custom sort a la place du Lucky Block : remet le streak a 0. */
     public void resetStreak(Block block) {
         Location key = blockKey(block);
         MachineState state = machines.get(key);
@@ -922,10 +917,5 @@ public class MachineManager {
         }
         state.streak = 0;
         persistAsync(key, state);
-    }
-
-    /** % du lot de minerais rendu en cas d'echec (0 = recyclage desactive). */
-    public double getRecyclagePourcent() {
-        return recyclagePourcent;
     }
 }

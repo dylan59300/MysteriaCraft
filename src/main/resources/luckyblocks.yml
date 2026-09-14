@@ -10,6 +10,13 @@
 # prix-achat : 0 = pas achetable directement via /luckyblock buy (uniquement craft ou recompense).
 # chance-bonne-base : % de chance d'un effet BON avant bonus de minerais (50 par defaut).
 # recette : ingredients d'un craft shapeless (n'importe quel agencement dans la table).
+# actif-du / actif-au : DEUX cles optionnelles (format "MM-jj", ex: "10-20") qui rendent une
+#                       famille SAISONNIERE (Halloween, Noel...) : n'apparait dans le GUI/shop et
+#                       n'est craftable QUE durant cette periode (gere le passage du nouvel an,
+#                       ex: "12-15" -> "01-05"). Absentes des deux cotes = famille permanente
+#                       (comportement normal). Hors periode, elle reste donnable/cassable via
+#                       /luckyblockadmin give ou en recompense ; relancez /luckyblockadmin reload
+#                       le jour du changement pour que le craft/GUI se mette a jour immediatement.
 #
 # effets[].type : BON | MAUVAIS
 # effets[].recompense (si BON) : ITEM, ECONOMIE, BOOST_XP, PET, LUCKYBLOCK,
@@ -315,3 +322,38 @@ familles:
           type: OBJET_CUSTOM
           item-id: armure_immortelle_casque
           quantite: 1
+
+  # Exemple de famille SAISONNIERE (voir actif-du/actif-au ci-dessus) : disponible seulement du
+  # 20 octobre au 5 novembre. Dupliquez ce modele pour un futur Lucky Block de Noel, etc.
+  halloween:
+    nom: "&6&lLucky Block Halloween"
+    materiel: CARVED_PUMPKIN
+    ordre: 5
+    actif-du: "10-20"
+    actif-au: "11-05"
+    prix-achat: 4000
+    chance-bonne-base: 50
+    recette:
+      - materiel: CARVED_PUMPKIN
+        quantite: 1
+      - materiel: RABBIT_FOOT
+        quantite: 1
+      - materiel: SPIDER_EYE
+        quantite: 1
+    effets:
+      - type: BON
+        chance: 40
+        recompense:
+          type: ITEM
+          materiel: JACK_O_LANTERN
+          quantite: 8
+      - type: BON
+        chance: 30
+        recompense:
+          type: ECONOMIE
+          montant: 5000
+      - type: BON
+        chance: 30
+        recompense:
+          type: PET
+          pet-id: renard

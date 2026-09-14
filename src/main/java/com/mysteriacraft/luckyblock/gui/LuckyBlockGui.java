@@ -97,6 +97,9 @@ public class LuckyBlockGui extends Menu {
 
     private ItemStack buildFamilyItem(LuckyBlockFamily family) {
         List<String> lore = new ArrayList<>();
+        if (family.isSaisonniere()) {
+            lore.add(messages.raw("luckyblock.gui-saisonniere"));
+        }
         lore.add(replace(messages.raw("luckyblock.gui-chance-base"), "chance", String.valueOf((int) family.baseGoodChance())));
         lore.add("");
         if (family.isPurchasable()) {
