@@ -2,6 +2,7 @@ package com.mysteriacraft.customitems.machine;
 
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -12,28 +13,43 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Charge la configuration de la Machine a Transformation (bloc, minerais acceptes -> famille
- * de Lucky Block cible, chance de reussite, carburant, cooldown) et fabrique/marque son bloc.
- * L'etat de chaque machine posee (charges de carburant restantes, horodatage de derniere
- * utilisation) est stocke directement sur le bloc via PersistentDataContainer (extension Paper).
+ * de Lucky Block cible, chance de reussite, types de carburant, amelioration) et fabrique/marque
+ * son bloc. L'etat de chaque machine posee (charges de carburant restantes, cooldown actif,
+ * bonus de reussite, horodatage de derniere utilisation) est stocke directement sur le bloc via
+ * PersistentDataContainer (extension Paper).
  */
 public class MachineManager {
+
+    /** Un type de carburant utilisable : charges qu'il apporte et cooldown qu'il impose tant qu'il est actif. */
+    public record FuelType(String itemId, int charges, long cooldownSeconds) {
+    }
 
     private final Plugin plugin;
     private final ConfigManager customItemsConfig;
     private final NamespacedKey machineKey;
     private final NamespacedKey fuelKey;
     private final NamespacedKey lastUseKey;
+    private final NamespacedKey activeCooldownKey;
+    private final NamespacedKey bonusReussiteKey;
+
+    /** Machines actuellement posees dans le monde, pour l'effet de particules ambiant (perdu au redemarrage). */
+    private final Set<Location> activeMachines = ConcurrentHashMap.newKeySet();
 
     private Material blockMaterial = Material.IRON_BLOCK;
     private double successChance = 20.0;
-    private long cooldownSeconds = 60L;
-    private String fuelItemId = "carburant";
-    private int chargesPerFuel = 5;
+    private long defaultCooldownSeconds = 60L;
+    private final Map<String, FuelType> fuelTypes = new LinkedHashMap<>();
+    private String upgradeItemId = "amelioration_machine";
+    private double bonusPerUpgrade = 5.0;
+    private double bonusMax = 30.0;
     private final Map<Material, String> acceptedOres = new HashMap<>();
 
     public MachineManager(Plugin plugin, ConfigManager customItemsConfig) {
@@ -42,11 +58,14 @@ public class MachineManager {
         this.machineKey = new NamespacedKey(plugin, "machine-transformation");
         this.fuelKey = new NamespacedKey(plugin, "machine-carburant");
         this.lastUseKey = new NamespacedKey(plugin, "machine-derniere-utilisation");
+        this.activeCooldownKey = new NamespacedKey(plugin, "machine-cooldown-actif");
+        this.bonusReussiteKey = new NamespacedKey(plugin, "machine-bonus-reussite");
         loadConfig();
     }
 
     public void loadConfig() {
         acceptedOres.clear();
+        fuelTypes.clear();
         ConfigurationSection section = customItemsConfig.get().getConfigurationSection("machine-transformation");
         if (section == null) {
             plugin.getLogger().warning("Section 'machine-transformation' manquante dans custom_items.yml.");
@@ -56,9 +75,30 @@ public class MachineManager {
         Material material = Material.matchMaterial(section.getString("bloc", "IRON_BLOCK"));
         blockMaterial = material != null ? material : Material.IRON_BLOCK;
         successChance = section.getDouble("chance-reussite", 20.0);
-        cooldownSeconds = section.getLong("cooldown-secondes", 60L);
-        fuelItemId = section.getString("carburant-item-id", "carburant");
-        chargesPerFuel = Math.max(1, section.getInt("charges-par-carburant", 5));
+        defaultCooldownSeconds = section.getLong("cooldown-secondes", 60L);
+
+        ConfigurationSection carburants = section.getConfigurationSection("carburants");
+        if (carburants != null) {
+            for (String itemId : carburants.getKeys(false)) {
+                ConfigurationSection fuelSection = carburants.getConfigurationSection(itemId);
+                if (fuelSection == null) {
+                    continue;
+                }
+                int charges = Math.max(1, fuelSection.getInt("charges", 5));
+                long cooldown = Math.max(0, fuelSection.getLong("cooldown-secondes", defaultCooldownSeconds));
+                fuelTypes.put(itemId.toLowerCase(), new FuelType(itemId.toLowerCase(), charges, cooldown));
+            }
+        }
+        if (fuelTypes.isEmpty()) {
+            plugin.getLogger().warning("Aucun carburant configure dans machine-transformation.carburants.");
+        }
+
+        ConfigurationSection amelioration = section.getConfigurationSection("amelioration");
+        if (amelioration != null) {
+            upgradeItemId = amelioration.getString("item-id", "amelioration_machine").toLowerCase();
+            bonusPerUpgrade = amelioration.getDouble("bonus-par-amelioration", 5.0);
+            bonusMax = amelioration.getDouble("bonus-max", 30.0);
+        }
 
         ConfigurationSection ores = section.getConfigurationSection("minerais");
         if (ores != null) {
@@ -72,7 +112,7 @@ public class MachineManager {
             }
         }
         plugin.getLogger().info("Machine a Transformation : " + acceptedOres.size() + " minerai(s) accepte(s), "
-                + successChance + "% de reussite, cooldown " + cooldownSeconds + "s, carburant '" + fuelItemId + "'.");
+                + successChance + "% de reussite de base, " + fuelTypes.size() + " type(s) de carburant.");
     }
 
     public Material getBlockMaterial() {
@@ -83,16 +123,37 @@ public class MachineManager {
         return successChance;
     }
 
-    public long getCooldownSeconds() {
-        return cooldownSeconds;
+    public long getDefaultCooldownSeconds() {
+        return defaultCooldownSeconds;
     }
 
-    public String getFuelItemId() {
-        return fuelItemId;
+    // ---- Carburant ----
+
+    public boolean isFuelType(String itemId) {
+        return itemId != null && fuelTypes.containsKey(itemId.toLowerCase());
     }
 
-    public int getChargesPerFuel() {
-        return chargesPerFuel;
+    public FuelType getFuelType(String itemId) {
+        return itemId == null ? null : fuelTypes.get(itemId.toLowerCase());
+    }
+
+    /** Le carburant "de base" (le premier declare dans la config), utilise pour les messages generiques. */
+    public FuelType getDefaultFuelType() {
+        return fuelTypes.values().stream().findFirst().orElse(null);
+    }
+
+    // ---- Amelioration ----
+
+    public String getUpgradeItemId() {
+        return upgradeItemId;
+    }
+
+    public double getBonusPerUpgrade() {
+        return bonusPerUpgrade;
+    }
+
+    public double getBonusMax() {
+        return bonusMax;
     }
 
     /** Famille de Lucky Block cible pour ce minerai, ou null si non accepte par la machine. */
@@ -131,9 +192,20 @@ public class MachineManager {
         return item;
     }
 
-    /** Marque un bloc pose comme etant la Machine a Transformation (charges/cooldown a 0 par defaut). */
+    /** Marque un bloc pose comme etant la Machine a Transformation et l'enregistre pour les particules ambiantes. */
     public void tagBlock(Block block) {
         block.getPersistentDataContainer().set(machineKey, PersistentDataType.BYTE, (byte) 1);
+        activeMachines.add(block.getLocation());
+    }
+
+    /** A appeler quand une machine est cassee, pour arreter ses particules ambiantes. */
+    public void forgetMachine(Location location) {
+        activeMachines.remove(location);
+    }
+
+    /** Emplacements de toutes les machines connues depuis le demarrage du plugin (effet de particules ambiant). */
+    public Set<Location> getActiveMachineLocations() {
+        return activeMachines;
     }
 
     public boolean isMachineBlock(Block block) {
@@ -147,7 +219,7 @@ public class MachineManager {
         return item.getItemMeta().getPersistentDataContainer().has(machineKey, PersistentDataType.BYTE);
     }
 
-    // ---- Etat de la machine (carburant, cooldown), stocke sur le bloc ----
+    // ---- Etat de la machine (carburant, cooldown, bonus), stocke sur le bloc ----
 
     public int getFuel(Block block) {
         Integer value = block.getPersistentDataContainer().get(fuelKey, PersistentDataType.INTEGER);
@@ -169,6 +241,16 @@ public class MachineManager {
         setFuel(block, getFuel(block) - 1);
     }
 
+    /** Cooldown actuellement applique par cette machine (herite du dernier carburant utilise). */
+    public long getActiveCooldownSeconds(Block block) {
+        Long value = block.getPersistentDataContainer().get(activeCooldownKey, PersistentDataType.LONG);
+        return value == null ? defaultCooldownSeconds : value;
+    }
+
+    public void setActiveCooldownSeconds(Block block, long seconds) {
+        block.getPersistentDataContainer().set(activeCooldownKey, PersistentDataType.LONG, Math.max(0, seconds));
+    }
+
     public long getLastUseMillis(Block block) {
         Long value = block.getPersistentDataContainer().get(lastUseKey, PersistentDataType.LONG);
         return value == null ? 0L : value;
@@ -184,6 +266,24 @@ public class MachineManager {
         if (lastUse == 0L) {
             return 0L;
         }
-        return (lastUse + cooldownSeconds * 1000L) - System.currentTimeMillis();
+        return (lastUse + getActiveCooldownSeconds(block) * 1000L) - System.currentTimeMillis();
+    }
+
+    /** Bonus de reussite accumule sur cette machine grace aux ameliorations (0 par defaut). */
+    public double getBonusReussite(Block block) {
+        Double value = block.getPersistentDataContainer().get(bonusReussiteKey, PersistentDataType.DOUBLE);
+        return value == null ? 0.0 : value;
+    }
+
+    /** Ajoute du bonus de reussite (plafonne a bonus-max). Renvoie le nouveau total. */
+    public double addBonusReussite(Block block, double amount) {
+        double newTotal = Math.min(bonusMax, getBonusReussite(block) + amount);
+        block.getPersistentDataContainer().set(bonusReussiteKey, PersistentDataType.DOUBLE, newTotal);
+        return newTotal;
+    }
+
+    /** Chance de reussite effective de cette machine (base + bonus d'amelioration), plafonnee a 100%. */
+    public double getEffectiveChance(Block block) {
+        return Math.min(100.0, successChance + getBonusReussite(block));
     }
 }

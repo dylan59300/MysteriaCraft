@@ -261,6 +261,9 @@ public final class MysteriaCraft extends JavaPlugin {
         this.machineService = new MachineService(machineManager, customItemManager, luckyBlockManager, messages);
         Bukkit.getPluginManager().registerEvents(new MachineListener(machineManager, machineService), this);
         getCommand("machine").setExecutor(new MachineCommand(customItemsConfig, machineManager, messages));
+
+        // Effet de particules ambiant (densite/couleur selon le niveau de carburant), toutes les 5 secondes.
+        Bukkit.getScheduler().runTaskTimer(this, machineService::tickAmbientParticles, 100L, 100L);
     }
 
     @Override

@@ -2,6 +2,9 @@ package com.mysteriacraft.customitems.machine.listeners;
 
 import com.mysteriacraft.customitems.machine.MachineManager;
 import com.mysteriacraft.customitems.machine.MachineService;
+import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -13,7 +16,8 @@ import org.bukkit.inventory.EquipmentSlot;
 
 /**
  * Marque la Machine a Transformation a sa pose, la fait dropper elle-meme a la casse (au lieu
- * du bloc brut), et delegue le clic-droit dessus au MachineService.
+ * du bloc brut) avec un effet d'explosion visuelle si elle etait encore chargee en carburant,
+ * et delegue le clic-droit dessus au MachineService.
  */
 public class MachineListener implements Listener {
 
@@ -38,6 +42,17 @@ public class MachineListener implements Listener {
         if (!manager.isMachineBlock(block)) {
             return;
         }
+
+        // Casser une machine encore chargee en carburant est risque : simple effet visuel/sonore,
+        // aucun degat reel n'est inflige au monde (pas de bloc detruit ni de joueur blesse).
+        if (manager.getFuel(block) > 0) {
+            Location center = block.getLocation().add(0.5, 0.5, 0.5);
+            center.getWorld().spawnParticle(Particle.EXPLOSION_LARGE, center, 3, 0.2, 0.2, 0.2);
+            center.getWorld().spawnParticle(Particle.SMOKE_LARGE, center, 25, 0.4, 0.4, 0.4);
+            center.getWorld().playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 1f, 0.9f);
+        }
+
+        manager.forgetMachine(block.getLocation());
         event.setDropItems(false);
         block.getWorld().dropItemNaturally(block.getLocation(), manager.createMachineItem());
     }

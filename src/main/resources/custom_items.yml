@@ -9,18 +9,32 @@
 # prix-vente : 0 = non revendable via /customitem sell.
 
 # Machine a Transformation : un bloc pose (voir /machine give) sur lequel on clique-droit avec
-# un minerai vanilla en main. chance-reussite % de le transformer en Lucky Block de la famille
-# indiquee (module LuckyBlock). En cas d'echec, le minerai est simplement perdu.
-# carburant-item-id : id (dans "items" ci-dessous) de l'objet custom a utiliser comme carburant.
-#                     Clic-droit sur la machine avec ce carburant en main la ravitaille.
-# charges-par-carburant : nombre de tentatives autorisees par unite de carburant consommee.
-# cooldown-secondes : delai minimum entre deux tentatives sur LA MEME machine (tous joueurs confondus).
+# un minerai vanilla en main. chance-reussite % (+ bonus d'amelioration, voir "amelioration"
+# ci-dessous) de le transformer en Lucky Block de la famille indiquee (module LuckyBlock).
+# En cas d'echec, le minerai est simplement perdu.
+# carburants : chaque entree est un objet custom (voir "items" ci-dessous) utilisable comme
+#              carburant. Clic-droit sur la machine avec l'un d'eux en main la ravitaille :
+#              charges = nombre de tentatives ajoutees, cooldown-secondes = delai applique aux
+#              PROCHAINES tentatives tant que la machine tourne sur ce type de carburant (un
+#              carburant ameliore peut donc a la fois donner plus de charges et reduire l'attente).
+# cooldown-secondes (racine) : cooldown par defaut d'une machine neuve, avant tout ravitaillement.
 machine-transformation:
   bloc: IRON_BLOCK
   chance-reussite: 20
   cooldown-secondes: 60
-  carburant-item-id: carburant
-  charges-par-carburant: 5
+  carburants:
+    carburant:
+      charges: 5
+      cooldown-secondes: 60
+    carburant_ameliore:
+      charges: 12
+      cooldown-secondes: 20
+  # Amelioration de machine : objet custom consommable qui augmente durablement la chance de
+  # reussite d'UNE machine (stockee sur son bloc), jusqu'a bonus-max.
+  amelioration:
+    item-id: amelioration_machine
+    bonus-par-amelioration: 5
+    bonus-max: 30
   minerais:
     COAL: commune
     RAW_IRON: commune
@@ -151,6 +165,34 @@ items:
       - "&7Clic-droit sur la machine pour la ravitailler."
     item-de-base: IRON_INGOT
     custom-model-data: 500011
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+
+  carburant_ameliore:
+    nom: "&6&lCarburant Ameliore"
+    lore:
+      - "&7Une version raffinee du carburant standard."
+      - "&7Donne plus de charges et reduit le"
+      - "&7temps de recharge de la machine."
+      - "&7Uniquement obtenable en recompense"
+      - "&7(crate, battlepass, quete, luckyblock)."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500012
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+
+  amelioration_machine:
+    nom: "&d&lAmelioration de Machine"
+    lore:
+      - "&7Clic-droit sur une Machine a Transformation"
+      - "&7pour augmenter durablement sa chance"
+      - "&7de reussite."
+      - "&7Uniquement obtenable en recompense"
+      - "&7(crate, battlepass, quete, luckyblock)."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500013
     minerais-source: []
     chance-drop: 0
     prix-vente: 0

@@ -9,21 +9,27 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Traite l'utilisation de la Machine a Transformation :
- * - clic-droit avec le carburant en main -> ravitaille la machine (ajoute des charges) ;
- * - clic-droit a vide -> affiche l'etat (carburant restant, cooldown) ;
+ * - clic-droit avec un carburant (voir machine-transformation.carburants) en main -> ravitaille
+ *   la machine (ajoute des charges et applique le cooldown de ce type de carburant) ;
+ * - clic-droit avec l'objet d'amelioration en main -> augmente durablement la chance de reussite ;
+ * - clic-droit a vide -> affiche l'etat (carburant restant, cooldown, bonus de reussite) ;
  * - clic-droit avec un minerai accepte en main -> tente la transformation si du carburant est
  *   disponible et que le cooldown (par machine) est ecoule ; le minerai est consomme dans tous
- *   les cas, avec "chance-reussite" % de le transformer en Lucky Block. En cas d'echec, il est perdu.
+ *   les cas, avec "chance-reussite" (+ bonus) % de le transformer en Lucky Block. En cas
+ *   d'echec, il est perdu.
  */
 public class MachineService {
 
@@ -48,8 +54,15 @@ public class MachineService {
             return;
         }
 
-        if (manager.getFuelItemId().equals(customItemManager.getCustomItemId(inHand))) {
-            refuel(player, machineBlock, inHand);
+        String customItemId = customItemManager.getCustomItemId(inHand);
+        MachineManager.FuelType fuelType = manager.getFuelType(customItemId);
+        if (fuelType != null) {
+            refuel(player, machineBlock, inHand, fuelType);
+            return;
+        }
+
+        if (customItemId != null && customItemId.equalsIgnoreCase(manager.getUpgradeItemId())) {
+            upgrade(player, machineBlock, inHand);
             return;
         }
 
@@ -59,6 +72,8 @@ public class MachineService {
     private void showStatus(Player player, Block machineBlock) {
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("carburant", String.valueOf(manager.getFuel(machineBlock)));
+        placeholders.put("bonus", formatBonus(manager.getBonusReussite(machineBlock)));
+        placeholders.put("chance", String.valueOf((int) manager.getEffectiveChance(machineBlock)));
 
         long remaining = manager.getRemainingCooldownMillis(machineBlock);
         if (remaining > 0) {
@@ -69,20 +84,44 @@ public class MachineService {
         }
     }
 
-    private void refuel(Player player, Block machineBlock, ItemStack fuelItem) {
+    private void refuel(Player player, Block machineBlock, ItemStack fuelItem, MachineManager.FuelType fuelType) {
         int remaining = fuelItem.getAmount() - 1;
         player.getInventory().setItemInMainHand(remaining > 0 ? withAmount(fuelItem, remaining) : null);
 
-        int newTotal = manager.addFuel(machineBlock, manager.getChargesPerFuel());
+        int newTotal = manager.addFuel(machineBlock, fuelType.charges());
+        manager.setActiveCooldownSeconds(machineBlock, fuelType.cooldownSeconds());
 
         Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("charges", String.valueOf(manager.getChargesPerFuel()));
+        placeholders.put("charges", String.valueOf(fuelType.charges()));
         placeholders.put("total", String.valueOf(newTotal));
+        placeholders.put("cooldown", formatDuration(fuelType.cooldownSeconds() * 1000L));
         messages.send(player, "machine.ravitaillee", placeholders);
 
         Location loc = machineBlock.getLocation().add(0.5, 1.0, 0.5);
         loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 15, 0.4, 0.4, 0.4);
         player.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 0.6f, 1.5f);
+    }
+
+    private void upgrade(Player player, Block machineBlock, ItemStack upgradeItem) {
+        double currentBonus = manager.getBonusReussite(machineBlock);
+        if (currentBonus >= manager.getBonusMax()) {
+            messages.send(player, "machine.amelioration-max");
+            return;
+        }
+
+        int remaining = upgradeItem.getAmount() - 1;
+        player.getInventory().setItemInMainHand(remaining > 0 ? withAmount(upgradeItem, remaining) : null);
+
+        double newBonus = manager.addBonusReussite(machineBlock, manager.getBonusPerUpgrade());
+
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("bonus", formatBonus(newBonus));
+        placeholders.put("chance", String.valueOf((int) manager.getEffectiveChance(machineBlock)));
+        messages.send(player, "machine.amelioration-effectuee", placeholders);
+
+        Location loc = machineBlock.getLocation().add(0.5, 1.0, 0.5);
+        loc.getWorld().spawnParticle(Particle.END_ROD, loc, 20, 0.3, 0.5, 0.3, 0.02);
+        player.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.6f);
     }
 
     private void attemptTransformation(Player player, Block machineBlock, ItemStack inHand) {
@@ -94,7 +133,7 @@ public class MachineService {
 
         if (manager.getFuel(machineBlock) <= 0) {
             Map<String, String> placeholders = new HashMap<>();
-            placeholders.put("carburant", customItemName());
+            placeholders.put("carburant", defaultFuelName());
             messages.send(player, "machine.sans-carburant", placeholders);
             return;
         }
@@ -120,7 +159,8 @@ public class MachineService {
         manager.markUsedNow(machineBlock);
 
         Location effectLocation = machineBlock.getLocation().add(0.5, 1.0, 0.5);
-        boolean success = ThreadLocalRandom.current().nextDouble(100.0) < manager.getSuccessChance();
+        double chance = manager.getEffectiveChance(machineBlock);
+        boolean success = ThreadLocalRandom.current().nextDouble(100.0) < chance;
 
         if (success) {
             ItemStack reward = luckyBlockManager.createItem(family);
@@ -142,9 +182,47 @@ public class MachineService {
         }
     }
 
-    private String customItemName() {
-        CustomItemDefinition definition = customItemManager.getItem(manager.getFuelItemId());
-        return definition != null ? definition.displayName() : manager.getFuelItemId();
+    /**
+     * Effet de particules ambiant, appele periodiquement depuis MysteriaCraft pour toutes les machines
+     * posees depuis le demarrage du plugin. La densite/couleur varie selon le niveau de carburant restant.
+     */
+    public void tickAmbientParticles() {
+        List<Location> stale = new ArrayList<>();
+        for (Location location : manager.getActiveMachineLocations()) {
+            World world = location.getWorld();
+            if (world == null || !world.isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4)) {
+                continue;
+            }
+            Block block = location.getBlock();
+            if (!manager.isMachineBlock(block)) {
+                stale.add(location);
+                continue;
+            }
+
+            Location effectLocation = location.clone().add(0.5, 1.1, 0.5);
+            int fuel = manager.getFuel(block);
+            if (fuel <= 0) {
+                world.spawnParticle(Particle.SMOKE_NORMAL, effectLocation, 1, 0.1, 0.1, 0.1, 0.0);
+            } else if (fuel < 5) {
+                world.spawnParticle(Particle.FLAME, effectLocation, 1, 0.15, 0.1, 0.15, 0.0);
+            } else {
+                world.spawnParticle(Particle.END_ROD, effectLocation, 2, 0.2, 0.15, 0.2, 0.0);
+            }
+        }
+        stale.forEach(manager::forgetMachine);
+    }
+
+    private String defaultFuelName() {
+        MachineManager.FuelType defaultFuel = manager.getDefaultFuelType();
+        if (defaultFuel == null) {
+            return "carburant";
+        }
+        CustomItemDefinition definition = customItemManager.getItem(defaultFuel.itemId());
+        return definition != null ? definition.displayName() : defaultFuel.itemId();
+    }
+
+    private String formatBonus(double bonus) {
+        return bonus == Math.floor(bonus) ? String.valueOf((int) bonus) : String.valueOf(bonus);
     }
 
     private ItemStack withAmount(ItemStack item, int amount) {

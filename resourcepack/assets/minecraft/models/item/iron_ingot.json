@@ -14,6 +14,8 @@
     { "predicate": { "custom_model_data": 500008 }, "model": "mysteriacraft:item/gem_amethyste" },
     { "predicate": { "custom_model_data": 500009 }, "model": "mysteriacraft:item/gem_peridot" },
     { "predicate": { "custom_model_data": 500010 }, "model": "mysteriacraft:item/gem_jade" },
-    { "predicate": { "custom_model_data": 500011 }, "model": "mysteriacraft:item/gem_carburant" }
+    { "predicate": { "custom_model_data": 500011 }, "model": "mysteriacraft:item/gem_carburant" },
+    { "predicate": { "custom_model_data": 500012 }, "model": "mysteriacraft:item/gem_carburant_ameliore" },
+    { "predicate": { "custom_model_data": 500013 }, "model": "mysteriacraft:item/gem_amelioration" }
   ]
 }
