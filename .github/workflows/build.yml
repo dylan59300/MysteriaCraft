@@ -1,0 +1,36 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Compiler avec Maven (mvn clean package)
+        run: mvn -B clean package
+
+      - name: Publier le jar compile
+        uses: actions/upload-artifact@v4
+        with:
+          name: MysteriaCraft-jar
+          # maven-shade-plugin garde aussi l'archive non-shadee sous "original-*.jar" : on ne
+          # publie que le jar final (avec sqlite-jdbc embarque) pour eviter toute confusion.
+          path: |
+            target/*.jar
+            !target/original-*.jar
+          if-no-files-found: error
