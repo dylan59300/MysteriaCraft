@@ -264,6 +264,18 @@ familles:
         recompense:
           type: ECONOMIE
           montant: 10000
+      - type: BON
+        chance: 20
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: armure_paladin_casque
+          quantite: 1
+      - type: BON
+        chance: 20
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: armure_paladin_bottes
+          quantite: 1
       - type: MAUVAIS
         chance: 50
         action: MOBS
@@ -283,6 +295,7 @@ familles:
     cooldown-secondes: 300
     prix-achat: 20000
     chance-bonne-base: 40
+    # Total des quantites = 9 maximum (limite Bukkit sur une recette sans forme, 1 par case de la table 3x3).
     recette:
       - materiel: NETHERITE_BLOCK
         quantite: 1
@@ -291,7 +304,7 @@ familles:
       - materiel: NETHER_STAR
         quantite: 1
       - materiel: ENDER_PEARL
-        quantite: 8
+        quantite: 6
     effets:
       - type: BON
         chance: 40
@@ -310,6 +323,30 @@ familles:
         recompense:
           type: ECONOMIE
           montant: 25000
+      - type: BON
+        chance: 15
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: epee_legendaire_dragon
+          quantite: 1
+      - type: BON
+        chance: 15
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: pioche_celeste
+          quantite: 1
+      - type: BON
+        chance: 15
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: hache_titan
+          quantite: 1
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: armure_immortelle_casque
+          quantite: 1
       - type: MAUVAIS
         chance: 60
         action: MOBS

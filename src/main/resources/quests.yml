@@ -43,8 +43,9 @@ quotidiennes:
     objectif: 32
     xp: 40
     recompense:
-      type: ECONOMIE
-      montant: 15
+      type: OBJET_CUSTOM
+      item-id: hache_bucheron
+      quantite: 1
 
   connexion_quotidienne:
     nom: "&bManger un repas"
@@ -66,8 +67,9 @@ hebdomadaires:
     objectif: 20
     xp: 400
     recompense:
-      type: ECONOMIE
-      montant: 500
+      type: OBJET_CUSTOM
+      item-id: pioche_mineur
+      quantite: 1
 
   pecher:
     nom: "&9Pecher"
@@ -99,9 +101,9 @@ hebdomadaires:
     objectif: 50
     xp: 350
     recompense:
-      type: ITEM
-      materiel: DIAMOND
-      quantite: 3
+      type: OBJET_CUSTOM
+      item-id: epee_guerrier
+      quantite: 1
 
   forger_diamant:
     nom: "&bFabriquer un outil en diamant"

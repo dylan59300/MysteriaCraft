@@ -8,6 +8,7 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -70,12 +71,11 @@ public class MiningMachineService {
         Location loc = machineBlock.getLocation().add(0.5, 1.0, 0.5);
         loc.getWorld().spawnParticle(Particle.LAVA, loc, 10, 0.4, 0.4, 0.4);
         player.playSound(loc, Sound.BLOCK_STONE_BREAK, 1f, 0.6f);
+        updateHologram(machineBlock);
     }
 
     private void showStatus(Player player, Block machineBlock) {
-        long total = manager.getTotalBlocks(machineBlock);
-        long mined = manager.getMinedBlocks(machineBlock);
-        int progress = total > 0 ? (int) (100.0 * mined / total) : 0;
+        int progress = progressPercent(machineBlock);
 
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("carburant", String.valueOf(manager.getFuel(machineBlock)));
@@ -86,6 +86,30 @@ public class MiningMachineService {
         } else {
             messages.send(player, "machine-miniere.statut-arretee", placeholders);
         }
+        updateHologram(machineBlock);
+    }
+
+    private int progressPercent(Block machineBlock) {
+        long total = manager.getTotalBlocks(machineBlock);
+        long mined = manager.getMinedBlocks(machineBlock);
+        return total > 0 ? (int) (100.0 * mined / total) : 0;
+    }
+
+    /** Met a jour le texte de l'hologramme : carburant restant et % du chunk actuel mine, ou "a
+     * l'arret" si aucune passe n'est en cours. */
+    private void updateHologram(Block machineBlock) {
+        ArmorStand stand = manager.getHologram(machineBlock);
+        if (stand == null) {
+            return;
+        }
+        String name;
+        if (manager.isActive(machineBlock)) {
+            name = "&b&lMachine a Miner &7- &e" + manager.getFuel(machineBlock) + " &7bloc(s) &7- &a"
+                    + progressPercent(machineBlock) + "%";
+        } else {
+            name = "&b&lMachine a Miner &7- &e" + manager.getFuel(machineBlock) + " &7bloc(s) &7- &7A l'arret";
+        }
+        stand.setCustomName(MessageManager.color(name));
     }
 
     /**
@@ -131,6 +155,7 @@ public class MiningMachineService {
                 world.spawnParticle(Particle.EXPLOSION_LARGE, effect, 3, 0.3, 0.3, 0.3);
                 world.playSound(effect, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
             }
+            updateHologram(block);
         }
         stale.forEach(manager::forgetMachine);
     }

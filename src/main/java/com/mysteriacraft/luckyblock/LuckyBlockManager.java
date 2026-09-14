@@ -479,12 +479,20 @@ public class LuckyBlockManager {
             if (family.recipe().isEmpty()) {
                 continue;
             }
-            NamespacedKey recipeKey = recipeKey(family.id());
-            ShapelessRecipe recipe = new ShapelessRecipe(recipeKey, createItem(family));
-            for (RecipeIngredient ingredient : family.recipe()) {
-                recipe.addIngredient(ingredient.amount(), ingredient.material());
+            try {
+                NamespacedKey recipeKey = recipeKey(family.id());
+                ShapelessRecipe recipe = new ShapelessRecipe(recipeKey, createItem(family));
+                for (RecipeIngredient ingredient : family.recipe()) {
+                    recipe.addIngredient(ingredient.amount(), ingredient.material());
+                }
+                Bukkit.addRecipe(recipe);
+            } catch (IllegalArgumentException e) {
+                // Ex: total des quantites > 9 (limite Bukkit pour une recette sans forme).
+                // Une recette invalide dans luckyblocks.yml ne doit jamais empecher le plugin
+                // entier de demarrer : on l'ignore simplement (le Lucky Block reste obtenable
+                // via /luckyblockadmin give ou en recompense).
+                plugin.getLogger().severe("Recette invalide pour le Lucky Block '" + family.id() + "' : " + e.getMessage());
             }
-            Bukkit.addRecipe(recipe);
         }
     }
 

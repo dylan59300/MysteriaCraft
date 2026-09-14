@@ -87,12 +87,16 @@ public class CustomItemManager {
                 continue;
             }
 
-            ShapedRecipe recipe = new ShapedRecipe(key, createItem(definition));
-            recipe.shape(definition.recipeShape().toArray(new String[0]));
-            for (Map.Entry<Character, Material> entry : definition.recipeIngredients().entrySet()) {
-                recipe.setIngredient(entry.getKey(), entry.getValue());
-            }
+            // shape()/setIngredient() peuvent eux aussi lancer IllegalArgumentException (forme
+            // invalide, caractere absent de la forme...) : toute la construction de la recette est
+            // donc protegee, pas seulement addRecipe(), pour qu'une recette mal configuree dans
+            // custom_items.yml n'empeche jamais le plugin entier de demarrer.
             try {
+                ShapedRecipe recipe = new ShapedRecipe(key, createItem(definition));
+                recipe.shape(definition.recipeShape().toArray(new String[0]));
+                for (Map.Entry<Character, Material> entry : definition.recipeIngredients().entrySet()) {
+                    recipe.setIngredient(entry.getKey(), entry.getValue());
+                }
                 Bukkit.addRecipe(recipe);
             } catch (IllegalArgumentException e) {
                 plugin.getLogger().severe("Recette invalide pour l'item custom '" + definition.id() + "' : " + e.getMessage());

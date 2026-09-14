@@ -4,12 +4,17 @@ import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.core.storage.Database;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -21,16 +26,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 
 /**
  * Charge la configuration de la Machine a Miner (mining_machine.yml) et suit l'etat de chaque
- * machine posee : carburant restant (en "blocs minables"), curseur de progression dans le chunk
- * en cours, et si elle est active. Comme MachineManager (Machine a Transformation), un Block "nu"
- * n'a pas de PersistentDataContainer sur paper-api 1.20.1 : l'etat est donc suivi via une table
- * SQLite dediee indexee par position, mise en cache memoire (write-through).
+ * machine posee : proprietaire, carburant restant (en "blocs minables"), curseur de progression
+ * dans le chunk en cours, si elle est active, et son hologramme. Comme MachineManager (Machine a
+ * Transformation), un Block "nu" n'a pas de PersistentDataContainer sur paper-api 1.20.1 : l'etat
+ * est donc suivi via une table SQLite dediee indexee par position, mise en cache memoire
+ * (write-through).
  */
 public class MiningMachineManager {
 
@@ -39,6 +48,7 @@ public class MiningMachineManager {
     }
 
     private static final class MachineState {
+        UUID owner;
         int fuelBlocks;
         boolean active;
         /** Index dans l'ordre de parcours du chunk (x*16+z)*hauteur + offsetY ; -1 = jamais demarree. */
@@ -48,6 +58,7 @@ public class MiningMachineManager {
         int chunkOriginZ;
         long totalBlocks;
         long minedBlocks;
+        UUID hologramUuid;
     }
 
     private final Plugin plugin;
@@ -64,6 +75,7 @@ public class MiningMachineManager {
     private int hauteurMin = -32;
     private int hauteurMax = 64;
     private int blocsParTick = 40;
+    private int maxPerPlayer = 5;
 
     public MiningMachineManager(Plugin plugin, Database database, ConfigManager configManager) {
         this.plugin = plugin;
@@ -81,6 +93,7 @@ public class MiningMachineManager {
                 "x INTEGER NOT NULL, " +
                 "y INTEGER NOT NULL, " +
                 "z INTEGER NOT NULL, " +
+                "proprietaire TEXT, " +
                 "carburant INTEGER NOT NULL DEFAULT 0, " +
                 "actif INTEGER NOT NULL DEFAULT 0, " +
                 "curseur INTEGER NOT NULL DEFAULT -1, " +
@@ -88,6 +101,7 @@ public class MiningMachineManager {
                 "chunk_origine_z INTEGER NOT NULL DEFAULT 0, " +
                 "total_blocs INTEGER NOT NULL DEFAULT 0, " +
                 "blocs_mines INTEGER NOT NULL DEFAULT 0, " +
+                "hologramme_uuid TEXT, " +
                 "PRIMARY KEY (monde, x, y, z)" +
                 ");";
         Connection connection = database.getConnection();
@@ -100,8 +114,8 @@ public class MiningMachineManager {
 
     private void loadMachines() {
         machines.clear();
-        String select = "SELECT monde, x, y, z, carburant, actif, curseur, chunk_origine_x, "
-                + "chunk_origine_z, total_blocs, blocs_mines FROM machines_minieres;";
+        String select = "SELECT monde, x, y, z, proprietaire, carburant, actif, curseur, chunk_origine_x, "
+                + "chunk_origine_z, total_blocs, blocs_mines, hologramme_uuid FROM machines_minieres;";
         Connection connection = database.getConnection();
         try (PreparedStatement statement = connection.prepareStatement(select);
              ResultSet rs = statement.executeQuery()) {
@@ -112,6 +126,14 @@ public class MiningMachineManager {
                 }
                 Location location = new Location(world, rs.getInt("x"), rs.getInt("y"), rs.getInt("z"));
                 MachineState state = new MachineState();
+                String ownerRaw = rs.getString("proprietaire");
+                if (ownerRaw != null) {
+                    try {
+                        state.owner = UUID.fromString(ownerRaw);
+                    } catch (IllegalArgumentException ignored) {
+                        // UUID corrompu : la machine reste sans proprietaire connu.
+                    }
+                }
                 state.fuelBlocks = rs.getInt("carburant");
                 state.active = rs.getInt("actif") != 0;
                 state.cursor = rs.getLong("curseur");
@@ -119,6 +141,14 @@ public class MiningMachineManager {
                 state.chunkOriginZ = rs.getInt("chunk_origine_z");
                 state.totalBlocks = rs.getLong("total_blocs");
                 state.minedBlocks = rs.getLong("blocs_mines");
+                String hologramRaw = rs.getString("hologramme_uuid");
+                if (hologramRaw != null) {
+                    try {
+                        state.hologramUuid = UUID.fromString(hologramRaw);
+                    } catch (IllegalArgumentException ignored) {
+                        // UUID corrompu : l'hologramme sera simplement recree au besoin.
+                    }
+                }
                 machines.put(location, state);
             }
         } catch (SQLException e) {
@@ -129,25 +159,29 @@ public class MiningMachineManager {
 
     private void persistAsync(Location location, MachineState state) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            String upsert = "INSERT INTO machines_minieres (monde, x, y, z, carburant, actif, curseur, "
-                    + "chunk_origine_x, chunk_origine_z, total_blocs, blocs_mines) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-                    + "ON CONFLICT(monde, x, y, z) DO UPDATE SET carburant = excluded.carburant, "
-                    + "actif = excluded.actif, curseur = excluded.curseur, chunk_origine_x = excluded.chunk_origine_x, "
-                    + "chunk_origine_z = excluded.chunk_origine_z, total_blocs = excluded.total_blocs, "
-                    + "blocs_mines = excluded.blocs_mines;";
+            String upsert = "INSERT INTO machines_minieres (monde, x, y, z, proprietaire, carburant, actif, curseur, "
+                    + "chunk_origine_x, chunk_origine_z, total_blocs, blocs_mines, hologramme_uuid) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    + "ON CONFLICT(monde, x, y, z) DO UPDATE SET proprietaire = excluded.proprietaire, "
+                    + "carburant = excluded.carburant, actif = excluded.actif, curseur = excluded.curseur, "
+                    + "chunk_origine_x = excluded.chunk_origine_x, chunk_origine_z = excluded.chunk_origine_z, "
+                    + "total_blocs = excluded.total_blocs, blocs_mines = excluded.blocs_mines, "
+                    + "hologramme_uuid = excluded.hologramme_uuid;";
             Connection connection = database.getConnection();
             try (PreparedStatement statement = connection.prepareStatement(upsert)) {
                 statement.setString(1, location.getWorld().getName());
                 statement.setInt(2, location.getBlockX());
                 statement.setInt(3, location.getBlockY());
                 statement.setInt(4, location.getBlockZ());
-                statement.setInt(5, state.fuelBlocks);
-                statement.setInt(6, state.active ? 1 : 0);
-                statement.setLong(7, state.cursor);
-                statement.setInt(8, state.chunkOriginX);
-                statement.setInt(9, state.chunkOriginZ);
-                statement.setLong(10, state.totalBlocks);
-                statement.setLong(11, state.minedBlocks);
+                statement.setString(5, state.owner != null ? state.owner.toString() : null);
+                statement.setInt(6, state.fuelBlocks);
+                statement.setInt(7, state.active ? 1 : 0);
+                statement.setLong(8, state.cursor);
+                statement.setInt(9, state.chunkOriginX);
+                statement.setInt(10, state.chunkOriginZ);
+                statement.setLong(11, state.totalBlocks);
+                statement.setLong(12, state.minedBlocks);
+                statement.setString(13, state.hologramUuid != null ? state.hologramUuid.toString() : null);
                 statement.executeUpdate();
             } catch (SQLException e) {
                 plugin.getLogger().severe("Erreur sauvegarde machine a miner : " + e.getMessage());
@@ -192,6 +226,7 @@ public class MiningMachineManager {
         hauteurMin = section.getInt("hauteur-min", -32);
         hauteurMax = Math.max(hauteurMin + 1, section.getInt("hauteur-max", 64));
         blocsParTick = Math.max(1, section.getInt("blocs-par-tick", 40));
+        maxPerPlayer = Math.max(0, section.getInt("max-machines-par-joueur", 5));
 
         ConfigurationSection carburants = section.getConfigurationSection("carburants");
         if (carburants != null) {
@@ -218,7 +253,8 @@ public class MiningMachineManager {
         ignoredMaterials.add(Material.BEDROCK);
 
         plugin.getLogger().info("Machine a Miner : " + fuelTypes.size() + " type(s) de carburant, "
-                + "zone " + largeur + "x" + largeur + " de Y" + hauteurMin + " a Y" + hauteurMax + ".");
+                + "zone " + largeur + "x" + largeur + " de Y" + hauteurMin + " a Y" + hauteurMax
+                + ", max " + maxPerPlayer + " par joueur.");
     }
 
     public Material getBlockMaterial() {
@@ -239,6 +275,10 @@ public class MiningMachineManager {
 
     public int getBlocsParTick() {
         return blocsParTick;
+    }
+
+    public int getMaxPerPlayer() {
+        return maxPerPlayer;
     }
 
     public boolean isIgnored(Material material) {
@@ -264,7 +304,7 @@ public class MiningMachineManager {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(MessageManager.color("&b&lMachine a Miner"));
-            meta.setLore(java.util.List.of(
+            meta.setLore(List.of(
                     MessageManager.color("&7Mine automatiquement un chunk entier"),
                     MessageManager.color("&7(" + largeur + "x" + largeur + ", de Y" + hauteurMin + " a Y" + hauteurMax + ")."),
                     MessageManager.color("&7Clic-droit avec du carburant pour"),
@@ -284,11 +324,15 @@ public class MiningMachineManager {
         return item.getItemMeta().getPersistentDataContainer().has(machineKey, PersistentDataType.BYTE);
     }
 
-    public void tagBlock(Block block) {
+    /** Marque un bloc pose comme etant une Machine a Miner appartenant a ce joueur, et fait
+     * apparaitre son hologramme d'etat. */
+    public void tagBlock(Block block, UUID owner) {
         Location key = blockKey(block);
         MachineState state = new MachineState();
+        state.owner = owner;
         machines.put(key, state);
         persistAsync(key, state);
+        spawnHologram(block);
     }
 
     public void forgetMachine(Location location) {
@@ -300,20 +344,36 @@ public class MiningMachineManager {
         return machines.containsKey(blockKey(block));
     }
 
-    public java.util.Set<Location> getActiveMachineLocations() {
+    public Set<Location> getActiveMachineLocations() {
         return machines.keySet();
     }
 
-    private static final org.bukkit.block.BlockFace[] ADJACENT_FACES = {
-            org.bukkit.block.BlockFace.NORTH, org.bukkit.block.BlockFace.SOUTH,
-            org.bukkit.block.BlockFace.EAST, org.bukkit.block.BlockFace.WEST,
-            org.bukkit.block.BlockFace.UP, org.bukkit.block.BlockFace.DOWN
+    /** UUID du proprietaire de cette machine (celui qui l'a posee), ou null si inconnu. */
+    public UUID getOwner(Block block) {
+        MachineState state = machines.get(blockKey(block));
+        return state == null ? null : state.owner;
+    }
+
+    /** Nombre de Machines a Miner actuellement suivies appartenant a ce joueur (chargees au
+     * demarrage + posees depuis). */
+    public int countOwnedMachines(UUID owner) {
+        int count = 0;
+        for (MachineState state : machines.values()) {
+            if (owner.equals(state.owner)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static final BlockFace[] ADJACENT_FACES = {
+            BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN
     };
 
     /** Premier coffre/coffre piege/baril/hopper colle a la machine (sortie des blocs mines), ou
      * null si aucun n'est colle (les blocs mines sont alors deposes au sol au pied de la machine). */
     public Block getOutputContainer(Block machineBlock) {
-        for (org.bukkit.block.BlockFace face : ADJACENT_FACES) {
+        for (BlockFace face : ADJACENT_FACES) {
             Block relative = machineBlock.getRelative(face);
             Material type = relative.getType();
             if (type == Material.CHEST || type == Material.TRAPPED_CHEST
@@ -322,6 +382,52 @@ public class MiningMachineManager {
             }
         }
         return null;
+    }
+
+    // ---- Hologramme d'etat (ArmorStand invisible affichant carburant/progression) ----
+
+    /** Fait apparaitre l'hologramme au-dessus du bloc, s'il n'en a pas deja un (ex: rechargement du plugin). */
+    public void spawnHologram(Block block) {
+        if (getHologram(block) != null) {
+            return;
+        }
+        Location key = blockKey(block);
+        MachineState state = machines.get(key);
+        if (state == null) {
+            return;
+        }
+        Location location = block.getLocation().add(0.5, 1.4, 0.5);
+        ArmorStand stand = (ArmorStand) block.getWorld().spawnEntity(location, EntityType.ARMOR_STAND);
+        stand.setInvisible(true);
+        stand.setMarker(true);
+        stand.setGravity(false);
+        stand.setSmall(true);
+        stand.setBasePlate(false);
+        stand.setCustomNameVisible(true);
+        stand.setCustomName(MessageManager.color("&b&lMachine a Miner"));
+        stand.setPersistent(true);
+        state.hologramUuid = stand.getUniqueId();
+        persistAsync(key, state);
+    }
+
+    public ArmorStand getHologram(Block block) {
+        MachineState state = machines.get(blockKey(block));
+        if (state == null || state.hologramUuid == null) {
+            return null;
+        }
+        Entity entity = Bukkit.getEntity(state.hologramUuid);
+        return entity instanceof ArmorStand stand ? stand : null;
+    }
+
+    public void removeHologram(Block block) {
+        ArmorStand stand = getHologram(block);
+        if (stand != null) {
+            stand.remove();
+        }
+        MachineState state = machines.get(blockKey(block));
+        if (state != null) {
+            state.hologramUuid = null;
+        }
     }
 
     // ---- Etat (carburant, progression) ----
@@ -362,7 +468,7 @@ public class MiningMachineManager {
             state.active = true;
             state.cursor = 0;
             state.minedBlocks = 0;
-            org.bukkit.Chunk chunk = block.getChunk();
+            Chunk chunk = block.getChunk();
             state.chunkOriginX = chunk.getX() * 16;
             state.chunkOriginZ = chunk.getZ() * 16;
             state.totalBlocks = (long) largeur * largeur * (hauteurMax - hauteurMin);
@@ -389,7 +495,7 @@ public class MiningMachineManager {
      * machine active ; onBlockMined est invoque pour chaque bloc reellement mine (bloc maintenant
      * remplace par de l'air, materiau d'origine transmis pour deposer l'item correspondant).
      */
-    public void tick(Block machineBlock, java.util.function.BiConsumer<Block, Material> onBlockMined) {
+    public void tick(Block machineBlock, BiConsumer<Block, Material> onBlockMined) {
         Location key = blockKey(machineBlock);
         MachineState state = machines.get(key);
         if (state == null || !state.active) {

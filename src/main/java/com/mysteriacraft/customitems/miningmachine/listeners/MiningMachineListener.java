@@ -12,9 +12,13 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * Marque la Machine a Miner a sa pose, empeche de la casser pendant qu'elle mine (sauf en sneak
- * ou avec la permission admin) et delegue le clic-droit dessus au MiningMachineService.
+ * Marque la Machine a Miner a sa pose (en respectant la limite par joueur), empeche de la casser
+ * pendant qu'elle mine (sauf en sneak ou avec la permission admin) et delegue le clic-droit dessus
+ * au MiningMachineService.
  */
 public class MiningMachineListener implements Listener {
 
@@ -30,9 +34,20 @@ public class MiningMachineListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
-        if (manager.isMachineItem(event.getItemInHand())) {
-            manager.tagBlock(event.getBlockPlaced());
+        if (!manager.isMachineItem(event.getItemInHand())) {
+            return;
         }
+
+        int max = manager.getMaxPerPlayer();
+        if (max > 0 && manager.countOwnedMachines(event.getPlayer().getUniqueId()) >= max) {
+            event.setCancelled(true);
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("max", String.valueOf(max));
+            messages.send(event.getPlayer(), "machine-miniere.limite-atteinte", placeholders);
+            return;
+        }
+
+        manager.tagBlock(event.getBlockPlaced(), event.getPlayer().getUniqueId());
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -49,6 +64,9 @@ public class MiningMachineListener implements Listener {
             return;
         }
 
+        // Ordre important : removeHologram() lit l'etat de la machine (encore present dans le
+        // cache) pour retrouver son hologramme ; forgetMachine() supprime cet etat juste apres.
+        manager.removeHologram(block);
         manager.forgetMachine(block.getLocation());
         event.setDropItems(false);
         block.getWorld().dropItemNaturally(block.getLocation(), manager.createMachineItem());

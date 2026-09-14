@@ -205,6 +205,7 @@ machine-miniere:
   protection-active: "&cImpossible de casser cette machine pendant qu'elle mine ! &7(maintenez shift pour forcer)"
   statut-active: "&b&lMachine a miner &7- &7carburant &e{carburant} &7bloc(s) &7- &7progression &e{progres}%"
   statut-arretee: "&b&lMachine a miner &7- &7carburant &e{carburant} &7bloc(s) &7- &7a l'arret"
+  limite-atteinte: "&cVous avez deja &e{max} &cMachines a Miner actives (limite atteinte). Recuperez-en une ailleurs pour en poser une nouvelle."
 
 generateur:
   usage: "&cUsage : /generateur <liste|give <joueur> <fer|or|diamant> [quantite]|reload>"

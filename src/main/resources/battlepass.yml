@@ -55,14 +55,15 @@ niveaux:
       materiel: DIAMOND
       quantite: 2
     premium:
-      type: ITEM
-      materiel: NETHERITE_SCRAP
-      quantite: 2
+      type: OBJET_CUSTOM
+      item-id: epee_apprenti
+      quantite: 1
   6:
     xp-requis: 1000
     gratuit:
-      type: ECONOMIE
-      montant: 250
+      type: OBJET_CUSTOM
+      item-id: carburant_minier
+      quantite: 1
     premium:
       type: ITEM
       materiel: DIAMOND
@@ -74,8 +75,9 @@ niveaux:
       materiel: EXPERIENCE_BOTTLE
       quantite: 8
     premium:
-      type: ECONOMIE
-      montant: 750
+      type: OBJET_CUSTOM
+      item-id: pioche_expert
+      quantite: 1
   8:
     xp-requis: 1900
     gratuit:
@@ -83,8 +85,8 @@ niveaux:
       materiel: DIAMOND
       quantite: 3
     premium:
-      type: ITEM
-      materiel: NETHERITE_INGOT
+      type: OBJET_CUSTOM
+      item-id: hache_demolisseur
       quantite: 1
   9:
     xp-requis: 2500
@@ -92,8 +94,8 @@ niveaux:
       type: ECONOMIE
       montant: 400
     premium:
-      type: ITEM
-      materiel: NETHER_STAR
+      type: OBJET_CUSTOM
+      item-id: armure_paladin_plastron
       quantite: 1
   10:
     xp-requis: 3200
