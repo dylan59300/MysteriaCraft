@@ -7,7 +7,7 @@ import com.mysteriacraft.core.reward.Reward;
  * (bons et mauvais) d'une meme famille.
  *
  * Selon kind, seuls certains champs sont pertinents :
- * - BON : reward (recompense donnee via RewardGiver, meme systeme que Crates/BattlePass/Quetes)
+ * - BON : reward (recompense donnee via RewardGiver, meme systeme que BattlePass/Quetes)
  * - MAUVAIS (badType == TNT) : intValue = nombre de TNT
  * - MAUVAIS (badType == MOBS) : stringValue = type d'entite, intValue = nombre de mobs
  * - MAUVAIS (badType == POTION) : stringValue = type d'effet, intValue = duree (ticks), amplifier

@@ -7,8 +7,8 @@
 # cible : materiau (BREAK_BLOCK/PLACE_BLOCK/CRAFT_ITEM/CONSUME_ITEM), type d'entite (KILL_MOB) ou
 #         id de famille Lucky Block (MACHINE_TRANSFORM). Absent = tout compte (FISH, MACHINE_TRANSFORM).
 # xp : ajoutee automatiquement au BattlePass a la completion.
-# recompense : ITEM, ECONOMIE, CLE_CAISSE (caisse + quantite), BOOST_XP (duree-secondes +
-#              multiplicateur), PET, LUCKYBLOCK, OBJET_CUSTOM ou GENERATEUR (type-id + quantite).
+# recompense : ITEM, ECONOMIE, BOOST_XP (duree-secondes + multiplicateur), PET, LUCKYBLOCK,
+#              OBJET_CUSTOM ou GENERATEUR (type-id + quantite).
 #              Donnee automatiquement a la completion (optionnel).
 
 quotidiennes:
@@ -54,10 +54,8 @@ quotidiennes:
     objectif: 1
     xp: 30
     recompense:
-      # Cle gratuite quotidienne pour la caisse commune : fidelise sans toucher a l'economie.
-      type: CLE_CAISSE
-      caisse: commune
-      quantite: 1
+      type: ECONOMIE
+      montant: 50
 
 hebdomadaires:
   miner_diamants:
@@ -89,9 +87,9 @@ hebdomadaires:
     objectif: 5
     xp: 350
     recompense:
-      type: CLE_CAISSE
-      caisse: commune
-      quantite: 1
+      type: OBJET_CUSTOM
+      item-id: carburant_legendaire
+      quantite: 3
 
   tuer_squelettes:
     nom: "&fTuer des squelettes"

@@ -5,7 +5,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 
 /**
- * Base commune pour tous les menus GUI du plugin (kits, crates, battlepass, quetes, pets...).
+ * Base commune pour tous les menus GUI du plugin (kits, battlepass, quetes, pets...).
  * Chaque menu sait construire son inventaire et reagir aux clics dedans.
  */
 public abstract class Menu {

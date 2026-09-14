@@ -332,7 +332,7 @@ public class GeneratorManager {
             ));
             if (type.rewardOnly()) {
                 lore.add(MessageManager.color("&5Uniquement obtenable en recompense"));
-                lore.add(MessageManager.color("&5(crate, battlepass, quete, luckyblock)."));
+                lore.add(MessageManager.color("&5(battlepass, quete, luckyblock)."));
             }
             meta.setLore(lore);
             meta.getPersistentDataContainer().set(generatorKey, PersistentDataType.BYTE, (byte) 1);

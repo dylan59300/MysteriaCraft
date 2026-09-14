@@ -5,18 +5,8 @@
 # et redecrit : AUCUN resource pack requis, tout fonctionne avec le client Minecraft standard.
 # minerais-source : blocs dont la casse a une chance (chance-drop, en %) de donner ce minerai.
 #                   Liste vide/absente = pas de source naturelle, uniquement obtenable en
-#                   recompense (crate/battlepass/quete/luckyblock via "type: OBJET_CUSTOM").
+#                   recompense (battlepass/quete/luckyblock via "type: OBJET_CUSTOM").
 # prix-vente : 0 = non revendable via /customitem sell.
-# caisse-auto : si true, cet item est automatiquement ajoute au tirage de TOUTES les caisses
-#               (module Crates) sans avoir a l'ajouter a la main dans crates.yml - y compris les
-#               caisses ajoutees plus tard. Vaut true PAR DEFAUT pour les items SANS source
-#               naturelle (minerais-source vide, donc deja "reward-only" par nature), false sinon
-#               (les minerais qui tombent deja en minant n'ont pas besoin d'etre aussi en caisse).
-#               Peut toujours etre force explicitement dans les deux sens.
-# caisse-chance : poids relatif utilise pour le tirage pondere de la caisse (echelle comparable
-#                 aux "chance" de crates.yml, generalement entre 2 et 50). Defaut : 2 (rare).
-# caisse-rarete : COMMUNE|RARE|EPIQUE|LEGENDAIRE, purement visuel (couleur du nom en caisse). Defaut : RARE.
-# caisse-quantite : quantite donnee quand cet item est tire en caisse. Defaut : 1.
 
 # Machine a Transformation : un bloc pose (voir /machine give ou /machine preset) sur lequel on
 # clique-droit avec un minerai vanilla en main. chance-reussite % du tier actuel (+ bonus
@@ -226,12 +216,11 @@ items:
       - "&7Une gemme legendaire, introuvable"
       - "&7dans la nature."
       - "&7Uniquement obtenable en recompense"
-      - "&7(crate, battlepass, quete, luckyblock)."
+      - "&7(battlepass, quete, luckyblock)."
     item-de-base: GREEN_DYE
     minerais-source: []
     chance-drop: 0
     prix-vente: 500
-    caisse-rarete: LEGENDAIRE
 
   carburant:
     nom: "&6Carburant de Machine"
@@ -281,13 +270,11 @@ items:
       - "&7carburant de Machine a Transformation :"
       - "&7enormement de charges, cooldown quasi nul."
       - "&7Uniquement obtenable en recompense"
-      - "&7(crate, battlepass, quete, luckyblock)."
+      - "&7(battlepass, quete, luckyblock)."
     item-de-base: DRAGON_BREATH
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
-    caisse-rarete: EPIQUE
-    caisse-chance: 3
 
   carburant_illimite:
     nom: "&e&lCarburant Illimite (24h)"
@@ -296,13 +283,11 @@ items:
       - "&7pour rendre GRATUITES toutes vos"
       - "&7transformations manuelles pendant 24h."
       - "&7Uniquement obtenable en recompense"
-      - "&7(crate, battlepass, quete, luckyblock)."
+      - "&7(battlepass, quete, luckyblock)."
     item-de-base: HEART_OF_THE_SEA
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
-    caisse-rarete: LEGENDAIRE
-    caisse-chance: 1
 
   amelioration_machine:
     nom: "&d&lAmelioration de Machine"
@@ -324,7 +309,6 @@ items:
         D: DIAMOND
         G: GOLD_INGOT
         N: NETHERITE_SCRAP
-    caisse-rarete: RARE
 
   kit_argent:
     nom: "&fKit d'Amelioration Argent"
@@ -336,7 +320,6 @@ items:
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
-    caisse-rarete: COMMUNE
     # Craftable a l'etabli : 8 lingots d'or autour d'un bloc de fer.
     recette:
       forme:
@@ -357,7 +340,6 @@ items:
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
-    caisse-rarete: RARE
     # Craftable a l'etabli : 8 diamants autour d'un bloc d'or.
     recette:
       forme:
@@ -378,8 +360,6 @@ items:
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
-    caisse-rarete: LEGENDAIRE
-    caisse-chance: 1
     # Craftable a l'etabli : 8 lingots de netherite autour d'une etoile du Nether.
     recette:
       forme:
@@ -400,7 +380,6 @@ items:
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
-    caisse-rarete: RARE
     # Craftable a l'etabli : 4 emeraudes + 4 lingots d'or autour d'un diamant.
     recette:
       forme:

@@ -52,7 +52,7 @@ public class CustomItemService implements RewardGiver.CustomItemGiveHandler {
         }
     }
 
-    /** Donne un item custom gratuitement (recompense de crate/battlepass/quete/luckyblock). */
+    /** Donne un item custom gratuitement (recompense de battlepass/quete/luckyblock). */
     @Override
     public void giveCustomItem(Player player, String customItemId, int amount) {
         CustomItemDefinition definition = manager.getItem(customItemId);

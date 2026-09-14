@@ -5,7 +5,6 @@ import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.customitems.CustomItemDefinition;
 import com.mysteriacraft.customitems.CustomItemManager;
 import com.mysteriacraft.customitems.CustomItemService;
-import com.mysteriacraft.crates.CrateManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -29,15 +28,13 @@ public class CustomItemCommand implements CommandExecutor {
     private final ConfigManager customItemsConfig;
     private final CustomItemManager manager;
     private final CustomItemService service;
-    private final CrateManager crateManager;
     private final MessageManager messages;
 
     public CustomItemCommand(ConfigManager customItemsConfig, CustomItemManager manager,
-                              CustomItemService service, CrateManager crateManager, MessageManager messages) {
+                              CustomItemService service, MessageManager messages) {
         this.customItemsConfig = customItemsConfig;
         this.manager = manager;
         this.service = service;
-        this.crateManager = crateManager;
         this.messages = messages;
     }
 
@@ -55,9 +52,6 @@ public class CustomItemCommand implements CommandExecutor {
             }
             customItemsConfig.reload();
             manager.loadItems();
-            // Re-synchronise les caisses avec les items custom "caisse-auto" a jour (nouveaux items,
-            // changements de caisse-chance/rarete...), voir CrateManager#syncAutoCustomItemRewards.
-            crateManager.loadCrates();
             messages.send(sender, "customitem.reload");
             return true;
         }

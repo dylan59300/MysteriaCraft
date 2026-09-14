@@ -80,7 +80,7 @@ public class PetService implements RewardGiver.PetUnlockHandler {
         });
     }
 
-    /** Debloque un pet gratuitement (recompense de crate/battlepass/quete). */
+    /** Debloque un pet gratuitement (recompense de battlepass/quete). */
     @Override
     public void unlockFromReward(Player player, String petId) {
         PetDefinition pet = petManager.getPet(petId);

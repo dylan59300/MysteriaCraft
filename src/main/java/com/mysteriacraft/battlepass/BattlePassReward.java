@@ -6,7 +6,7 @@ import org.bukkit.inventory.ItemStack;
 
 /**
  * Une recompense de palier de BattlePass (piste gratuite ou premium), enveloppant la Reward
- * generique partagee avec Crates/Quetes.
+ * generique partagee avec Quetes.
  */
 public record BattlePassReward(Reward reward) {
 

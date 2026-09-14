@@ -248,7 +248,7 @@ public class LuckyBlockManager {
         return new LuckyBlockFamily(id, displayName, material, order, cooldownSeconds, buyPrice, baseGoodChance, recipe, effects);
     }
 
-    /** Meme limitation que dans CrateManager : getOrDefault(k, "texte") ne compile pas sur une
+    /** Meme limitation que sur les Map issues de getMapList() : getOrDefault(k, "texte") ne compile pas sur une
      * Map&lt;?, ?&gt; (capture de type inconnue). On relit la valeur brute nous-memes. */
     private static String getOrDefault(Map<?, ?> map, String key, String fallback) {
         Object value = map.get(key);
@@ -292,7 +292,7 @@ public class LuckyBlockManager {
         };
     }
 
-    /** Convertit une Map issue de getMapList (loot Crates/LuckyBlock) en ConfigurationSection pour reutiliser RewardParser. */
+    /** Convertit une Map issue de getMapList (loot LuckyBlock) en ConfigurationSection pour reutiliser RewardParser. */
     private ConfigurationSection mapToSection(Map<String, Object> map) {
         if (map == null) {
             return null;

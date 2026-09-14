@@ -1,30 +1,25 @@
 package com.mysteriacraft.core.reward;
 
 import com.mysteriacraft.core.config.MessageManager;
-import com.mysteriacraft.crates.CrateManager;
 import com.mysteriacraft.economy.EconomyManager;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * Distribue une Reward a un joueur, quel que soit son type (objet, economie, cle de caisse,
- * boost xp). Instance partagee entre les modules Crates, BattlePass et Quetes pour eviter de
- * dupliquer cette logique dans chacun.
+ * Distribue une Reward a un joueur, quel que soit son type (objet, economie, boost xp...).
+ * Instance partagee entre les modules BattlePass et Quetes pour eviter de dupliquer cette
+ * logique dans chacun.
  *
  * BattlePassService est branche apres coup via setBattlePassService() pour casser la dependance
  * circulaire (BattlePassService a lui-meme besoin d'un RewardGiver pour honorer ses paliers).
  */
 public class RewardGiver {
 
-    private final Plugin plugin;
     private final EconomyManager economyManager;
-    private final CrateManager crateManager;
     private final MessageManager messages;
 
     private XpBoosterHandler boosterHandler;
@@ -33,10 +28,8 @@ public class RewardGiver {
     private CustomItemGiveHandler customItemGiveHandler;
     private GeneratorGiveHandler generatorGiveHandler;
 
-    public RewardGiver(Plugin plugin, EconomyManager economyManager, CrateManager crateManager, MessageManager messages) {
-        this.plugin = plugin;
+    public RewardGiver(EconomyManager economyManager, MessageManager messages) {
         this.economyManager = economyManager;
-        this.crateManager = crateManager;
         this.messages = messages;
     }
 
@@ -88,8 +81,6 @@ public class RewardGiver {
     public void give(Player player, Reward reward) {
         switch (reward.type()) {
             case ECONOMIE -> economyManager.deposit(player.getUniqueId(), reward.economyAmount());
-            case CLE_CAISSE -> Bukkit.getScheduler().runTaskAsynchronously(plugin,
-                    () -> crateManager.addKeys(player.getUniqueId(), reward.crateId(), reward.crateKeyAmount()));
             case BOOST_XP -> {
                 if (boosterHandler != null) {
                     boosterHandler.activateBooster(player, reward.boosterDurationSeconds(), reward.boosterMultiplier());
@@ -107,12 +98,12 @@ public class RewardGiver {
             }
             case OBJET_CUSTOM -> {
                 if (customItemGiveHandler != null) {
-                    customItemGiveHandler.giveCustomItem(player, reward.customItemId(), Math.max(1, reward.crateKeyAmount()));
+                    customItemGiveHandler.giveCustomItem(player, reward.customItemId(), Math.max(1, reward.amount()));
                 }
             }
             case GENERATEUR -> {
                 if (generatorGiveHandler != null) {
-                    generatorGiveHandler.giveGenerator(player, reward.customItemId(), Math.max(1, reward.crateKeyAmount()));
+                    generatorGiveHandler.giveGenerator(player, reward.customItemId(), Math.max(1, reward.amount()));
                 }
             }
             case ITEM -> giveItem(player, reward);

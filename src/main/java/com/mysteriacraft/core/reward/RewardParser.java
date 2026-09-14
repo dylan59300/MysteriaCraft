@@ -7,8 +7,7 @@ import org.bukkit.inventory.ItemStack;
 
 /**
  * Parse une Reward depuis une section YAML unique (utilise par BattlePass et Quetes, qui
- * decrivent chacun une seule recompense par section, contrairement a Crates dont la table de
- * loot est une liste de maps geree separement dans CrateManager).
+ * decrivent chacun une seule recompense par section).
  */
 public final class RewardParser {
 
@@ -23,7 +22,6 @@ public final class RewardParser {
 
         return switch (type) {
             case "ECONOMIE" -> parseEconomie(section);
-            case "CLE_CAISSE" -> parseCrateKey(section);
             case "BOOST_XP" -> parseXpBoost(section);
             case "PET" -> parsePet(section);
             case "LUCKYBLOCK" -> parseLuckyBlock(section);
@@ -88,18 +86,6 @@ public final class RewardParser {
         }
         ItemStack icon = new ItemBuilder(iconMaterial).name("&e" + displayName).build();
         return Reward.ofEconomy(amount, displayName, icon);
-    }
-
-    private static Reward parseCrateKey(ConfigurationSection section) {
-        String crateId = section.getString("caisse", "");
-        int amount = Math.max(1, section.getInt("quantite", 1));
-        String displayName = section.getString("nom", amount + " cle(s) - " + crateId);
-        Material iconMaterial = Material.matchMaterial(section.getString("icone", "TRIPWIRE_HOOK"));
-        if (iconMaterial == null) {
-            iconMaterial = Material.TRIPWIRE_HOOK;
-        }
-        ItemStack icon = new ItemBuilder(iconMaterial, amount).name("&e" + displayName).build();
-        return Reward.ofCrateKey(crateId, amount, displayName, icon);
     }
 
     private static Reward parseXpBoost(ConfigurationSection section) {

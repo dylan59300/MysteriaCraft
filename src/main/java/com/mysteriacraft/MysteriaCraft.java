@@ -21,11 +21,6 @@ import com.mysteriacraft.kits.KitManager;
 import com.mysteriacraft.kits.KitService;
 import com.mysteriacraft.kits.commands.KitCommand;
 import com.mysteriacraft.kits.commands.KitReloadCommand;
-import com.mysteriacraft.crates.CrateManager;
-import com.mysteriacraft.crates.CrateService;
-import com.mysteriacraft.crates.commands.CrateCommand;
-import com.mysteriacraft.crates.commands.CrateKeyCommand;
-import com.mysteriacraft.crates.commands.CrateReloadCommand;
 import com.mysteriacraft.battlepass.BattlePassManager;
 import com.mysteriacraft.battlepass.BattlePassService;
 import com.mysteriacraft.battlepass.commands.BattlePassAdminCommand;
@@ -80,9 +75,6 @@ public final class MysteriaCraft extends JavaPlugin {
     private KitManager kitManager;
     private KitService kitService;
 
-    private ConfigManager cratesConfig;
-    private CrateManager crateManager;
-    private CrateService crateService;
     private RewardGiver rewardGiver;
 
     private ConfigManager battlepassConfig;
@@ -119,17 +111,19 @@ public final class MysteriaCraft extends JavaPlugin {
         this.database = new Database(this, configManager.get().getString("base-de-donnees.fichier", "database.db"));
         database.connect();
 
-        // Listener generique pour tous les menus GUI (kits, crates, battlepass, quetes, pets...)
+        // Listener generique pour tous les menus GUI (kits, battlepass, quetes, pets...)
         Bukkit.getPluginManager().registerEvents(new MenuListener(), this);
 
         // ---- Module Economie ----
         setupEconomy();
 
+        // RewardGiver est partage par BattlePass et Quetes pour eviter de dupliquer la logique de
+        // distribution des recompenses. Le lien vers BattlePassService (pour BOOST_XP) est complete
+        // dans setupBattlePass() via setBoosterHandler().
+        this.rewardGiver = new RewardGiver(economyManager, messages);
+
         // ---- Module Kits ----
         setupKits();
-
-        // ---- Module Crates ----
-        setupCrates();
 
         // ---- Module BattlePass ----
         setupBattlePass();
@@ -180,22 +174,6 @@ public final class MysteriaCraft extends JavaPlugin {
 
         getCommand("kit").setExecutor(new KitCommand(this, kitManager, kitService, messages));
         getCommand("kitreload").setExecutor(new KitReloadCommand(kitsConfig, kitManager, messages));
-    }
-
-    private void setupCrates() {
-        this.cratesConfig = new ConfigManager(this, "crates.yml");
-        this.crateManager = new CrateManager(this, database, cratesConfig);
-
-        // RewardGiver est partage par Crates, BattlePass et Quetes : cree ici car il a besoin de
-        // crateManager (pour les recompenses de type CLE_CAISSE). Le lien vers BattlePassService
-        // (pour BOOST_XP) est complete dans setupBattlePass() via setBoosterHandler().
-        this.rewardGiver = new RewardGiver(this, economyManager, crateManager, messages);
-
-        this.crateService = new CrateService(this, crateManager, economyManager, rewardGiver, messages);
-
-        getCommand("crate").setExecutor(new CrateCommand(this, crateManager, crateService, economyManager, messages));
-        getCommand("cratekey").setExecutor(new CrateKeyCommand(this, crateManager, messages));
-        getCommand("cratereload").setExecutor(new CrateReloadCommand(cratesConfig, crateManager, messages));
     }
 
     private void setupBattlePass() {
@@ -262,14 +240,11 @@ public final class MysteriaCraft extends JavaPlugin {
         this.customItemManager = new CustomItemManager(this, customItemsConfig);
         this.customItemService = new CustomItemService(customItemManager, economyManager, messages);
         rewardGiver.setCustomItemGiveHandler(customItemService);
-        // Le module Crates est initialise AVANT celui-ci : on lui branche maintenant le module
-        // Custom Items pour qu'il synchronise les items "caisse-auto" dans toutes ses caisses.
-        crateManager.setCustomItemManager(customItemManager);
 
         Bukkit.getPluginManager().registerEvents(new CustomItemListener(customItemService), this);
 
         getCommand("customitem").setExecutor(
-                new CustomItemCommand(customItemsConfig, customItemManager, customItemService, crateManager, messages));
+                new CustomItemCommand(customItemsConfig, customItemManager, customItemService, messages));
 
         // Machine a Transformation : minerai -> Lucky Block (module luckyblock deja initialise avant celui-ci).
         this.machineManager = new MachineManager(this, database, customItemsConfig);

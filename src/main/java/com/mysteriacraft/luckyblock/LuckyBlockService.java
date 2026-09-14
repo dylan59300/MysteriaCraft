@@ -140,7 +140,7 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
         player.addPotionEffect(new PotionEffect(type, Math.max(20, durationTicks), Math.max(0, amplifier)));
     }
 
-    /** Donne un Lucky Block gratuitement (recompense de crate/battlepass/quete/autre Lucky Block). */
+    /** Donne un Lucky Block gratuitement (recompense de battlepass/quete/autre Lucky Block). */
     @Override
     public void giveLuckyBlock(Player player, String familyId) {
         LuckyBlockFamily family = manager.getFamily(familyId);

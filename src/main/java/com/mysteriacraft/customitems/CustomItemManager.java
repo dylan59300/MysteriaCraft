@@ -138,16 +138,8 @@ public class CustomItemManager {
             }
         }
 
-        // Defaut : reward-only (pas de source naturelle) => inclus automatiquement dans les caisses ;
-        // un minerai qui tombe deja en minant n'a pas besoin d'etre aussi tirable en caisse.
-        boolean crateAutoDefault = sourceOres.isEmpty();
-        boolean crateAuto = section.getBoolean("caisse-auto", crateAutoDefault);
-        double crateChance = section.getDouble("caisse-chance", 2.0);
-        String crateRarity = section.getString("caisse-rarete", "RARE");
-        int crateQuantity = Math.max(1, section.getInt("caisse-quantite", 1));
-
         return new CustomItemDefinition(id, displayName, lore, baseItem, sourceOres, dropChance,
-                sellPrice, recipeShape, recipeIngredients, crateAuto, crateChance, crateRarity, crateQuantity);
+                sellPrice, recipeShape, recipeIngredients);
     }
 
     public List<CustomItemDefinition> getItemsSorted() {

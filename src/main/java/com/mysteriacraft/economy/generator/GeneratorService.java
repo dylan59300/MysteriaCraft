@@ -128,7 +128,7 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
         }
     }
 
-    /** Donne un Generateur d'Argent (recompense de crate/battlepass/quete/luckyblock). */
+    /** Donne un Generateur d'Argent (recompense de battlepass/quete/luckyblock). */
     @Override
     public void giveGenerator(Player player, String generatorTypeId, int amount) {
         GeneratorManager.GeneratorType type = manager.getType(generatorTypeId);
