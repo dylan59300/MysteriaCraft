@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * Une famille de Lucky Block (ex: commune, rare), chargee depuis luckyblocks.yml.
- * Chaque famille a son propre pool d'effets et son propre cooldown.
+ * Chaque famille a son propre pool d'effets (aucun cooldown : se recasse immediatement).
  *
  * @param baseGoodChance chance de base (en %) d'obtenir un effet BON plutot que MAUVAIS,
  *                       avant tout bonus de minerai place a cote du bloc (50% par defaut).
@@ -17,7 +17,6 @@ public record LuckyBlockFamily(
         String displayName,
         Material blockMaterial,
         int order,
-        long cooldownSeconds,
         double buyPrice,
         double baseGoodChance,
         List<RecipeIngredient> recipe,

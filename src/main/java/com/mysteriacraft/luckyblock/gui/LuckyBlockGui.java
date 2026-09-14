@@ -98,7 +98,6 @@ public class LuckyBlockGui extends Menu {
     private ItemStack buildFamilyItem(LuckyBlockFamily family) {
         List<String> lore = new ArrayList<>();
         lore.add(replace(messages.raw("luckyblock.gui-chance-base"), "chance", String.valueOf((int) family.baseGoodChance())));
-        lore.add(replace(messages.raw("luckyblock.gui-cooldown"), "cooldown", String.valueOf(family.cooldownSeconds())));
         lore.add("");
         if (family.isPurchasable()) {
             lore.add(replace(messages.raw("luckyblock.gui-prix"), "prix", economyManager.format(family.buyPrice())));

@@ -4,12 +4,16 @@ import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.luckyblock.LuckyBlockFamily;
 import com.mysteriacraft.luckyblock.LuckyBlockManager;
 import com.mysteriacraft.luckyblock.LuckyBlockService;
+import com.mysteriacraft.luckyblock.gui.LuckyBlockOddsGui;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +23,8 @@ import java.util.Map;
  * et delegue sa casse au LuckyBlockService s'il s'agit bien d'un Lucky Block.
  * Gere aussi le bonus de minerais : poser un minerai a cote d'un Lucky Block (ou l'inverse)
  * augmente sa chance d'effet BON, selon le minerai (voir bonus-minerais dans luckyblocks.yml).
+ * Un clic droit avec un Lucky Block en main (sans etre accroupi sur un bloc, pour ne pas gener
+ * la pose normale) ouvre le GUI des loot disponibles pour cette famille.
  */
 public class LuckyBlockListener implements Listener {
 
@@ -70,6 +76,30 @@ public class LuckyBlockListener implements Listener {
             placeholders.put("max", String.valueOf((int) manager.getBonusMax()));
             messages.send(event.getPlayer(), "luckyblock.bonus-augmente", placeholders);
         }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onInteractWithItem(PlayerInteractEvent event) {
+        if (event.getHand() != EquipmentSlot.HAND) {
+            return;
+        }
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK && event.getAction() != Action.RIGHT_CLICK_AIR) {
+            return;
+        }
+        String familyId = manager.getFamilyIdFromItem(event.getItem());
+        if (familyId == null) {
+            return;
+        }
+        // Accroupi + clic sur un bloc : on laisse la pose normale se derouler.
+        if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getPlayer().isSneaking()) {
+            return;
+        }
+        LuckyBlockFamily family = manager.getFamily(familyId);
+        if (family == null) {
+            return;
+        }
+        event.setCancelled(true);
+        new LuckyBlockOddsGui(event.getPlayer(), family, null, messages).open();
     }
 
     @EventHandler(ignoreCancelled = true)

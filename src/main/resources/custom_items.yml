@@ -116,17 +116,30 @@ machine-transformation:
   # ORDRE DE PRIORITE pour l'auto-alimentation : quand plusieurs minerais acceptes sont presents
   # dans le coffre d'entree, celui declare EN PREMIER ici est traite en premier (peu importe sa
   # case dans le coffre). Range ici du plus rare au plus commun pour prioriser les gros gains.
+  # La valeur associee a chaque minerai est l'id de la famille de Lucky Block obtenue en echange
+  # (voir luckyblocks.yml) : un nouveau Lucky Block n'a donc besoin QUE d'une nouvelle ligne ici,
+  # aucun changement de code n'est necessaire pour qu'il fonctionne avec la machine.
   minerais:
-    NETHERITE_INGOT: rare
-    DIAMOND: rare
-    EMERALD: rare
+    # legendaire
+    NETHERITE_INGOT: legendaire
+    NETHERITE_SCRAP: legendaire
+    ANCIENT_DEBRIS: legendaire
+    # epique
+    DIAMOND: epique
+    EMERALD: epique
+    # rare
     GOLD_INGOT: rare
     RAW_GOLD: rare
+    LAPIS_LAZULI: rare
+    AMETHYST_SHARD: rare
+    # commune
     IRON_INGOT: commune
     RAW_IRON: commune
     COPPER_INGOT: commune
     RAW_COPPER: commune
     COAL: commune
+    REDSTONE: commune
+    QUARTZ: commune
 
 items:
   rubis:

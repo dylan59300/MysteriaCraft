@@ -3,7 +3,6 @@ package com.mysteriacraft.luckyblock;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.core.reward.RewardGiver;
 import com.mysteriacraft.economy.EconomyManager;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -14,7 +13,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -22,22 +20,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Orchestre la casse d'un Lucky Block : cooldown par joueur/famille (annule la casse tant qu'il
- * n'est pas ecoule, pour que le bloc reste utilisable plus tard), puis tirage pondere et
- * application de l'effet (bon via RewardGiver, mauvais via TNT/mobs/potion/foudre).
+ * Orchestre la casse d'un Lucky Block : tirage pondere (aucun cooldown, se recasse immediatement)
+ * et application de l'effet (bon via RewardGiver, mauvais via TNT/mobs/potion/foudre).
  * Gere aussi l'achat direct (/luckyblock buy) via la monnaie interne.
+ *
+ * IMPORTANT : tout est traite de maniere SYNCHRONE, dans le handler d'evenement lui-meme.
+ * BlockBreakEvent#setCancelled()/setDropItems() n'ont aucun effet si on les appelle apres que
+ * l'evenement a fini d'etre traite (ex: depuis un Bukkit.getScheduler().runTaskAsynchronously()
+ * puis un runTask() planifie pour plus tard) : Bukkit a deja casse le bloc et applique ses drops
+ * par defaut avant que ce code differe ne s'execute. C'est ce qui causait a la fois le Lucky Block
+ * qui se cassait quand meme pendant son cooldown et le drop du bloc vanilla brut (GOLD_BLOCK...)
+ * au lieu de l'effet attendu.
  */
 public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
 
-    private final Plugin plugin;
     private final LuckyBlockManager manager;
     private final EconomyManager economyManager;
     private final RewardGiver rewardGiver;
     private final MessageManager messages;
 
-    public LuckyBlockService(Plugin plugin, LuckyBlockManager manager, EconomyManager economyManager,
+    public LuckyBlockService(LuckyBlockManager manager, EconomyManager economyManager,
                               RewardGiver rewardGiver, MessageManager messages) {
-        this.plugin = plugin;
         this.manager = manager;
         this.economyManager = economyManager;
         this.rewardGiver = rewardGiver;
@@ -47,38 +50,17 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
     /** Appele par le listener sur BlockBreakEvent quand le bloc casse est un Lucky Block marque. */
     public void handleBreak(BlockBreakEvent event, LuckyBlockFamily family) {
         Player player = event.getPlayer();
-        // Lu maintenant : une fois le bloc reellement casse (event non annule), on desenregistre
-        // sa position (voir LuckyBlockManager#untagBlock) et son bonus de minerais serait perdu.
         double bonusPercent = manager.getBonus(event.getBlock());
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            long lastUsed = manager.getLastUsed(player.getUniqueId(), family.id());
-            long remainingMillis = (lastUsed + family.cooldownSeconds() * 1000L) - System.currentTimeMillis();
+        LuckyBlockEffect effect = manager.pickEffect(family, bonusPercent);
 
-            if (lastUsed > 0 && remainingMillis > 0) {
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    // Le bloc reste intact tant que le cooldown n'est pas ecoule.
-                    event.setCancelled(true);
-                    Map<String, String> placeholders = new HashMap<>();
-                    placeholders.put("temps", formatDuration(remainingMillis));
-                    messages.send(player, "luckyblock.cooldown", placeholders);
-                });
-                return;
-            }
-
-            manager.markUsed(player.getUniqueId(), family.id());
-            LuckyBlockEffect effect = manager.pickEffect(family, bonusPercent);
-
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                event.setDropItems(false);
-                manager.untagBlock(event.getBlock());
-                if (effect == null) {
-                    messages.send(player, "luckyblock.aucun-effet");
-                    return;
-                }
-                applyEffect(player, event.getBlock().getLocation(), effect);
-            });
-        });
+        event.setDropItems(false);
+        manager.untagBlock(event.getBlock());
+        if (effect == null) {
+            messages.send(player, "luckyblock.aucun-effet");
+            return;
+        }
+        applyEffect(player, event.getBlock().getLocation(), effect);
     }
 
     private void applyEffect(Player player, Location location, LuckyBlockEffect effect) {
@@ -185,25 +167,5 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
         placeholders.put("famille", family.displayName());
         placeholders.put("prix", economyManager.format(totalPrice));
         messages.send(player, "luckyblock.achat-reussi", placeholders);
-    }
-
-    /** Formate une duree en millisecondes en "XhYmZs" (n'affiche que les unites non nulles). */
-    private static String formatDuration(long millis) {
-        long totalSeconds = Math.max(0, millis / 1000);
-        long hours = totalSeconds / 3600;
-        long minutes = (totalSeconds % 3600) / 60;
-        long seconds = totalSeconds % 60;
-
-        StringBuilder builder = new StringBuilder();
-        if (hours > 0) {
-            builder.append(hours).append("h");
-        }
-        if (minutes > 0) {
-            builder.append(minutes).append("m");
-        }
-        if (hours == 0 && (seconds > 0 || builder.isEmpty())) {
-            builder.append(seconds).append("s");
-        }
-        return builder.toString();
     }
 }

@@ -3,9 +3,10 @@
 # =========================================
 # A la casse, le jeu tire d'abord BON ou MAUVAIS selon "chance-bonne-base" (50% par defaut) plus
 # l'eventuel bonus de minerais places a cote du bloc (voir bonus-minerais ci-dessous), puis tire
-# un effet precis au poids ("chance") au sein du pool correspondant (BON ou MAUVAIS).
+# un effet precis au poids ("chance") au sein du pool correspondant (BON ou MAUVAIS). Aucun
+# cooldown : un Lucky Block se recasse immediatement. Tous les mauvais loot ont ete retires : seuls
+# des effets BON sont configures ci-dessous, donc chaque casse donne toujours une recompense.
 #
-# cooldown-secondes : delai avant de pouvoir re-declencher un effet sur CETTE famille (par joueur).
 # prix-achat : 0 = pas achetable directement via /luckyblock buy (uniquement craft ou recompense).
 # chance-bonne-base : % de chance d'un effet BON avant bonus de minerais (50 par defaut).
 # recette : ingredients d'un craft shapeless (n'importe quel agencement dans la table).
@@ -153,7 +154,6 @@ familles:
     nom: "&6Lucky Block Commun"
     materiel: GOLD_BLOCK
     ordre: 1
-    cooldown-secondes: 30
     prix-achat: 300
     chance-bonne-base: 50
     recette:
@@ -178,21 +178,11 @@ familles:
         recompense:
           type: ECONOMIE
           montant: 250
-      - type: MAUVAIS
-        chance: 55
-        action: TNT
-        quantite: 1
-      - type: MAUVAIS
-        chance: 45
-        action: MOBS
-        mob: ZOMBIE
-        quantite: 3
 
   rare:
     nom: "&b&lLucky Block Rare"
     materiel: DIAMOND_BLOCK
     ordre: 2
-    cooldown-secondes: 90
     prix-achat: 2000
     chance-bonne-base: 50
     recette:
@@ -220,21 +210,11 @@ familles:
         recompense:
           type: ECONOMIE
           montant: 1000
-      - type: MAUVAIS
-        chance: 60
-        action: POTION
-        effet-potion: POISON
-        duree-secondes: 10
-        amplificateur: 1
-      - type: MAUVAIS
-        chance: 40
-        action: FOUDRE
 
   epique:
     nom: "&5&lLucky Block Epique"
     materiel: EMERALD_BLOCK
     ordre: 3
-    cooldown-secondes: 150
     prix-achat: 6000
     chance-bonne-base: 45
     recette:
@@ -276,23 +256,11 @@ familles:
           type: OBJET_CUSTOM
           item-id: armure_paladin_bottes
           quantite: 1
-      - type: MAUVAIS
-        chance: 50
-        action: MOBS
-        mob: WITHER_SKELETON
-        quantite: 2
-      - type: MAUVAIS
-        chance: 50
-        action: POTION
-        effet-potion: BLINDNESS
-        duree-secondes: 15
-        amplificateur: 1
 
   legendaire:
     nom: "&4&lLucky Block Legendaire"
     materiel: NETHERITE_BLOCK
     ordre: 4
-    cooldown-secondes: 300
     prix-achat: 20000
     chance-bonne-base: 40
     # Total des quantites = 9 maximum (limite Bukkit sur une recette sans forme, 1 par case de la table 3x3).
@@ -347,12 +315,3 @@ familles:
           type: OBJET_CUSTOM
           item-id: armure_immortelle_casque
           quantite: 1
-      - type: MAUVAIS
-        chance: 60
-        action: MOBS
-        mob: WITHER
-        quantite: 1
-      - type: MAUVAIS
-        chance: 40
-        action: TNT
-        quantite: 4

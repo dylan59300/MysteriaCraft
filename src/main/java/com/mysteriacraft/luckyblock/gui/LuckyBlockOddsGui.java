@@ -89,8 +89,12 @@ public class LuckyBlockOddsGui extends Menu {
 
     @Override
     public void handleClick(InventoryClickEvent event) {
-        if (event.getSlot() == BACK_SLOT && event.getWhoClicked() instanceof Player) {
-            parent.open();
+        if (event.getSlot() == BACK_SLOT && event.getWhoClicked() instanceof Player player) {
+            if (parent != null) {
+                parent.open();
+            } else {
+                player.closeInventory();
+            }
         }
         // Menu en lecture seule sinon : les autres clics sont ignores.
     }

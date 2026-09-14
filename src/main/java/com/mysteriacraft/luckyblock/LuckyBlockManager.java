@@ -28,13 +28,12 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Charge les familles de Lucky Block depuis luckyblocks.yml, gere le cooldown par joueur et
- * par famille (SQLite), le tirage pondere des effets, la fabrication de l'item (avec sa marque
+ * Charge les familles de Lucky Block depuis luckyblocks.yml (aucun cooldown : se recasse
+ * immediatement), le tirage pondere des effets, la fabrication de l'item (avec sa marque
  * PersistentDataContainer, valable pour un ItemStack) et l'enregistrement/desenregistrement des
  * recettes de craft.
  *
@@ -77,26 +76,10 @@ public class LuckyBlockManager {
         this.database = database;
         this.luckyBlocksConfig = luckyBlocksConfig;
         this.familyKey = new NamespacedKey(plugin, "luckyblock-famille");
-        createTable();
         createBlocksTable();
         loadPlacedBlocks();
         loadFamilies();
         registerRecipes();
-    }
-
-    private void createTable() {
-        String sql = "CREATE TABLE IF NOT EXISTS luckyblock_cooldowns (" +
-                "uuid TEXT NOT NULL, " +
-                "famille_id TEXT NOT NULL, " +
-                "derniere_utilisation INTEGER NOT NULL, " +
-                "PRIMARY KEY (uuid, famille_id)" +
-                ");";
-        Connection connection = database.getConnection();
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            plugin.getLogger().severe("Erreur creation table 'luckyblock_cooldowns' : " + e.getMessage());
-        }
     }
 
     private void createBlocksTable() {
@@ -243,7 +226,6 @@ public class LuckyBlockManager {
             material = Material.GOLD_BLOCK;
         }
         int order = section.getInt("ordre", 0);
-        long cooldownSeconds = section.getLong("cooldown-secondes", 30);
         double buyPrice = section.getDouble("prix-achat", 0);
         double baseGoodChance = section.getDouble("chance-bonne-base", 50.0);
 
@@ -267,7 +249,7 @@ public class LuckyBlockManager {
             }
         }
 
-        return new LuckyBlockFamily(id, displayName, material, order, cooldownSeconds, buyPrice, baseGoodChance, recipe, effects);
+        return new LuckyBlockFamily(id, displayName, material, order, buyPrice, baseGoodChance, recipe, effects);
     }
 
     /** Meme limitation que sur les Map issues de getMapList() : getOrDefault(k, "texte") ne compile pas sur une
@@ -506,36 +488,4 @@ public class LuckyBlockManager {
         return new NamespacedKey(plugin, "luckyblock-" + familyId.toLowerCase());
     }
 
-    // ---- Cooldown par joueur et par famille ----
-
-    public synchronized long getLastUsed(UUID uuid, String familyId) {
-        String select = "SELECT derniere_utilisation FROM luckyblock_cooldowns WHERE uuid = ? AND famille_id = ?;";
-        Connection connection = database.getConnection();
-        try (PreparedStatement statement = connection.prepareStatement(select)) {
-            statement.setString(1, uuid.toString());
-            statement.setString(2, familyId.toLowerCase());
-            try (ResultSet rs = statement.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getLong("derniere_utilisation");
-                }
-            }
-        } catch (SQLException e) {
-            plugin.getLogger().severe("Erreur lecture cooldown Lucky Block '" + familyId + "' pour " + uuid + " : " + e.getMessage());
-        }
-        return 0L;
-    }
-
-    public synchronized void markUsed(UUID uuid, String familyId) {
-        String upsert = "INSERT INTO luckyblock_cooldowns (uuid, famille_id, derniere_utilisation) VALUES (?, ?, ?) " +
-                "ON CONFLICT(uuid, famille_id) DO UPDATE SET derniere_utilisation = excluded.derniere_utilisation;";
-        Connection connection = database.getConnection();
-        try (PreparedStatement statement = connection.prepareStatement(upsert)) {
-            statement.setString(1, uuid.toString());
-            statement.setString(2, familyId.toLowerCase());
-            statement.setLong(3, System.currentTimeMillis());
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            plugin.getLogger().severe("Erreur mise a jour cooldown Lucky Block '" + familyId + "' pour " + uuid + " : " + e.getMessage());
-        }
-    }
 }

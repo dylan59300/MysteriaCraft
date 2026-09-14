@@ -214,7 +214,7 @@ public final class MysteriaCraft extends JavaPlugin {
     private void setupLuckyBlock() {
         this.luckyBlocksConfig = new ConfigManager(this, "luckyblocks.yml");
         this.luckyBlockManager = new LuckyBlockManager(this, database, luckyBlocksConfig);
-        this.luckyBlockService = new LuckyBlockService(this, luckyBlockManager, economyManager, rewardGiver, messages);
+        this.luckyBlockService = new LuckyBlockService(luckyBlockManager, economyManager, rewardGiver, messages);
         rewardGiver.setLuckyBlockGiveHandler(luckyBlockService);
 
         Bukkit.getPluginManager().registerEvents(new LuckyBlockListener(luckyBlockManager, luckyBlockService, messages), this);
