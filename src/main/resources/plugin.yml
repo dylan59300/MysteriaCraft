@@ -79,6 +79,10 @@ commands:
   customitem:
     description: Gere les minerais/objets custom (give admin, sell, reload admin)
     usage: /<command> <give <joueur> <id> [quantite]|sell <id>|reload>
+  machine:
+    description: Donne la Machine a Transformation ou recharge sa config (admin)
+    usage: /<command> <give <joueur> [quantite]|reload>
+    permission: mysteriacraft.machine.admin
 
 permissions:
   mysteriacraft.eco.admin:
@@ -119,4 +123,7 @@ permissions:
     default: op
   mysteriacraft.customitem.admin:
     description: Autorise la gestion admin des items custom (give, reload)
+    default: op
+  mysteriacraft.machine.admin:
+    description: Autorise la gestion admin de la Machine a Transformation (give, reload)
     default: op

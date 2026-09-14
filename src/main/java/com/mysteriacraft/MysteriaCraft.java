@@ -47,6 +47,10 @@ import com.mysteriacraft.customitems.CustomItemManager;
 import com.mysteriacraft.customitems.CustomItemService;
 import com.mysteriacraft.customitems.commands.CustomItemCommand;
 import com.mysteriacraft.customitems.listeners.CustomItemListener;
+import com.mysteriacraft.customitems.machine.MachineManager;
+import com.mysteriacraft.customitems.machine.MachineService;
+import com.mysteriacraft.customitems.machine.commands.MachineCommand;
+import com.mysteriacraft.customitems.machine.listeners.MachineListener;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -92,6 +96,8 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager customItemsConfig;
     private CustomItemManager customItemManager;
     private CustomItemService customItemService;
+    private MachineManager machineManager;
+    private MachineService machineService;
 
     @Override
     public void onEnable() {
@@ -249,6 +255,12 @@ public final class MysteriaCraft extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new CustomItemListener(customItemService), this);
 
         getCommand("customitem").setExecutor(new CustomItemCommand(customItemsConfig, customItemManager, customItemService, messages));
+
+        // Machine a Transformation : minerai -> Lucky Block (module luckyblock deja initialise avant celui-ci).
+        this.machineManager = new MachineManager(this, customItemsConfig);
+        this.machineService = new MachineService(machineManager, luckyBlockManager, messages);
+        Bukkit.getPluginManager().registerEvents(new MachineListener(machineManager, machineService), this);
+        getCommand("machine").setExecutor(new MachineCommand(customItemsConfig, machineManager, messages));
     }
 
     @Override

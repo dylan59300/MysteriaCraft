@@ -8,6 +8,24 @@
 #                   recompense (crate/battlepass/quete/luckyblock via "type: OBJET_CUSTOM").
 # prix-vente : 0 = non revendable via /customitem sell.
 
+# Machine a Transformation : un bloc pose (voir /machine give) sur lequel on clique-droit avec
+# un minerai vanilla en main. chance-reussite % de le transformer en cle... en Lucky Block de la
+# famille indiquee (module LuckyBlock). En cas d'echec, le minerai est simplement perdu.
+machine-transformation:
+  bloc: IRON_BLOCK
+  chance-reussite: 20
+  minerais:
+    COAL: commune
+    RAW_IRON: commune
+    IRON_INGOT: commune
+    RAW_COPPER: commune
+    COPPER_INGOT: commune
+    RAW_GOLD: rare
+    GOLD_INGOT: rare
+    DIAMOND: rare
+    EMERALD: rare
+    NETHERITE_INGOT: rare
+
 items:
   rubis:
     nom: "&cRubis Brut"

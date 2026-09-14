@@ -193,3 +193,13 @@ customitem:
   trouve: "&6&lTrouvaille ! &aVous avez trouve : &e{item}"
   give-effectue: "&a{joueur} a recu &e{quantite}x {item}&a."
   reload: "&aLes items custom ont ete recharges."
+
+machine:
+  usage: "&cUsage : /machine <give <joueur> [quantite]|reload>"
+  aucun-item: "&cVous devez tenir un minerai en main pour utiliser la machine."
+  minerai-non-accepte: "&cCe minerai n'est pas accepte par la machine."
+  famille-introuvable: "&cErreur : la famille de Lucky Block ciblee n'existe pas (verifiez la config)."
+  reussite: "&a&lTransformation reussie ! &aVous avez obtenu une caisse : &e{caisse}"
+  echec: "&c&lTransformation echouee... &7Le minerai a ete perdu."
+  give-effectue: "&a{joueur} a recu &e{quantite}x Machine a Transformation&a."
+  reload: "&aLa configuration de la machine a ete rechargee."
