@@ -346,7 +346,7 @@ public class MachineService {
         }
     }
 
-    /** Met a jour le texte de l'hologramme de cette machine (charges, chance, cooldown restant,
+    /** Met a jour le texte de l'hologramme de cette machine (charges, chance, barre de cooldown,
      * et faces d'entree/sortie de l'auto-alimentation si des conteneurs sont colles). */
     private void updateHologram(Block machineBlock) {
         ArmorStand stand = manager.getHologram(machineBlock);
@@ -356,10 +356,26 @@ public class MachineService {
         int fuel = manager.getFuel(machineBlock);
         int chance = (int) manager.getEffectiveChance(machineBlock);
         long remaining = manager.getRemainingCooldownMillis(machineBlock);
-        String etat = remaining > 0 ? "&c" + formatDuration(remaining) : "&aPrete";
+        String etat = remaining > 0
+                ? cooldownProgressBar(remaining, machineBlock) + " &c" + formatDuration(remaining)
+                : "&a[■■■■■■■■■■] Prete";
 
         String ligne1 = "&b&lMachine &7| &e" + fuel + " carburant &7| &e" + chance + "% &7| " + etat;
         stand.setCustomName(MessageManager.color(ligne1 + autoFeedSuffix(machineBlock)));
+    }
+
+    /** Barre "&a[■■■□□□□□□□]" indiquant la progression du cooldown (se remplit a mesure qu'il s'ecoule). */
+    private String cooldownProgressBar(long remainingMillis, Block machineBlock) {
+        int segments = 10;
+        long totalMillis = manager.getActiveCooldownSeconds(machineBlock) * 1000L;
+        double progress = totalMillis > 0
+                ? 1.0 - Math.min(1.0, Math.max(0.0, (double) remainingMillis / totalMillis))
+                : 1.0;
+        int filled = Math.max(0, Math.min(segments, (int) Math.round(progress * segments)));
+
+        StringBuilder bar = new StringBuilder("&e[&a").append("■".repeat(filled))
+                .append("&7").append("□".repeat(segments - filled)).append("&e]");
+        return bar.toString();
     }
 
     /** "&7| &aEntree: Nord &7| &6Sortie: Sud" (ou juste "Entree/Sortie: Nord" si un seul conteneur colle), vide sinon. */
