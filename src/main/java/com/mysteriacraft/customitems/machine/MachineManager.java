@@ -17,6 +17,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,6 +37,10 @@ public class MachineManager {
 
     /** Un type de carburant utilisable : charges qu'il apporte et cooldown qu'il impose tant qu'il est actif. */
     public record FuelType(String itemId, int charges, long cooldownSeconds) {
+    }
+
+    /** Les 2 conteneurs adjacents utilises par l'auto-alimentation (peuvent etre le meme bloc s'il n'y en a qu'un seul). */
+    public record AdjacentContainers(Block input, Block output) {
     }
 
     private final Plugin plugin;
@@ -58,6 +63,7 @@ public class MachineManager {
     private double bonusPerUpgrade = 5.0;
     private double bonusMax = 30.0;
     private boolean autoAlimentation = true;
+    private boolean carburantSeulementSiEchec = false;
     private final Map<Material, String> acceptedOres = new HashMap<>();
 
     private static final BlockFace[] ADJACENT_FACES = {
@@ -114,6 +120,7 @@ public class MachineManager {
         }
 
         autoAlimentation = section.getBoolean("auto-alimentation", true);
+        carburantSeulementSiEchec = section.getBoolean("carburant-uniquement-si-echec", false);
 
         ConfigurationSection ores = section.getConfigurationSection("minerais");
         if (ores != null) {
@@ -176,16 +183,33 @@ public class MachineManager {
         return autoAlimentation;
     }
 
-    /** Bloc adjacent (coffre ou baril) pouvant alimenter automatiquement cette machine, ou null. */
-    public Block getAdjacentChest(Block machineBlock) {
+    /** Si true, le carburant n'est consomme que quand la transformation echoue (mode economique). */
+    public boolean isConsumeFuelOnFailureOnly() {
+        return carburantSeulementSiEchec;
+    }
+
+    /**
+     * Conteneurs adjacents (coffre, coffre piege, baril ou hopper) utilises par l'auto-alimentation.
+     * Avec un seul conteneur colle, il sert a la fois d'entree (minerais) et de sortie (Lucky Blocks).
+     * Avec 2 conteneurs ou plus, le premier trouve (ordre nord/sud/est/ouest/haut/bas) sert d'entree
+     * et le second de sortie, pour separer minerais et recompenses. Renvoie null si aucun n'est colle.
+     */
+    public AdjacentContainers getAdjacentContainers(Block machineBlock) {
+        List<Block> found = new ArrayList<>();
         for (BlockFace face : ADJACENT_FACES) {
             Block relative = machineBlock.getRelative(face);
             Material type = relative.getType();
-            if (type == Material.CHEST || type == Material.TRAPPED_CHEST || type == Material.BARREL) {
-                return relative;
+            if (type == Material.CHEST || type == Material.TRAPPED_CHEST
+                    || type == Material.BARREL || type == Material.HOPPER) {
+                found.add(relative);
             }
         }
-        return null;
+        if (found.isEmpty()) {
+            return null;
+        }
+        Block input = found.get(0);
+        Block output = found.size() > 1 ? found.get(1) : input;
+        return new AdjacentContainers(input, output);
     }
 
     /** Famille de Lucky Block cible pour ce minerai, ou null si non accepte par la machine. */

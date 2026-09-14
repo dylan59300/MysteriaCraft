@@ -18,14 +18,20 @@
 #              PROCHAINES tentatives tant que la machine tourne sur ce type de carburant (un
 #              carburant ameliore peut donc a la fois donner plus de charges et reduire l'attente).
 # cooldown-secondes (racine) : cooldown par defaut d'une machine neuve, avant tout ravitaillement.
-# auto-alimentation : si true, coller un coffre ou un baril a la machine (n'importe quelle face)
-#                      lui permet de piocher automatiquement les minerais acceptes dedans (1 par
-#                      cooldown ecoule) sans avoir a cliquer, et d'y deposer les Lucky Blocks obtenus.
+# auto-alimentation : si true, coller un coffre/coffre piege/baril/hopper a la machine (n'importe
+#                      quelle face) lui permet de piocher automatiquement les minerais acceptes
+#                      dedans (1 par cooldown ecoule) sans avoir a cliquer. Avec un seul conteneur
+#                      colle, il sert aussi de sortie pour les Lucky Blocks obtenus ; avec 2
+#                      conteneurs ou plus colles, le 1er (ordre nord/sud/est/ouest/haut/bas) sert
+#                      d'entree et le 2eme de sortie, pour separer minerais et recompenses.
+# carburant-uniquement-si-echec : si true, le carburant n'est consomme QUE quand la transformation
+#                                  echoue (mode economique optionnel, desactive par defaut).
 machine-transformation:
   bloc: IRON_BLOCK
   chance-reussite: 20
   cooldown-secondes: 60
   auto-alimentation: true
+  carburant-uniquement-si-echec: false
   carburants:
     carburant:
       charges: 5

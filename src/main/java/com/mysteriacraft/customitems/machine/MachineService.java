@@ -9,6 +9,7 @@ import com.mysteriacraft.quests.QuestService;
 import com.mysteriacraft.quests.QuestType;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -175,10 +176,14 @@ public class MachineService {
             return;
         }
 
-        // Consomme exactement 1 exemplaire du minerai, 1 charge de carburant, et relance le cooldown.
+        // Consomme exactement 1 exemplaire du minerai et relance le cooldown. Le carburant n'est
+        // consomme tout de suite que si le mode economique (carburant-uniquement-si-echec) est desactive.
         int remaining = inHand.getAmount() - 1;
         player.getInventory().setItemInMainHand(remaining > 0 ? withAmount(inHand, remaining) : null);
-        manager.consumeCharge(machineBlock);
+        boolean economyMode = manager.isConsumeFuelOnFailureOnly();
+        if (!economyMode) {
+            manager.consumeCharge(machineBlock);
+        }
         manager.markUsedNow(machineBlock);
 
         Location effectLocation = machineBlock.getLocation().add(0.5, 1.0, 0.5);
@@ -201,6 +206,9 @@ public class MachineService {
 
             questService.registerProgress(player, QuestType.MACHINE_TRANSFORM, family.id(), 1);
         } else {
+            if (economyMode) {
+                manager.consumeCharge(machineBlock);
+            }
             effectLocation.getWorld().spawnParticle(Particle.SMOKE_NORMAL, effectLocation, 20, 0.4, 0.4, 0.4);
             player.playSound(effectLocation, Sound.ENTITY_ITEM_BREAK, 1f, 0.7f);
             messages.send(player, "machine.echec");
@@ -242,9 +250,12 @@ public class MachineService {
     }
 
     /**
-     * Auto-alimentation : si un coffre/baril est colle a la machine, pioche automatiquement 1 minerai
-     * accepte dedans des que le cooldown est ecoule (et qu'il reste du carburant), et y depose le
-     * Lucky Block obtenu en cas de reussite. Purement automatique, aucun joueur n'est implique.
+     * Auto-alimentation : si un/des conteneur(s) sont colles a la machine, pioche automatiquement
+     * 1 minerai accepte dans le conteneur d'entree des que le cooldown est ecoule (et qu'il reste
+     * du carburant), et depose le Lucky Block obtenu (en cas de reussite) dans le conteneur de
+     * sortie. Purement automatique, aucun joueur n'est implique. Si aucun minerai accepte n'est
+     * trouve dans l'entree, un petit indicateur (poudre rouge) apparait au-dessus pour signaler
+     * qu'il faut la reapprovisionner.
      */
     private void tickAutoFeed(Block machineBlock) {
         if (!manager.isAutoAlimentationEnabled()) {
@@ -253,13 +264,19 @@ public class MachineService {
         if (manager.getFuel(machineBlock) <= 0 || manager.getRemainingCooldownMillis(machineBlock) > 0) {
             return;
         }
-        Block chestBlock = manager.getAdjacentChest(machineBlock);
-        if (chestBlock == null || !(chestBlock.getState() instanceof Container container)) {
+        MachineManager.AdjacentContainers containers = manager.getAdjacentContainers(machineBlock);
+        if (containers == null) {
+            return;
+        }
+        if (!(containers.input().getState() instanceof Container inputContainer)
+                || !(containers.output().getState() instanceof Container outputContainer)) {
             return;
         }
 
-        Inventory inventory = container.getInventory();
-        ItemStack[] contents = inventory.getContents();
+        Inventory inputInventory = inputContainer.getInventory();
+        Inventory outputInventory = outputContainer.getInventory();
+        ItemStack[] contents = inputInventory.getContents();
+
         for (int slot = 0; slot < contents.length; slot++) {
             ItemStack stack = contents[slot];
             if (stack == null || stack.getType() == Material.AIR) {
@@ -276,26 +293,39 @@ public class MachineService {
 
             if (stack.getAmount() > 1) {
                 stack.setAmount(stack.getAmount() - 1);
-                inventory.setItem(slot, stack);
+                inputInventory.setItem(slot, stack);
             } else {
-                inventory.setItem(slot, null);
+                inputInventory.setItem(slot, null);
             }
-            manager.consumeCharge(machineBlock);
+
+            boolean economyMode = manager.isConsumeFuelOnFailureOnly();
+            if (!economyMode) {
+                manager.consumeCharge(machineBlock);
+            }
             manager.markUsedNow(machineBlock);
 
             Location effectLocation = machineBlock.getLocation().add(0.5, 1.0, 0.5);
             boolean success = ThreadLocalRandom.current().nextDouble(100.0) < manager.getEffectiveChance(machineBlock);
             if (success) {
                 ItemStack reward = luckyBlockManager.createItem(family);
-                Map<Integer, ItemStack> leftovers = inventory.addItem(reward);
-                leftovers.values().forEach(leftover -> chestBlock.getWorld().dropItemNaturally(chestBlock.getLocation(), leftover));
+                Map<Integer, ItemStack> leftovers = outputInventory.addItem(reward);
+                leftovers.values().forEach(leftover ->
+                        containers.output().getWorld().dropItemNaturally(containers.output().getLocation(), leftover));
                 playAutoFeedEffects(effectLocation, true);
             } else {
+                if (economyMode) {
+                    manager.consumeCharge(machineBlock);
+                }
                 playAutoFeedEffects(effectLocation, false);
             }
             updateHologram(machineBlock);
             return; // 1 minerai par cooldown ecoule, meme cadence que l'utilisation manuelle
         }
+
+        // Aucun minerai accepte trouve dans l'entree : petit indicateur visuel de reapprovisionnement.
+        Location warningLocation = containers.input().getLocation().add(0.5, 1.1, 0.5);
+        containers.input().getWorld().spawnParticle(Particle.REDSTONE, warningLocation, 6, 0.2, 0.1, 0.2, 0.0,
+                new Particle.DustOptions(Color.RED, 1.2f));
     }
 
     private void playAutoFeedEffects(Location location, boolean success) {
