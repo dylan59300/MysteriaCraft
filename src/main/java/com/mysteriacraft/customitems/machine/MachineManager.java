@@ -64,6 +64,9 @@ public class MachineManager {
     private double bonusMax = 30.0;
     private boolean autoAlimentation = true;
     private boolean carburantSeulementSiEchec = false;
+    private int hologramSegments = 10;
+    private int hologramFuelGaugeMax = 20;
+    private boolean hologramCompact = false;
     /** LinkedHashMap : l'ordre de declaration dans machine-transformation.minerais fixe la priorite
      * de traitement de l'auto-alimentation (le 1er minerai present dans le coffre d'entree est traite en premier). */
     private final Map<Material, String> acceptedOres = new LinkedHashMap<>();
@@ -123,6 +126,9 @@ public class MachineManager {
 
         autoAlimentation = section.getBoolean("auto-alimentation", true);
         carburantSeulementSiEchec = section.getBoolean("carburant-uniquement-si-echec", false);
+        hologramSegments = Math.max(1, section.getInt("hologramme-segments", 10));
+        hologramFuelGaugeMax = Math.max(1, section.getInt("hologramme-jauge-carburant-max", 20));
+        hologramCompact = section.getBoolean("hologramme-compact", false);
 
         ConfigurationSection ores = section.getConfigurationSection("minerais");
         if (ores != null) {
@@ -188,6 +194,18 @@ public class MachineManager {
     /** Si true, le carburant n'est consomme que quand la transformation echoue (mode economique). */
     public boolean isConsumeFuelOnFailureOnly() {
         return carburantSeulementSiEchec;
+    }
+
+    public int getHologramSegments() {
+        return hologramSegments;
+    }
+
+    public int getHologramFuelGaugeMax() {
+        return hologramFuelGaugeMax;
+    }
+
+    public boolean isHologramCompact() {
+        return hologramCompact;
     }
 
     /**

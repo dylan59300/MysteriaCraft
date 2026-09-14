@@ -26,12 +26,21 @@
 #                      d'entree et le 2eme de sortie, pour separer minerais et recompenses.
 # carburant-uniquement-si-echec : si true, le carburant n'est consomme QUE quand la transformation
 #                                  echoue (mode economique optionnel, desactive par defaut).
+# hologramme-segments : nombre de blocs "■" dans la barre de progression du cooldown affichee sur
+#                        l'hologramme et en actionbar (10 par defaut).
+# hologramme-jauge-carburant-max : niveau de carburant correspondant a une jauge pleine sur
+#                                   l'hologramme (purement visuel, ne limite pas le stock reel).
+# hologramme-compact : si true, l'hologramme n'affiche que l'essentiel (barre de cooldown + %
+#                       de reussite), sans le nom de la machine ni le detail carburant/entree-sortie.
 machine-transformation:
   bloc: IRON_BLOCK
   chance-reussite: 20
   cooldown-secondes: 60
   auto-alimentation: true
   carburant-uniquement-si-echec: false
+  hologramme-segments: 10
+  hologramme-jauge-carburant-max: 20
+  hologramme-compact: false
   carburants:
     carburant:
       charges: 5

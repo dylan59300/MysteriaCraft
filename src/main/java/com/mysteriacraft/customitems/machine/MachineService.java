@@ -346,36 +346,52 @@ public class MachineService {
         }
     }
 
-    /** Met a jour le texte de l'hologramme de cette machine (charges, chance, barre de cooldown,
-     * et faces d'entree/sortie de l'auto-alimentation si des conteneurs sont colles). */
+    /** Met a jour le texte de l'hologramme de cette machine. En mode normal : nom, jauge de
+     * carburant, % de reussite, barre de cooldown et faces d'entree/sortie de l'auto-alimentation
+     * si des conteneurs sont colles. En mode compact (hologramme-compact: true) : uniquement la
+     * barre de cooldown et le % de reussite. */
     private void updateHologram(Block machineBlock) {
         ArmorStand stand = manager.getHologram(machineBlock);
         if (stand == null) {
             return;
         }
-        int fuel = manager.getFuel(machineBlock);
         int chance = (int) manager.getEffectiveChance(machineBlock);
         long remaining = manager.getRemainingCooldownMillis(machineBlock);
-        String etat = remaining > 0
-                ? cooldownProgressBar(remaining, machineBlock) + " &c" + formatDuration(remaining)
-                : "&a[■■■■■■■■■■] Prete";
+        int segments = manager.getHologramSegments();
+        String cooldownBar = remaining > 0
+                ? cooldownProgressBar(remaining, machineBlock, segments) + " &f" + formatDuration(remaining)
+                : "&a[" + "■".repeat(segments) + "] &aPrete";
 
-        String ligne1 = "&b&lMachine &7| &e" + fuel + " carburant &7| &e" + chance + "% &7| " + etat;
+        if (manager.isHologramCompact()) {
+            stand.setCustomName(MessageManager.color(cooldownBar + " &7| &e" + chance + "%"));
+            return;
+        }
+
+        int fuel = manager.getFuel(machineBlock);
+        String fuelBar = fuelGaugeBar(fuel);
+        String ligne1 = "&b&lMachine &7| &e" + fuel + " " + fuelBar + " &7| &e" + chance + "% &7| " + cooldownBar;
         stand.setCustomName(MessageManager.color(ligne1 + autoFeedSuffix(machineBlock)));
     }
 
-    /** Barre "&a[■■■□□□□□□□]" indiquant la progression du cooldown (se remplit a mesure qu'il s'ecoule). */
-    private String cooldownProgressBar(long remainingMillis, Block machineBlock) {
-        int segments = 10;
+    /** Barre "[■■■□□]" coloree du rouge (debut) au vert (fin) selon l'avancement du cooldown. */
+    private String cooldownProgressBar(long remainingMillis, Block machineBlock, int segments) {
         long totalMillis = manager.getActiveCooldownSeconds(machineBlock) * 1000L;
         double progress = totalMillis > 0
                 ? 1.0 - Math.min(1.0, Math.max(0.0, (double) remainingMillis / totalMillis))
                 : 1.0;
         int filled = Math.max(0, Math.min(segments, (int) Math.round(progress * segments)));
 
-        StringBuilder bar = new StringBuilder("&e[&a").append("■".repeat(filled))
-                .append("&7").append("□".repeat(segments - filled)).append("&e]");
-        return bar.toString();
+        String filledColor = progress < 0.34 ? "&c" : progress < 0.67 ? "&6" : "&a";
+        return "&f[" + filledColor + "■".repeat(filled) + "&7" + "□".repeat(segments - filled) + "&f]";
+    }
+
+    /** Petite jauge "[■■□□□]" (5 segments fixes, bleue) indiquant le niveau de carburant par
+     * rapport a hologramme-jauge-carburant-max (purement visuel, ne plafonne pas le stock reel). */
+    private String fuelGaugeBar(int fuel) {
+        int segments = 5;
+        double progress = Math.min(1.0, (double) fuel / manager.getHologramFuelGaugeMax());
+        int filled = Math.max(0, Math.min(segments, (int) Math.round(progress * segments)));
+        return "&f[&b" + "■".repeat(filled) + "&7" + "□".repeat(segments - filled) + "&f]";
     }
 
     /** "&7| &aEntree: Nord &7| &6Sortie: Sud" (ou juste "Entree/Sortie: Nord" si un seul conteneur colle), vide sinon. */
@@ -409,8 +425,9 @@ public class MachineService {
                 }
                 return;
             }
+            String bar = cooldownProgressBar(remaining, machineBlock, manager.getHologramSegments());
             player.sendActionBar(LegacyComponentSerializer.legacySection()
-                    .deserialize(MessageManager.color("&c&lMachine en recharge : &e" + formatDuration(remaining))));
+                    .deserialize(MessageManager.color("&c&lMachine en recharge : " + bar + " &e" + formatDuration(remaining))));
         }, 0L, 20L);
 
         cooldownActionbarTasks.put(uuid, task);
