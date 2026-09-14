@@ -15,6 +15,116 @@
 #                                 OBJET_CUSTOM ou GENERATEUR (meme format que
 #                                 battlepass.yml/quests.yml).
 # effets[].action (si MAUVAIS) : TNT | MOBS | POTION | FOUDRE
+#
+# effets-communs-bons : pool d'effets BONS fusionne automatiquement dans LE POOL BON DE CHAQUE
+#                       FAMILLE (commune, rare, epique, legendaire, et toute famille ajoutee plus
+#                       tard) EN PLUS de ses propres effets "effets:". Pas besoin de dupliquer ce
+#                       loot dans chaque famille a la main. Meme format qu'un effet BON de famille.
+effets-communs-bons:
+  - type: BON
+    chance: 25
+    recompense:
+      type: ITEM
+      materiel: GOLDEN_APPLE
+      quantite: 48
+  - type: BON
+    chance: 20
+    recompense:
+      type: ITEM
+      materiel: GOLDEN_APPLE
+      quantite: 64
+  - type: BON
+    chance: 8
+    recompense:
+      type: ITEM
+      materiel: GOLDEN_APPLE
+      quantite: 256
+  - type: BON
+    chance: 20
+    recompense:
+      type: ITEM
+      materiel: CREEPER_SPAWN_EGG
+      quantite: 1
+  - type: BON
+    chance: 12
+    recompense:
+      type: ITEM
+      materiel: CREEPER_SPAWN_EGG
+      quantite: 4
+  - type: BON
+    chance: 6
+    recompense:
+      type: ITEM
+      materiel: CREEPER_SPAWN_EGG
+      quantite: 8
+  - type: BON
+    chance: 18
+    recompense:
+      type: ITEM
+      materiel: OBSIDIAN
+      quantite: 320
+  - type: BON
+    chance: 10
+    recompense:
+      type: ITEM
+      materiel: OBSIDIAN
+      quantite: 512
+  - type: BON
+    chance: 6
+    recompense:
+      type: ITEM
+      materiel: OBSIDIAN
+      quantite: 640
+  - type: BON
+    chance: 15
+    recompense:
+      type: ITEM
+      materiel: TNT
+      quantite: 64
+  - type: BON
+    chance: 18
+    recompense:
+      type: ITEM
+      materiel: ENDER_PEARL
+      quantite: 16
+  - type: BON
+    chance: 15
+    recompense:
+      type: ITEM
+      materiel: IRON_BLOCK
+      quantite: 256
+  - type: BON
+    chance: 8
+    recompense:
+      type: ITEM
+      materiel: IRON_BLOCK
+      quantite: 384
+  - type: BON
+    chance: 10
+    recompense:
+      type: ITEM
+      materiel: DIAMOND_BLOCK
+      quantite: 16
+  - type: BON
+    chance: 10
+    recompense:
+      type: ECONOMIE
+      montant: 2000000
+  - type: BON
+    chance: 6
+    recompense:
+      type: ECONOMIE
+      montant: 4000000
+  - type: BON
+    chance: 3
+    recompense:
+      type: ECONOMIE
+      montant: 6000000
+  - type: BON
+    chance: 1
+    recompense:
+      type: ECONOMIE
+      montant: 8000000
 
 # Bonus de minerais : placer un de ces blocs contre un Lucky Block (ou l'inverse) augmente sa
 # chance d'effet BON du pourcentage indique, jusqu'a bonus-minerais-max cumule (par bloc).
@@ -119,3 +229,93 @@ familles:
       - type: MAUVAIS
         chance: 40
         action: FOUDRE
+
+  epique:
+    nom: "&5&lLucky Block Epique"
+    materiel: EMERALD_BLOCK
+    ordre: 3
+    cooldown-secondes: 150
+    prix-achat: 6000
+    chance-bonne-base: 45
+    recette:
+      - materiel: EMERALD_BLOCK
+        quantite: 1
+      - materiel: RABBIT_FOOT
+        quantite: 1
+      - materiel: GOLDEN_APPLE
+        quantite: 1
+      - materiel: ENDER_PEARL
+        quantite: 4
+    effets:
+      - type: BON
+        chance: 35
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: carburant_illimite
+          quantite: 1
+      - type: BON
+        chance: 35
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: kit_mythique
+          quantite: 1
+      - type: BON
+        chance: 30
+        recompense:
+          type: ECONOMIE
+          montant: 10000
+      - type: MAUVAIS
+        chance: 50
+        action: MOBS
+        mob: WITHER_SKELETON
+        quantite: 2
+      - type: MAUVAIS
+        chance: 50
+        action: POTION
+        effet-potion: BLINDNESS
+        duree-secondes: 15
+        amplificateur: 1
+
+  legendaire:
+    nom: "&4&lLucky Block Legendaire"
+    materiel: NETHERITE_BLOCK
+    ordre: 4
+    cooldown-secondes: 300
+    prix-achat: 20000
+    chance-bonne-base: 40
+    recette:
+      - materiel: NETHERITE_BLOCK
+        quantite: 1
+      - materiel: TOTEM_OF_UNDYING
+        quantite: 1
+      - materiel: NETHER_STAR
+        quantite: 1
+      - materiel: ENDER_PEARL
+        quantite: 8
+    effets:
+      - type: BON
+        chance: 40
+        recompense:
+          type: GENERATEUR
+          type-id: legendaire
+          quantite: 1
+      - type: BON
+        chance: 30
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: carburant_illimite
+          quantite: 3
+      - type: BON
+        chance: 30
+        recompense:
+          type: ECONOMIE
+          montant: 25000
+      - type: MAUVAIS
+        chance: 60
+        action: MOBS
+        mob: WITHER
+        quantite: 1
+      - type: MAUVAIS
+        chance: 40
+        action: TNT
+        quantite: 4

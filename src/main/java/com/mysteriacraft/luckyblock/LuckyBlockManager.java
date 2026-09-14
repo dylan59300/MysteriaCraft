@@ -65,6 +65,9 @@ public class LuckyBlockManager {
     private final Map<String, LuckyBlockFamily> families = new LinkedHashMap<>();
     private final Map<Material, Double> oreBonuses = new LinkedHashMap<>();
     private double bonusMax = 45.0;
+    /** Pool d'effets BONS commun a TOUTES les familles (voir luckyblocks.yml: effets-communs-bons),
+     * y compris celles ajoutees plus tard : fusionne dans chaque famille au chargement. */
+    private final List<LuckyBlockEffect> sharedGoodEffects = new ArrayList<>();
 
     /** Lucky Blocks actuellement poses dans le monde, indexes par position (charge au demarrage). */
     private final Map<Location, PlacedBlockState> placedBlocks = new ConcurrentHashMap<>();
@@ -177,6 +180,7 @@ public class LuckyBlockManager {
     public void loadFamilies() {
         families.clear();
         loadOreBonuses();
+        loadSharedGoodEffects();
 
         ConfigurationSection root = luckyBlocksConfig.get().getConfigurationSection("familles");
         if (root == null) {
@@ -196,6 +200,22 @@ public class LuckyBlockManager {
             }
         }
         plugin.getLogger().info(families.size() + " famille(s) de Lucky Block chargee(s).");
+    }
+
+    /**
+     * Charge le pool d'effets BONS partage par toutes les familles (luckyblocks.yml:
+     * effets-communs-bons). Fusionne automatiquement dans CHAQUE famille au parsing (voir
+     * parseFamily), y compris les familles ajoutees plus tard dans la config : pas besoin de
+     * dupliquer ce loot dans chaque famille a la main.
+     */
+    private void loadSharedGoodEffects() {
+        sharedGoodEffects.clear();
+        for (Map<?, ?> raw : luckyBlocksConfig.get().getMapList("effets-communs-bons")) {
+            LuckyBlockEffect effect = parseEffect(raw);
+            if (effect != null) {
+                sharedGoodEffects.add(effect);
+            }
+        }
     }
 
     private void loadOreBonuses() {
@@ -237,7 +257,9 @@ public class LuckyBlockManager {
             recipe.add(new RecipeIngredient(ingredientMaterial, Math.max(1, amount)));
         }
 
-        List<LuckyBlockEffect> effects = new ArrayList<>();
+        // Commence par le pool d'effets BONS commun a toutes les familles (voir loadSharedGoodEffects),
+        // puis ajoute les effets propres a cette famille (bons ET mauvais).
+        List<LuckyBlockEffect> effects = new ArrayList<>(sharedGoodEffects);
         for (Map<?, ?> raw : section.getMapList("effets")) {
             LuckyBlockEffect effect = parseEffect(raw);
             if (effect != null) {

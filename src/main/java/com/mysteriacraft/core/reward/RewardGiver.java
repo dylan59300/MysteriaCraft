@@ -127,7 +127,7 @@ public class RewardGiver {
             for (ItemStack leftover : leftovers.values()) {
                 player.getWorld().dropItemNaturally(dropLocation, leftover);
             }
-            messages.send(player, "kits.inventaire-plein");
+            messages.send(player, "general.inventaire-plein");
         }
     }
 }

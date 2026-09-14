@@ -64,7 +64,7 @@ public class LuckyBlockOddsGui extends Menu {
         placePool(inventory, family.badEffects(), BAD_SLOTS, false);
 
         inventory.setItem(BACK_SLOT, new ItemBuilder(Material.ARROW)
-                .name(messages.raw("kits.gui-apercu-retour")).build());
+                .name(messages.raw("general.gui-retour")).build());
 
         return inventory;
     }

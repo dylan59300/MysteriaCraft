@@ -124,11 +124,11 @@ public class BattlePassGui extends Menu {
         int maxPage = maxPage();
         if (page > 0) {
             inventory.setItem(PREVIOUS_SLOT, new ItemBuilder(Material.ARROW)
-                    .name(messages.raw("kits.gui-page-precedente")).build());
+                    .name(messages.raw("general.gui-page-precedente")).build());
         }
         if (page < maxPage - 1) {
             inventory.setItem(NEXT_SLOT, new ItemBuilder(Material.ARROW)
-                    .name(messages.raw("kits.gui-page-suivante")).build());
+                    .name(messages.raw("general.gui-page-suivante")).build());
         }
 
         if (!premium) {

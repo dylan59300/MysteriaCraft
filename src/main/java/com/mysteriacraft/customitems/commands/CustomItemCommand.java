@@ -5,6 +5,7 @@ import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.customitems.CustomItemDefinition;
 import com.mysteriacraft.customitems.CustomItemManager;
 import com.mysteriacraft.customitems.CustomItemService;
+import com.mysteriacraft.customitems.gui.CustomItemsGui;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -40,8 +41,13 @@ public class CustomItemCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) {
-            messages.send(sender, "customitem.usage");
+        // Sans argument (ou "gui") : catalogue de tous les items custom disponibles.
+        if (args.length == 0 || args[0].equalsIgnoreCase("gui")) {
+            if (!(sender instanceof Player player)) {
+                messages.send(sender, "general.commande-joueur-uniquement");
+                return true;
+            }
+            new CustomItemsGui(player, manager, messages).open();
             return true;
         }
 

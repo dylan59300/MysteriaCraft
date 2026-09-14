@@ -17,10 +17,6 @@ import com.mysteriacraft.economy.generator.GeneratorService;
 import com.mysteriacraft.economy.generator.commands.GeneratorCommand;
 import com.mysteriacraft.economy.generator.listeners.GeneratorListener;
 import com.mysteriacraft.core.gui.MenuListener;
-import com.mysteriacraft.kits.KitManager;
-import com.mysteriacraft.kits.KitService;
-import com.mysteriacraft.kits.commands.KitCommand;
-import com.mysteriacraft.kits.commands.KitReloadCommand;
 import com.mysteriacraft.battlepass.BattlePassManager;
 import com.mysteriacraft.battlepass.BattlePassService;
 import com.mysteriacraft.battlepass.commands.BattlePassAdminCommand;
@@ -50,6 +46,10 @@ import com.mysteriacraft.customitems.machine.MachineManager;
 import com.mysteriacraft.customitems.machine.MachineService;
 import com.mysteriacraft.customitems.machine.commands.MachineCommand;
 import com.mysteriacraft.customitems.machine.listeners.MachineListener;
+import com.mysteriacraft.customitems.miningmachine.MiningMachineManager;
+import com.mysteriacraft.customitems.miningmachine.MiningMachineService;
+import com.mysteriacraft.customitems.miningmachine.commands.MiningMachineCommand;
+import com.mysteriacraft.customitems.miningmachine.listeners.MiningMachineListener;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -70,10 +70,6 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager generatorsConfig;
     private GeneratorManager generatorManager;
     private GeneratorService generatorService;
-
-    private ConfigManager kitsConfig;
-    private KitManager kitManager;
-    private KitService kitService;
 
     private RewardGiver rewardGiver;
 
@@ -99,6 +95,10 @@ public final class MysteriaCraft extends JavaPlugin {
     private MachineManager machineManager;
     private MachineService machineService;
 
+    private ConfigManager miningMachineConfig;
+    private MiningMachineManager miningMachineManager;
+    private MiningMachineService miningMachineService;
+
     @Override
     public void onEnable() {
         long start = System.currentTimeMillis();
@@ -111,7 +111,7 @@ public final class MysteriaCraft extends JavaPlugin {
         this.database = new Database(this, configManager.get().getString("base-de-donnees.fichier", "database.db"));
         database.connect();
 
-        // Listener generique pour tous les menus GUI (kits, battlepass, quetes, pets...)
+        // Listener generique pour tous les menus GUI (battlepass, quetes, pets...)
         Bukkit.getPluginManager().registerEvents(new MenuListener(), this);
 
         // ---- Module Economie ----
@@ -121,9 +121,6 @@ public final class MysteriaCraft extends JavaPlugin {
         // distribution des recompenses. Le lien vers BattlePassService (pour BOOST_XP) est complete
         // dans setupBattlePass() via setBoosterHandler().
         this.rewardGiver = new RewardGiver(economyManager, messages);
-
-        // ---- Module Kits ----
-        setupKits();
 
         // ---- Module BattlePass ----
         setupBattlePass();
@@ -165,15 +162,6 @@ public final class MysteriaCraft extends JavaPlugin {
         Bukkit.getScheduler().runTaskAsynchronously(this, () ->
                 Bukkit.getOnlinePlayers().forEach(player ->
                         economyManager.loadAccount(player.getUniqueId(), player.getName())));
-    }
-
-    private void setupKits() {
-        this.kitsConfig = new ConfigManager(this, "kits.yml");
-        this.kitManager = new KitManager(this, database, kitsConfig);
-        this.kitService = new KitService(this, kitManager, messages);
-
-        getCommand("kit").setExecutor(new KitCommand(this, kitManager, kitService, messages));
-        getCommand("kitreload").setExecutor(new KitReloadCommand(kitsConfig, kitManager, messages));
     }
 
     private void setupBattlePass() {
@@ -254,6 +242,18 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // Effet de particules ambiant (densite/couleur selon le niveau de carburant), toutes les 5 secondes.
         Bukkit.getScheduler().runTaskTimer(this, machineService::tickAmbientParticles, 100L, 100L);
+
+        // Machine a Miner : mine automatiquement un chunk entier au fil du temps, avec du carburant.
+        this.miningMachineConfig = new ConfigManager(this, "mining_machine.yml");
+        this.miningMachineManager = new MiningMachineManager(this, database, miningMachineConfig);
+        this.miningMachineService = new MiningMachineService(miningMachineManager, customItemManager, messages);
+        Bukkit.getPluginManager().registerEvents(
+                new MiningMachineListener(miningMachineManager, miningMachineService, messages), this);
+        getCommand("machineminiere").setExecutor(
+                new MiningMachineCommand(miningMachineConfig, miningMachineManager, messages));
+
+        // Traite blocs-par-tick blocs pour chaque machine active, chaque tick serveur.
+        Bukkit.getScheduler().runTaskTimer(this, miningMachineService::tickAll, 20L, 1L);
     }
 
     private void setupGenerators() {

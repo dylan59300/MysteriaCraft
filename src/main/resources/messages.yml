@@ -7,6 +7,10 @@ general:
   pas-de-permission: "&cVous n'avez pas la permission d'utiliser cette commande."
   commande-joueur-uniquement: "&cCette commande est reservee aux joueurs."
   usage-invalide: "&cUsage incorrect : &7{usage}"
+  inventaire-plein: "&eVotre inventaire etait plein, le surplus a ete depose au sol."
+  gui-page-suivante: "&a&lPage suivante ->"
+  gui-page-precedente: "&a&l<- Page precedente"
+  gui-retour: "&e&l<- Retour"
 
 economie:
   solde-personnel: "&7Votre solde : &a{montant}"
@@ -35,24 +39,6 @@ economie:
   baltop-titre: "&d&l=== Classement des fortunes (page {page}/{max}) ==="
   baltop-ligne: "&7#{rang} &e{joueur} &7- &a{montant}"
   baltop-vide: "&7Aucun joueur enregistre pour le moment."
-
-kits:
-  titre-gui: "&8Kits disponibles"
-  gui-verrouille: "&c&lVerrouille"
-  introuvable: "&cCe kit n'existe pas."
-  pas-permission: "&cVous n'avez pas la permission de reclamer le kit &e{kit}&c."
-  cooldown: "&cVous devez encore attendre &e{temps} &cavant de reclamer &e{kit} &cde nouveau."
-  recu: "&aVous avez recu le kit &e{kit}&a !"
-  inventaire-plein: "&eVotre inventaire etait plein, le surplus a ete depose au sol."
-  reload: "&aLes kits ont ete recharges."
-  reset-usage: "&cUsage : /kit reset <joueur> <kit>"
-  reset-effectue: "&aCooldown du kit &e{kit} &areinitialise pour &e{joueur}&a."
-  reset-aucun: "&eAucun cooldown actif pour &e{joueur} &esur le kit &e{kit}&e."
-  gui-page: "&7Page {page}/{max}"
-  gui-page-suivante: "&a&lPage suivante ->"
-  gui-page-precedente: "&a&l<- Page precedente"
-  gui-apercu-titre: "&8Contenu du kit"
-  gui-apercu-retour: "&e&l<- Retour aux kits"
 
 battlepass:
   titre-gui: "&8BattlePass - Saison permanente"
@@ -155,7 +141,13 @@ luckyblock:
   gui-odds-pourcentage: "&7Chance au sein du pool : &e{pourcentage}%"
 
 customitem:
-  usage: "&cUsage : /customitem <give <joueur> <id> [quantite]|sell <id>|recettes|reload>"
+  usage: "&cUsage : /customitem <[gui]|give <joueur> <id> [quantite]|sell <id>|recettes|reload>"
+  gui-titre: "&8Catalogue des items custom"
+  gui-source-minage: "&7Obtenable en minant"
+  gui-source-craft: "&7Obtenable en craft (voir /customitem recettes)"
+  gui-source-recompense: "&6Obtenable uniquement en recompense"
+  gui-prix-vente: "&7Prix de vente : &e{prix}&7/unite"
+  gui-id: "&8id: {id}"
   introuvable: "&cCet item custom n'existe pas."
   non-vendable: "&cCet item ne peut pas etre revendu."
   aucun-en-inventaire: "&cVous n'avez aucun exemplaire de cet item dans votre inventaire."
@@ -201,6 +193,18 @@ machine:
   stats-favori-nom: "&6&lMinerai favori"
   stats-favori-ligne: "&7Utilise &e{essais} &7fois"
   stats-favori-aucun: "&7Aucune transformation tentee pour l'instant."
+
+machine-miniere:
+  usage: "&cUsage : /machineminiere <give <joueur> [quantite]|reload>"
+  reload: "&aLa configuration de la machine a miner a ete rechargee."
+  give-effectue: "&a{joueur} a recu &e{quantite}x Machine a Miner&a."
+  carburant-non-accepte: "&cCet item n'est pas un carburant accepte par la machine a miner."
+  demarree: "&a&lMachine a miner demarree ! &a+&e{blocs} &ablocs minables &7(total : &e{total}&7)."
+  ravitaillee: "&a&lMachine a miner ravitaillee ! &a+&e{blocs} &ablocs minables &7(total : &e{total}&7)."
+  arretee: "&cMinage arrete. &7Le carburant restant est conserve."
+  protection-active: "&cImpossible de casser cette machine pendant qu'elle mine ! &7(maintenez shift pour forcer)"
+  statut-active: "&b&lMachine a miner &7- &7carburant &e{carburant} &7bloc(s) &7- &7progression &e{progres}%"
+  statut-arretee: "&b&lMachine a miner &7- &7carburant &e{carburant} &7bloc(s) &7- &7a l'arret"
 
 generateur:
   usage: "&cUsage : /generateur <liste|give <joueur> <fer|or|diamant> [quantite]|reload>"

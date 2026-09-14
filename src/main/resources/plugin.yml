@@ -3,7 +3,7 @@ version: '${project.version}'
 main: com.mysteriacraft.MysteriaCraft
 api-version: '1.20'
 author: dylan59300
-description: Plugin serveur - Economie, Kits, BattlePass, Quetes, Pets, LuckyBlock, Custom Items
+description: Plugin serveur - Economie, BattlePass, Quetes, Pets, LuckyBlock, Custom Items
 
 commands:
   balance:
@@ -27,13 +27,6 @@ commands:
     description: Recharge la configuration et les messages du plugin
     usage: /<command>
     permission: mysteriacraft.eco.admin
-  kit:
-    description: Ouvre le menu des kits, reclame un kit precis, ou /kit reset <joueur> <kit> (admin)
-    usage: /<command> [nom-du-kit]
-  kitreload:
-    description: Recharge kits.yml
-    usage: /<command>
-    permission: mysteriacraft.kit.admin
   battlepass:
     description: Ouvre le menu du BattlePass (saison permanente)
     usage: /<command>
@@ -66,13 +59,17 @@ commands:
     usage: /<command> <give <joueur> <famille> [quantite]|reload>
     permission: mysteriacraft.luckyblock.admin
   customitem:
-    description: Gere les minerais/objets custom (give admin, sell, reload admin)
-    usage: /<command> <give <joueur> <id> [quantite]|sell <id>|reload>
+    description: Catalogue des items custom, gere les minerais/objets (give admin, sell, reload admin)
+    usage: /<command> [gui|give <joueur> <id> [quantite]|sell <id>|reload]
   machine:
     description: Donne/recharge la Machine a Transformation (admin), ou affiche vos stats
     usage: /<command> <give <joueur> [quantite]|preset|reload|stats>
     # Pas de "permission:" ici : /machine stats doit rester accessible a tout joueur (les
     # sous-commandes admin restent protegees dans le code par mysteriacraft.machine.admin).
+  machineminiere:
+    description: Donne/recharge la Machine a Miner (admin)
+    usage: /<command> <give <joueur> [quantite]|reload>
+    permission: mysteriacraft.machineminiere.admin
   generateur:
     description: Liste vos generateurs actifs, ou donne/recharge (admin)
     usage: /<command> <liste|give <joueur> <fer|or|diamant> [quantite]|reload>
@@ -83,21 +80,6 @@ permissions:
   mysteriacraft.eco.admin:
     description: Autorise la gestion admin de l'economie
     default: op
-  mysteriacraft.kit.admin:
-    description: Autorise la gestion admin des kits (reload, reset de cooldown)
-    default: op
-  mysteriacraft.kit.starter:
-    description: Donne acces au kit Debutant
-    default: true
-  mysteriacraft.kit.guerrier:
-    description: Donne acces au kit Guerrier
-    default: true
-  mysteriacraft.kit.vip:
-    description: Donne acces au kit VIP
-    default: false
-  mysteriacraft.kit.cooldown.vip:
-    description: Reduit le cooldown des kits pour les VIP (voir cooldown-permissions dans kits.yml)
-    default: false
   mysteriacraft.battlepass.admin:
     description: Autorise la gestion admin du BattlePass (xp, reload)
     default: op
@@ -118,6 +100,9 @@ permissions:
     default: op
   mysteriacraft.machine.admin:
     description: Autorise la gestion admin de la Machine a Transformation (give, preset, reload)
+    default: op
+  mysteriacraft.machineminiere.admin:
+    description: Autorise la gestion admin de la Machine a Miner (give, reload, casse pendant le minage)
     default: op
   mysteriacraft.generateur.admin:
     description: Autorise la gestion admin des Generateurs d'Argent (give, reload)

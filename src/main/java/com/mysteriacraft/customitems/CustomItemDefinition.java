@@ -1,6 +1,7 @@
 package com.mysteriacraft.customitems;
 
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,13 @@ import java.util.Map;
  * @param recipeShape forme de la recette (1 a 3 lignes de 1 a 3 caracteres, espace = case vide),
  *                     vide si l'item n'est pas craftable a l'etabli.
  * @param recipeIngredients association caractere de la forme -> materiau vanilla requis.
+ * @param enchantments enchantements appliques (sans limite de niveau vanilla) pour un equipement
+ *                      "full custom" (armes/outils/armures) : id vanilla -> niveau. Vide = aucun.
+ * @param extraAttackDamage bonus de degats d'attaque (attribut GENERIC_ATTACK_DAMAGE) ajoute EN
+ *                          PLUS des degats de base de l'item-de-base. 0 = aucun bonus.
+ * @param extraArmor bonus d'armure (attribut GENERIC_ARMOR) ajoute pour une piece d'armure
+ *                    (casque/plastron/jambieres/bottes). 0 = aucun bonus.
+ * @param unbreakable si true, l'item ne perd jamais de durabilite (indicateur Unbreakable vanilla).
  */
 public record CustomItemDefinition(
         String id,
@@ -25,7 +33,11 @@ public record CustomItemDefinition(
         double dropChance,
         double sellPrice,
         List<String> recipeShape,
-        Map<Character, Material> recipeIngredients
+        Map<Character, Material> recipeIngredients,
+        Map<Enchantment, Integer> enchantments,
+        double extraAttackDamage,
+        double extraArmor,
+        boolean unbreakable
 ) {
 
     public boolean hasNaturalSource() {
@@ -38,5 +50,9 @@ public record CustomItemDefinition(
 
     public boolean isCraftable() {
         return !recipeShape.isEmpty();
+    }
+
+    public boolean isGear() {
+        return extraAttackDamage > 0 || extraArmor > 0 || !enchantments.isEmpty();
     }
 }

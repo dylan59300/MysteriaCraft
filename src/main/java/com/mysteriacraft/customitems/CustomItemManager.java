@@ -5,7 +5,12 @@ import com.mysteriacraft.core.config.MessageManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -17,6 +22,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Charge les minerais/objets custom depuis custom_items.yml et fabrique leurs ItemStack
@@ -138,8 +144,24 @@ public class CustomItemManager {
             }
         }
 
+        Map<Enchantment, Integer> enchantments = new LinkedHashMap<>();
+        ConfigurationSection enchantSection = section.getConfigurationSection("enchantements");
+        if (enchantSection != null) {
+            for (String enchantKey : enchantSection.getKeys(false)) {
+                Enchantment enchantment = Enchantment.getByName(enchantKey.toUpperCase());
+                if (enchantment == null) {
+                    plugin.getLogger().warning("Enchantement inconnu pour l'item custom '" + id + "' : " + enchantKey);
+                    continue;
+                }
+                enchantments.put(enchantment, Math.max(1, enchantSection.getInt(enchantKey, 1)));
+            }
+        }
+        double extraAttackDamage = section.getDouble("degats-bonus", 0);
+        double extraArmor = section.getDouble("armure-bonus", 0);
+        boolean unbreakable = section.getBoolean("incassable", false);
+
         return new CustomItemDefinition(id, displayName, lore, baseItem, sourceOres, dropChance,
-                sellPrice, recipeShape, recipeIngredients);
+                sellPrice, recipeShape, recipeIngredients, enchantments, extraAttackDamage, extraArmor, unbreakable);
     }
 
     public List<CustomItemDefinition> getItemsSorted() {
@@ -170,9 +192,61 @@ public class CustomItemManager {
             }
             meta.setLore(coloredLore);
             meta.getPersistentDataContainer().set(itemKey, PersistentDataType.STRING, definition.id());
+
+            // Enchantements "sans limite" (leur niveau vanilla max est ignore) : indispensable pour
+            // un equipement "full custom" nettement au-dessus de son equivalent vanilla.
+            for (Map.Entry<Enchantment, Integer> entry : definition.enchantments().entrySet()) {
+                meta.addEnchant(entry.getKey(), entry.getValue(), true);
+            }
+
+            EquipmentSlot slot = resolveEquipmentSlot(definition.baseItem());
+            if (definition.extraAttackDamage() > 0 && slot == EquipmentSlot.HAND) {
+                meta.addAttributeModifier(Attribute.GENERIC_ATTACK_DAMAGE, new AttributeModifier(
+                        UUID.nameUUIDFromBytes(("mysteriacraft-degats-" + definition.id()).getBytes()),
+                        "mysteriacraft-degats-bonus", definition.extraAttackDamage(),
+                        AttributeModifier.Operation.ADD_NUMBER, slot));
+            }
+            if (definition.extraArmor() > 0 && slot != null && slot != EquipmentSlot.HAND) {
+                meta.addAttributeModifier(Attribute.GENERIC_ARMOR, new AttributeModifier(
+                        UUID.nameUUIDFromBytes(("mysteriacraft-armure-" + definition.id()).getBytes()),
+                        "mysteriacraft-armure-bonus", definition.extraArmor(),
+                        AttributeModifier.Operation.ADD_NUMBER, slot));
+            }
+            if (definition.unbreakable()) {
+                meta.setUnbreakable(true);
+            }
+            if (definition.isGear()) {
+                // La lore custom decrit deja les bonus : masque les lignes vanilla redondantes
+                // (enchantements/attributs/incassable) pour un rendu propre et "full custom".
+                meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_UNBREAKABLE);
+            }
+
             item.setItemMeta(meta);
         }
         return item;
+    }
+
+    /** Emplacement d'equipement vanilla d'un materiau (arme/outil -> main, piece d'armure -> sa
+     * case), ou null si ce n'est ni une arme/outil ni une armure (pour l'attribut a appliquer). */
+    private EquipmentSlot resolveEquipmentSlot(Material material) {
+        String name = material.name();
+        if (name.endsWith("_HELMET") || name.equals("TURTLE_HELMET")) {
+            return EquipmentSlot.HEAD;
+        }
+        if (name.endsWith("_CHESTPLATE") || name.equals("ELYTRA")) {
+            return EquipmentSlot.CHEST;
+        }
+        if (name.endsWith("_LEGGINGS")) {
+            return EquipmentSlot.LEGS;
+        }
+        if (name.endsWith("_BOOTS")) {
+            return EquipmentSlot.FEET;
+        }
+        if (name.endsWith("_SWORD") || name.endsWith("_AXE") || name.endsWith("_PICKAXE")
+                || name.endsWith("_SHOVEL") || name.endsWith("_HOE")) {
+            return EquipmentSlot.HAND;
+        }
+        return null;
     }
 
     /** Renvoie l'id de l'item custom marque sur cet ItemStack, ou null si ce n'en est pas un. */

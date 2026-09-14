@@ -151,7 +151,7 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
         Map<Integer, ItemStack> leftovers = player.getInventory().addItem(item);
         if (!leftovers.isEmpty()) {
             leftovers.values().forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
-            messages.send(player, "kits.inventaire-plein");
+            messages.send(player, "general.inventaire-plein");
         }
     }
 
@@ -177,7 +177,7 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
         Map<Integer, ItemStack> leftovers = player.getInventory().addItem(item);
         if (!leftovers.isEmpty()) {
             leftovers.values().forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
-            messages.send(player, "kits.inventaire-plein");
+            messages.send(player, "general.inventaire-plein");
         }
 
         Map<String, String> placeholders = new HashMap<>();
