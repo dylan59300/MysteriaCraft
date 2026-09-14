@@ -5,19 +5,28 @@ import com.mysteriacraft.customitems.CustomItemDefinition;
 import com.mysteriacraft.customitems.CustomItemManager;
 import com.mysteriacraft.luckyblock.LuckyBlockFamily;
 import com.mysteriacraft.luckyblock.LuckyBlockManager;
+import com.mysteriacraft.quests.QuestService;
+import com.mysteriacraft.quests.QuestType;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -33,16 +42,23 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class MachineService {
 
+    private final Plugin plugin;
     private final MachineManager manager;
     private final CustomItemManager customItemManager;
     private final LuckyBlockManager luckyBlockManager;
+    private final QuestService questService;
     private final MessageManager messages;
 
-    public MachineService(MachineManager manager, CustomItemManager customItemManager,
-                           LuckyBlockManager luckyBlockManager, MessageManager messages) {
+    /** Tache d'actionbar en cours par joueur, pour eviter d'en empiler plusieurs en parallele. */
+    private final Map<UUID, BukkitTask> cooldownActionbarTasks = new ConcurrentHashMap<>();
+
+    public MachineService(Plugin plugin, MachineManager manager, CustomItemManager customItemManager,
+                           LuckyBlockManager luckyBlockManager, QuestService questService, MessageManager messages) {
+        this.plugin = plugin;
         this.manager = manager;
         this.customItemManager = customItemManager;
         this.luckyBlockManager = luckyBlockManager;
+        this.questService = questService;
         this.messages = messages;
     }
 
@@ -79,9 +95,11 @@ public class MachineService {
         if (remaining > 0) {
             placeholders.put("cooldown", formatDuration(remaining));
             messages.send(player, "machine.statut-en-attente", placeholders);
+            startCooldownActionbar(player, machineBlock);
         } else {
             messages.send(player, "machine.statut-pret", placeholders);
         }
+        updateHologram(machineBlock);
     }
 
     private void refuel(Player player, Block machineBlock, ItemStack fuelItem, MachineManager.FuelType fuelType) {
@@ -100,6 +118,7 @@ public class MachineService {
         Location loc = machineBlock.getLocation().add(0.5, 1.0, 0.5);
         loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 15, 0.4, 0.4, 0.4);
         player.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 0.6f, 1.5f);
+        updateHologram(machineBlock);
     }
 
     private void upgrade(Player player, Block machineBlock, ItemStack upgradeItem) {
@@ -122,6 +141,7 @@ public class MachineService {
         Location loc = machineBlock.getLocation().add(0.5, 1.0, 0.5);
         loc.getWorld().spawnParticle(Particle.END_ROD, loc, 20, 0.3, 0.5, 0.3, 0.02);
         player.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.6f);
+        updateHologram(machineBlock);
     }
 
     private void attemptTransformation(Player player, Block machineBlock, ItemStack inHand) {
@@ -143,6 +163,7 @@ public class MachineService {
             Map<String, String> placeholders = new HashMap<>();
             placeholders.put("temps", formatDuration(remainingCooldown));
             messages.send(player, "machine.cooldown", placeholders);
+            startCooldownActionbar(player, machineBlock);
             return;
         }
 
@@ -175,16 +196,20 @@ public class MachineService {
             Map<String, String> placeholders = new HashMap<>();
             placeholders.put("caisse", family.displayName());
             messages.send(player, "machine.reussite", placeholders);
+
+            questService.registerProgress(player, QuestType.MACHINE_TRANSFORM, family.id(), 1);
         } else {
             effectLocation.getWorld().spawnParticle(Particle.SMOKE_NORMAL, effectLocation, 20, 0.4, 0.4, 0.4);
             player.playSound(effectLocation, Sound.ENTITY_ITEM_BREAK, 1f, 0.7f);
             messages.send(player, "machine.echec");
         }
+        updateHologram(machineBlock);
     }
 
     /**
-     * Effet de particules ambiant, appele periodiquement depuis MysteriaCraft pour toutes les machines
-     * posees depuis le demarrage du plugin. La densite/couleur varie selon le niveau de carburant restant.
+     * Effet de particules ambiant + rafraichissement des hologrammes, appele periodiquement depuis
+     * MysteriaCraft pour toutes les machines posees depuis le demarrage du plugin. La densite/couleur
+     * des particules varie selon le niveau de carburant restant.
      */
     public void tickAmbientParticles() {
         List<Location> stale = new ArrayList<>();
@@ -208,8 +233,48 @@ public class MachineService {
             } else {
                 world.spawnParticle(Particle.END_ROD, effectLocation, 2, 0.2, 0.15, 0.2, 0.0);
             }
+            updateHologram(block);
         }
         stale.forEach(manager::forgetMachine);
+    }
+
+    /** Met a jour le texte de l'hologramme de cette machine (charges, chance, cooldown restant). */
+    private void updateHologram(Block machineBlock) {
+        ArmorStand stand = manager.getHologram(machineBlock);
+        if (stand == null) {
+            return;
+        }
+        int fuel = manager.getFuel(machineBlock);
+        int chance = (int) manager.getEffectiveChance(machineBlock);
+        long remaining = manager.getRemainingCooldownMillis(machineBlock);
+        String etat = remaining > 0 ? "&c" + formatDuration(remaining) : "&aPrete";
+
+        stand.setCustomName(MessageManager.color(
+                "&b&lMachine &7| &e" + fuel + " carburant &7| &e" + chance + "% &7| " + etat));
+    }
+
+    /** Envoie un compte a rebours en actionbar tant que le cooldown de cette machine n'est pas ecoule. */
+    private void startCooldownActionbar(Player player, Block machineBlock) {
+        UUID uuid = player.getUniqueId();
+        BukkitTask existing = cooldownActionbarTasks.get(uuid);
+        if (existing != null) {
+            existing.cancel();
+        }
+
+        BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            long remaining = manager.getRemainingCooldownMillis(machineBlock);
+            if (!player.isOnline() || remaining <= 0 || !manager.isMachineBlock(machineBlock)) {
+                BukkitTask self = cooldownActionbarTasks.remove(uuid);
+                if (self != null) {
+                    self.cancel();
+                }
+                return;
+            }
+            player.sendActionBar(LegacyComponentSerializer.legacySection()
+                    .deserialize(MessageManager.color("&c&lMachine en recharge : &e" + formatDuration(remaining))));
+        }, 0L, 20L);
+
+        cooldownActionbarTasks.put(uuid, task);
     }
 
     private String defaultFuelName() {

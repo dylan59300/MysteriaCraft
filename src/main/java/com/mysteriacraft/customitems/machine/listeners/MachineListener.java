@@ -53,6 +53,7 @@ public class MachineListener implements Listener {
         }
 
         manager.forgetMachine(block.getLocation());
+        manager.removeHologram(block);
         event.setDropItems(false);
         block.getWorld().dropItemNaturally(block.getLocation(), manager.createMachineItem());
     }

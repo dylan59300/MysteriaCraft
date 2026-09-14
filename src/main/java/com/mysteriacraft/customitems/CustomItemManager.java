@@ -2,10 +2,12 @@ package com.mysteriacraft.customitems;
 
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
@@ -64,6 +66,31 @@ public class CustomItemManager {
             }
         }
         plugin.getLogger().info(items.size() + " item(s) custom charge(s) depuis custom_items.yml.");
+        registerRecipes();
+    }
+
+    /** (Re)enregistre les recettes d'etabli des items custom qui en declarent une (voir "recette" en config).
+     * Retire d'abord l'ancienne recette de chaque item (meme ceux qui n'en ont plus), pour qu'un rechargement
+     * de config qui supprime une recette la desenregistre bien du jeu. */
+    private void registerRecipes() {
+        for (CustomItemDefinition definition : items.values()) {
+            NamespacedKey key = new NamespacedKey(plugin, "customitem-" + definition.id());
+            Bukkit.removeRecipe(key);
+            if (!definition.isCraftable()) {
+                continue;
+            }
+
+            ShapedRecipe recipe = new ShapedRecipe(key, createItem(definition));
+            recipe.shape(definition.recipeShape().toArray(new String[0]));
+            for (Map.Entry<Character, Material> entry : definition.recipeIngredients().entrySet()) {
+                recipe.setIngredient(entry.getKey(), entry.getValue());
+            }
+            try {
+                Bukkit.addRecipe(recipe);
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().severe("Recette invalide pour l'item custom '" + definition.id() + "' : " + e.getMessage());
+            }
+        }
     }
 
     private CustomItemDefinition parseItem(String id, ConfigurationSection section) {
@@ -87,7 +114,32 @@ public class CustomItemManager {
             }
         }
 
-        return new CustomItemDefinition(id, displayName, lore, baseItem, customModelData, sourceOres, dropChance, sellPrice);
+        List<String> recipeShape = List.of();
+        Map<Character, Material> recipeIngredients = new LinkedHashMap<>();
+        ConfigurationSection recette = section.getConfigurationSection("recette");
+        if (recette != null) {
+            recipeShape = recette.getStringList("forme");
+            ConfigurationSection ingredientsSection = recette.getConfigurationSection("ingredients");
+            if (ingredientsSection != null) {
+                for (String charKey : ingredientsSection.getKeys(false)) {
+                    if (charKey.length() != 1) {
+                        plugin.getLogger().warning("Cle d'ingredient invalide (1 caractere attendu) pour l'item custom '"
+                                + id + "' : " + charKey);
+                        continue;
+                    }
+                    Material ingredientMaterial = Material.matchMaterial(ingredientsSection.getString(charKey));
+                    if (ingredientMaterial == null) {
+                        plugin.getLogger().warning("Materiau d'ingredient inconnu pour l'item custom '" + id + "' : "
+                                + ingredientsSection.getString(charKey));
+                        continue;
+                    }
+                    recipeIngredients.put(charKey.charAt(0), ingredientMaterial);
+                }
+            }
+        }
+
+        return new CustomItemDefinition(id, displayName, lore, baseItem, customModelData, sourceOres, dropChance,
+                sellPrice, recipeShape, recipeIngredients);
     }
 
     public List<CustomItemDefinition> getItemsSorted() {

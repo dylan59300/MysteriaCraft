@@ -2,11 +2,15 @@ package com.mysteriacraft.customitems.machine;
 
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -17,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -39,6 +44,7 @@ public class MachineManager {
     private final NamespacedKey lastUseKey;
     private final NamespacedKey activeCooldownKey;
     private final NamespacedKey bonusReussiteKey;
+    private final NamespacedKey hologramKey;
 
     /** Machines actuellement posees dans le monde, pour l'effet de particules ambiant (perdu au redemarrage). */
     private final Set<Location> activeMachines = ConcurrentHashMap.newKeySet();
@@ -60,6 +66,7 @@ public class MachineManager {
         this.lastUseKey = new NamespacedKey(plugin, "machine-derniere-utilisation");
         this.activeCooldownKey = new NamespacedKey(plugin, "machine-cooldown-actif");
         this.bonusReussiteKey = new NamespacedKey(plugin, "machine-bonus-reussite");
+        this.hologramKey = new NamespacedKey(plugin, "machine-hologramme");
         loadConfig();
     }
 
@@ -192,15 +199,60 @@ public class MachineManager {
         return item;
     }
 
-    /** Marque un bloc pose comme etant la Machine a Transformation et l'enregistre pour les particules ambiantes. */
+    /** Marque un bloc pose comme etant la Machine a Transformation, l'enregistre pour les particules
+     * ambiantes et fait apparaitre son hologramme d'etat. */
     public void tagBlock(Block block) {
         block.getPersistentDataContainer().set(machineKey, PersistentDataType.BYTE, (byte) 1);
         activeMachines.add(block.getLocation());
+        spawnHologram(block);
     }
 
     /** A appeler quand une machine est cassee, pour arreter ses particules ambiantes. */
     public void forgetMachine(Location location) {
         activeMachines.remove(location);
+    }
+
+    // ---- Hologramme d'etat (ArmorStand invisible affichant charges/cooldown/bonus) ----
+
+    /** Fait apparaitre l'hologramme au-dessus du bloc, s'il n'en a pas deja un (ex: rechargement du plugin). */
+    public void spawnHologram(Block block) {
+        if (getHologram(block) != null) {
+            return;
+        }
+        Location location = block.getLocation().add(0.5, 1.4, 0.5);
+        ArmorStand stand = (ArmorStand) block.getWorld().spawnEntity(location, EntityType.ARMOR_STAND);
+        stand.setInvisible(true);
+        stand.setMarker(true);
+        stand.setGravity(false);
+        stand.setSmall(true);
+        stand.setBasePlate(false);
+        stand.setCustomNameVisible(true);
+        stand.setCustomName(MessageManager.color("&b&lMachine a Transformation"));
+        stand.setPersistent(true);
+        block.getPersistentDataContainer().set(hologramKey, PersistentDataType.STRING, stand.getUniqueId().toString());
+    }
+
+    /** Hologramme associe a cette machine, ou null s'il n'existe pas (jamais cree ou deja retire). */
+    public ArmorStand getHologram(Block block) {
+        String raw = block.getPersistentDataContainer().get(hologramKey, PersistentDataType.STRING);
+        if (raw == null) {
+            return null;
+        }
+        try {
+            Entity entity = Bukkit.getEntity(UUID.fromString(raw));
+            return entity instanceof ArmorStand stand ? stand : null;
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    /** Retire l'hologramme de cette machine (a appeler quand le bloc est casse). */
+    public void removeHologram(Block block) {
+        ArmorStand stand = getHologram(block);
+        if (stand != null) {
+            stand.remove();
+        }
+        block.getPersistentDataContainer().remove(hologramKey);
     }
 
     /** Emplacements de toutes les machines connues depuis le demarrage du plugin (effet de particules ambiant). */

@@ -168,6 +168,16 @@ items:
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
+    # Craftable a l'etabli : 4 charbon + 1 poudre de blaze + 4 redstone (croix).
+    recette:
+      forme:
+        - "CBC"
+        - "BRB"
+        - "CBC"
+      ingredients:
+        C: COAL
+        B: BLAZE_POWDER
+        R: REDSTONE
 
   carburant_ameliore:
     nom: "&6&lCarburant Ameliore"
@@ -175,13 +185,21 @@ items:
       - "&7Une version raffinee du carburant standard."
       - "&7Donne plus de charges et reduit le"
       - "&7temps de recharge de la machine."
-      - "&7Uniquement obtenable en recompense"
-      - "&7(crate, battlepass, quete, luckyblock)."
     item-de-base: IRON_INGOT
     custom-model-data: 500012
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
+    # Craftable a l'etabli : 4 lingots d'or + poudre de blaze + pierre de lumiere.
+    recette:
+      forme:
+        - "GBG"
+        - "BLB"
+        - "GBG"
+      ingredients:
+        G: GOLD_INGOT
+        B: BLAZE_POWDER
+        L: GLOWSTONE
 
   amelioration_machine:
     nom: "&d&lAmelioration de Machine"
@@ -189,10 +207,18 @@ items:
       - "&7Clic-droit sur une Machine a Transformation"
       - "&7pour augmenter durablement sa chance"
       - "&7de reussite."
-      - "&7Uniquement obtenable en recompense"
-      - "&7(crate, battlepass, quete, luckyblock)."
     item-de-base: IRON_INGOT
     custom-model-data: 500013
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
+    # Craftable a l'etabli : 4 diamants + 4 lingots d'or + 1 fragment de netherite.
+    recette:
+      forme:
+        - "DGD"
+        - "GNG"
+        - "DGD"
+      ingredients:
+        D: DIAMOND
+        G: GOLD_INGOT
+        N: NETHERITE_SCRAP

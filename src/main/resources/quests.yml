@@ -3,8 +3,9 @@
 # =========================================
 # Reset automatique : la progression est suivie par periode (jour ou semaine ISO courante).
 # Des qu'un nouveau jour/semaine commence, la progression repart de zero, sans tache a programmer.
-# type : BREAK_BLOCK | PLACE_BLOCK | KILL_MOB | FISH | CRAFT_ITEM | CONSUME_ITEM
-# cible : materiau (BREAK_BLOCK/PLACE_BLOCK/CRAFT_ITEM/CONSUME_ITEM) ou type d'entite (KILL_MOB). Absent = tout compte (FISH).
+# type : BREAK_BLOCK | PLACE_BLOCK | KILL_MOB | FISH | CRAFT_ITEM | CONSUME_ITEM | MACHINE_TRANSFORM
+# cible : materiau (BREAK_BLOCK/PLACE_BLOCK/CRAFT_ITEM/CONSUME_ITEM), type d'entite (KILL_MOB) ou
+#         id de famille Lucky Block (MACHINE_TRANSFORM). Absent = tout compte (FISH, MACHINE_TRANSFORM).
 # xp : ajoutee automatiquement au BattlePass a la completion.
 # recompense : ITEM, ECONOMIE, CLE_CAISSE (caisse + quantite) ou BOOST_XP (duree-secondes + multiplicateur).
 #              Donnee automatiquement a la completion (optionnel).
@@ -79,6 +80,17 @@ hebdomadaires:
       type: ITEM
       materiel: EMERALD
       quantite: 5
+
+  transformer_minerais:
+    nom: "&6Reussir des transformations a la Machine"
+    icone: IRON_BLOCK
+    type: MACHINE_TRANSFORM
+    objectif: 5
+    xp: 350
+    recompense:
+      type: CLE_CAISSE
+      caisse: commune
+      quantite: 1
 
   tuer_squelettes:
     nom: "&fTuer des squelettes"
