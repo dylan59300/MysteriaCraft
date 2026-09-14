@@ -259,7 +259,7 @@ public final class MysteriaCraft extends JavaPlugin {
         // Machine a Transformation : minerai -> Lucky Block (module luckyblock deja initialise avant celui-ci).
         this.machineManager = new MachineManager(this, customItemsConfig);
         this.machineService = new MachineService(this, machineManager, customItemManager, luckyBlockManager, questService, messages);
-        Bukkit.getPluginManager().registerEvents(new MachineListener(machineManager, machineService), this);
+        Bukkit.getPluginManager().registerEvents(new MachineListener(machineManager, machineService, messages), this);
         getCommand("machine").setExecutor(new MachineCommand(customItemsConfig, machineManager, messages));
 
         // Effet de particules ambiant (densite/couleur selon le niveau de carburant), toutes les 5 secondes.

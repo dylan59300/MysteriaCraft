@@ -1,5 +1,6 @@
 package com.mysteriacraft.customitems.machine.listeners;
 
+import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.customitems.machine.MachineManager;
 import com.mysteriacraft.customitems.machine.MachineService;
 import org.bukkit.Location;
@@ -17,16 +18,19 @@ import org.bukkit.inventory.EquipmentSlot;
 /**
  * Marque la Machine a Transformation a sa pose, la fait dropper elle-meme a la casse (au lieu
  * du bloc brut) avec un effet d'explosion visuelle si elle etait encore chargee en carburant,
+ * empeche de la casser pendant qu'elle recharge (sauf en sneak ou avec la permission admin),
  * et delegue le clic-droit dessus au MachineService.
  */
 public class MachineListener implements Listener {
 
     private final MachineManager manager;
     private final MachineService service;
+    private final MessageManager messages;
 
-    public MachineListener(MachineManager manager, MachineService service) {
+    public MachineListener(MachineManager manager, MachineService service, MessageManager messages) {
         this.manager = manager;
         this.service = service;
+        this.messages = messages;
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -40,6 +44,16 @@ public class MachineListener implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
         if (!manager.isMachineBlock(block)) {
+            return;
+        }
+
+        // Protection : impossible de casser une machine en pleine recharge, sauf en sneak
+        // (bris volontaire assume) ou avec la permission admin.
+        if (manager.getRemainingCooldownMillis(block) > 0
+                && !event.getPlayer().isSneaking()
+                && !event.getPlayer().hasPermission("mysteriacraft.machine.admin")) {
+            event.setCancelled(true);
+            messages.send(event.getPlayer(), "machine.protection-cooldown");
             return;
         }
 

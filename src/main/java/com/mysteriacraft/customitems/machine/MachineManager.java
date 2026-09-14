@@ -7,6 +7,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -56,7 +57,12 @@ public class MachineManager {
     private String upgradeItemId = "amelioration_machine";
     private double bonusPerUpgrade = 5.0;
     private double bonusMax = 30.0;
+    private boolean autoAlimentation = true;
     private final Map<Material, String> acceptedOres = new HashMap<>();
+
+    private static final BlockFace[] ADJACENT_FACES = {
+            BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN
+    };
 
     public MachineManager(Plugin plugin, ConfigManager customItemsConfig) {
         this.plugin = plugin;
@@ -107,6 +113,8 @@ public class MachineManager {
             bonusMax = amelioration.getDouble("bonus-max", 30.0);
         }
 
+        autoAlimentation = section.getBoolean("auto-alimentation", true);
+
         ConfigurationSection ores = section.getConfigurationSection("minerais");
         if (ores != null) {
             for (String materialName : ores.getKeys(false)) {
@@ -119,7 +127,8 @@ public class MachineManager {
             }
         }
         plugin.getLogger().info("Machine a Transformation : " + acceptedOres.size() + " minerai(s) accepte(s), "
-                + successChance + "% de reussite de base, " + fuelTypes.size() + " type(s) de carburant.");
+                + successChance + "% de reussite de base, " + fuelTypes.size() + " type(s) de carburant, "
+                + "auto-alimentation " + (autoAlimentation ? "activee" : "desactivee") + ".");
     }
 
     public Material getBlockMaterial() {
@@ -161,6 +170,22 @@ public class MachineManager {
 
     public double getBonusMax() {
         return bonusMax;
+    }
+
+    public boolean isAutoAlimentationEnabled() {
+        return autoAlimentation;
+    }
+
+    /** Bloc adjacent (coffre ou baril) pouvant alimenter automatiquement cette machine, ou null. */
+    public Block getAdjacentChest(Block machineBlock) {
+        for (BlockFace face : ADJACENT_FACES) {
+            Block relative = machineBlock.getRelative(face);
+            Material type = relative.getType();
+            if (type == Material.CHEST || type == Material.TRAPPED_CHEST || type == Material.BARREL) {
+                return relative;
+            }
+        }
+        return null;
     }
 
     /** Famille de Lucky Block cible pour ce minerai, ou null si non accepte par la machine. */

@@ -6,6 +6,7 @@ import com.mysteriacraft.customitems.CustomItemDefinition;
 import com.mysteriacraft.customitems.CustomItemManager;
 import com.mysteriacraft.customitems.CustomItemService;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -13,11 +14,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * /customitem give <joueur> <id> [quantite] (admin)
  * /customitem sell <id>
+ * /customitem recettes
  * /customitem reload (admin)
  */
 public class CustomItemCommand implements CommandExecutor {
@@ -61,6 +64,11 @@ public class CustomItemCommand implements CommandExecutor {
             return handleGive(sender, args);
         }
 
+        if (args[0].equalsIgnoreCase("recettes")) {
+            sendRecipes(sender);
+            return true;
+        }
+
         if (args[0].equalsIgnoreCase("sell")) {
             if (!(sender instanceof Player player)) {
                 messages.send(sender, "general.commande-joueur-uniquement");
@@ -76,6 +84,35 @@ public class CustomItemCommand implements CommandExecutor {
 
         messages.send(sender, "customitem.usage");
         return true;
+    }
+
+    /** Affiche a l'expediteur la forme et les ingredients de chaque item custom craftable. */
+    private void sendRecipes(CommandSender sender) {
+        List<CustomItemDefinition> craftables = manager.getItemsSorted().stream()
+                .filter(CustomItemDefinition::isCraftable)
+                .toList();
+
+        if (craftables.isEmpty()) {
+            messages.send(sender, "customitem.aucune-recette");
+            return;
+        }
+
+        messages.send(sender, "customitem.recettes-titre");
+        for (CustomItemDefinition definition : craftables) {
+            sender.sendMessage(MessageManager.color("&e&l" + definition.displayName() + " &7(id: " + definition.id() + ")"));
+            for (String row : definition.recipeShape()) {
+                StringBuilder rendered = new StringBuilder();
+                for (char c : row.toCharArray()) {
+                    if (c == ' ') {
+                        rendered.append("&8[ &7- &8] ");
+                        continue;
+                    }
+                    Material ingredient = definition.recipeIngredients().get(c);
+                    rendered.append("&8[ &f").append(ingredient != null ? ingredient.name() : "?").append(" &8] ");
+                }
+                sender.sendMessage(MessageManager.color(rendered.toString()));
+            }
+        }
     }
 
     private boolean handleGive(CommandSender sender, String[] args) {

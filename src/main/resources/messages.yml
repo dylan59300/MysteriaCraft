@@ -185,7 +185,7 @@ luckyblock:
   gui-odds-pourcentage: "&7Chance au sein du pool : &e{pourcentage}%"
 
 customitem:
-  usage: "&cUsage : /customitem <give <joueur> <id> [quantite]|sell <id>|reload>"
+  usage: "&cUsage : /customitem <give <joueur> <id> [quantite]|sell <id>|recettes|reload>"
   introuvable: "&cCet item custom n'existe pas."
   non-vendable: "&cCet item ne peut pas etre revendu."
   aucun-en-inventaire: "&cVous n'avez aucun exemplaire de cet item dans votre inventaire."
@@ -193,6 +193,8 @@ customitem:
   trouve: "&6&lTrouvaille ! &aVous avez trouve : &e{item}"
   give-effectue: "&a{joueur} a recu &e{quantite}x {item}&a."
   reload: "&aLes items custom ont ete recharges."
+  aucune-recette: "&cAucun item custom n'a de recette de craft configuree."
+  recettes-titre: "&6&l=== Recettes d'items custom ==="
 
 machine:
   usage: "&cUsage : /machine <give <joueur> [quantite]|reload>"
@@ -210,3 +212,4 @@ machine:
   statut-en-attente: "&b&lEtat machine : &7carburant &e{carburant} &7charge(s) &7- bonus &e+{bonus}% &7(&e{chance}%&7 de reussite) &7- &cRecharge : &e{cooldown}&c restant"
   amelioration-effectuee: "&d&lMachine amelioree ! &7Bonus de reussite : &e+{bonus}% &7(&e{chance}%&7 de reussite totale)."
   amelioration-max: "&cCette machine a deja atteint son bonus de reussite maximum."
+  protection-cooldown: "&cImpossible de casser cette machine pendant qu'elle recharge ! &7(maintenez shift pour forcer)"

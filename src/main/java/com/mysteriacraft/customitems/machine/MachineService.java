@@ -15,8 +15,10 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.Container;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -234,8 +236,77 @@ public class MachineService {
                 world.spawnParticle(Particle.END_ROD, effectLocation, 2, 0.2, 0.15, 0.2, 0.0);
             }
             updateHologram(block);
+            tickAutoFeed(block);
         }
         stale.forEach(manager::forgetMachine);
+    }
+
+    /**
+     * Auto-alimentation : si un coffre/baril est colle a la machine, pioche automatiquement 1 minerai
+     * accepte dedans des que le cooldown est ecoule (et qu'il reste du carburant), et y depose le
+     * Lucky Block obtenu en cas de reussite. Purement automatique, aucun joueur n'est implique.
+     */
+    private void tickAutoFeed(Block machineBlock) {
+        if (!manager.isAutoAlimentationEnabled()) {
+            return;
+        }
+        if (manager.getFuel(machineBlock) <= 0 || manager.getRemainingCooldownMillis(machineBlock) > 0) {
+            return;
+        }
+        Block chestBlock = manager.getAdjacentChest(machineBlock);
+        if (chestBlock == null || !(chestBlock.getState() instanceof Container container)) {
+            return;
+        }
+
+        Inventory inventory = container.getInventory();
+        ItemStack[] contents = inventory.getContents();
+        for (int slot = 0; slot < contents.length; slot++) {
+            ItemStack stack = contents[slot];
+            if (stack == null || stack.getType() == Material.AIR) {
+                continue;
+            }
+            String familyId = manager.getTargetFamily(stack.getType());
+            if (familyId == null) {
+                continue;
+            }
+            LuckyBlockFamily family = luckyBlockManager.getFamily(familyId);
+            if (family == null) {
+                continue;
+            }
+
+            if (stack.getAmount() > 1) {
+                stack.setAmount(stack.getAmount() - 1);
+                inventory.setItem(slot, stack);
+            } else {
+                inventory.setItem(slot, null);
+            }
+            manager.consumeCharge(machineBlock);
+            manager.markUsedNow(machineBlock);
+
+            Location effectLocation = machineBlock.getLocation().add(0.5, 1.0, 0.5);
+            boolean success = ThreadLocalRandom.current().nextDouble(100.0) < manager.getEffectiveChance(machineBlock);
+            if (success) {
+                ItemStack reward = luckyBlockManager.createItem(family);
+                Map<Integer, ItemStack> leftovers = inventory.addItem(reward);
+                leftovers.values().forEach(leftover -> chestBlock.getWorld().dropItemNaturally(chestBlock.getLocation(), leftover));
+                playAutoFeedEffects(effectLocation, true);
+            } else {
+                playAutoFeedEffects(effectLocation, false);
+            }
+            updateHologram(machineBlock);
+            return; // 1 minerai par cooldown ecoule, meme cadence que l'utilisation manuelle
+        }
+    }
+
+    private void playAutoFeedEffects(Location location, boolean success) {
+        World world = location.getWorld();
+        if (success) {
+            world.spawnParticle(Particle.VILLAGER_HAPPY, location, 25, 0.4, 0.4, 0.4);
+            world.playSound(location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.3f);
+        } else {
+            world.spawnParticle(Particle.SMOKE_NORMAL, location, 20, 0.4, 0.4, 0.4);
+            world.playSound(location, Sound.ENTITY_ITEM_BREAK, 1f, 0.7f);
+        }
     }
 
     /** Met a jour le texte de l'hologramme de cette machine (charges, chance, cooldown restant). */
