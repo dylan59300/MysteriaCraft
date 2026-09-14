@@ -1,8 +1,8 @@
 # =========================================
 #   MysteriaCraft - Configuration des minerais/objets custom
 # =========================================
-# Chaque minerai custom est visuellement un lingot de fer (item-de-base) redessine par le
-# resource pack via son custom-model-data (voir resourcepack/README.md pour l'installer).
+# Chaque minerai/objet custom est visuellement un item vanilla existant (item-de-base) renomme
+# et redecrit : AUCUN resource pack requis, tout fonctionne avec le client Minecraft standard.
 # minerais-source : blocs dont la casse a une chance (chance-drop, en %) de donner ce minerai.
 #                   Liste vide/absente = pas de source naturelle, uniquement obtenable en
 #                   recompense (crate/battlepass/quete/luckyblock via "type: OBJET_CUSTOM").
@@ -101,8 +101,7 @@ items:
     lore:
       - "&7Une pierre precieuse rougeoyante,"
       - "&7chaude au toucher."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500001
+    item-de-base: RED_DYE
     minerais-source: [REDSTONE_ORE, DEEPSLATE_REDSTONE_ORE]
     chance-drop: 8
     prix-vente: 40
@@ -112,8 +111,7 @@ items:
     lore:
       - "&7Un cristal bleu profond,"
       - "&7froid comme la glace."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500002
+    item-de-base: LAPIS_LAZULI
     minerais-source: [LAPIS_ORE, DEEPSLATE_LAPIS_ORE]
     chance-drop: 8
     prix-vente: 40
@@ -122,8 +120,7 @@ items:
     nom: "&6Topaze Brute"
     lore:
       - "&7Une gemme doree scintillante."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500003
+    item-de-base: ORANGE_DYE
     minerais-source: [GOLD_ORE, DEEPSLATE_GOLD_ORE, NETHER_GOLD_ORE]
     chance-drop: 6
     prix-vente: 60
@@ -132,8 +129,7 @@ items:
     nom: "&8Onyx Brut"
     lore:
       - "&7Une pierre noire et lisse."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500004
+    item-de-base: BLACK_DYE
     minerais-source: [COAL_ORE, DEEPSLATE_COAL_ORE]
     chance-drop: 10
     prix-vente: 20
@@ -143,8 +139,7 @@ items:
     lore:
       - "&7Une gemme rouge sombre,"
       - "&7veinee de metal."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500005
+    item-de-base: MAGENTA_DYE
     minerais-source: [IRON_ORE, DEEPSLATE_IRON_ORE]
     chance-drop: 8
     prix-vente: 35
@@ -154,8 +149,7 @@ items:
     lore:
       - "&7Une pierre bleu-vert claire,"
       - "&7rare et prisee."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500006
+    item-de-base: LIGHT_BLUE_DYE
     minerais-source: [DIAMOND_ORE, DEEPSLATE_DIAMOND_ORE]
     chance-drop: 5
     prix-vente: 150
@@ -165,8 +159,7 @@ items:
     lore:
       - "&7Une pierre laiteuse aux reflets"
       - "&7changeants."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500007
+    item-de-base: WHITE_DYE
     minerais-source: [NETHER_QUARTZ_ORE]
     chance-drop: 7
     prix-vente: 45
@@ -176,8 +169,7 @@ items:
     lore:
       - "&7Un cristal violet perce"
       - "&7dans les grottes profondes."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500008
+    item-de-base: AMETHYST_SHARD
     minerais-source: [AMETHYST_CLUSTER]
     chance-drop: 12
     prix-vente: 55
@@ -187,8 +179,7 @@ items:
     lore:
       - "&7Une gemme vert olive extremement"
       - "&7rare, trouvee pres du bedrock."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500009
+    item-de-base: LIME_DYE
     minerais-source: [ANCIENT_DEBRIS]
     chance-drop: 4
     prix-vente: 300
@@ -200,8 +191,7 @@ items:
       - "&7dans la nature."
       - "&7Uniquement obtenable en recompense"
       - "&7(crate, battlepass, quete, luckyblock)."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500010
+    item-de-base: GREEN_DYE
     minerais-source: []
     chance-drop: 0
     prix-vente: 500
@@ -211,8 +201,7 @@ items:
     lore:
       - "&7Alimente la Machine a Transformation."
       - "&7Clic-droit sur la machine pour la ravitailler."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500011
+    item-de-base: GLOWSTONE_DUST
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
@@ -233,8 +222,7 @@ items:
       - "&7Une version raffinee du carburant standard."
       - "&7Donne plus de charges et reduit le"
       - "&7temps de recharge de la machine."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500012
+    item-de-base: BLAZE_ROD
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
@@ -255,8 +243,7 @@ items:
       - "&7Clic-droit sur une Machine a Transformation"
       - "&7pour augmenter durablement sa chance"
       - "&7de reussite."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500013
+    item-de-base: NETHER_STAR
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
@@ -277,8 +264,7 @@ items:
       - "&7Clic-droit sur une Machine a Transformation"
       - "&7au tier Bronze pour la faire passer"
       - "&7au tier Argent."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500014
+    item-de-base: IRON_NUGGET
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
@@ -298,8 +284,7 @@ items:
       - "&7Clic-droit sur une Machine a Transformation"
       - "&7au tier Argent pour la faire passer"
       - "&7au tier Or."
-    item-de-base: IRON_INGOT
-    custom-model-data: 500015
+    item-de-base: GOLD_NUGGET
     minerais-source: []
     chance-drop: 0
     prix-vente: 0

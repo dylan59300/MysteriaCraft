@@ -20,8 +20,9 @@ import java.util.Map;
 
 /**
  * Charge les minerais/objets custom depuis custom_items.yml et fabrique leurs ItemStack
- * (item de base + CustomModelData + marque PersistentDataContainer). Le rendu visuel reel
- * necessite le resource pack fourni dans /resourcepack (voir son README).
+ * (item de base vanilla + nom/lore custom + marque PersistentDataContainer). Aucun resource
+ * pack requis : chaque item custom est visuellement un item vanilla existant (choisi via
+ * "item-de-base"), distingue par son nom colore et sa lore.
  */
 public class CustomItemManager {
 
@@ -100,7 +101,6 @@ public class CustomItemManager {
         if (baseItem == null) {
             baseItem = Material.IRON_INGOT;
         }
-        int customModelData = section.getInt("custom-model-data", 0);
         double dropChance = section.getDouble("chance-drop", 0);
         double sellPrice = section.getDouble("prix-vente", 0);
 
@@ -138,7 +138,7 @@ public class CustomItemManager {
             }
         }
 
-        return new CustomItemDefinition(id, displayName, lore, baseItem, customModelData, sourceOres, dropChance,
+        return new CustomItemDefinition(id, displayName, lore, baseItem, sourceOres, dropChance,
                 sellPrice, recipeShape, recipeIngredients);
     }
 
@@ -169,7 +169,6 @@ public class CustomItemManager {
                 coloredLore.add(MessageManager.color(line));
             }
             meta.setLore(coloredLore);
-            meta.setCustomModelData(definition.customModelData());
             meta.getPersistentDataContainer().set(itemKey, PersistentDataType.STRING, definition.id());
             item.setItemMeta(meta);
         }

@@ -7,7 +7,7 @@ import java.util.Map;
 
 /**
  * Definition immuable d'un minerai/objet custom, charge depuis custom_items.yml.
- * Rendu visuel via CustomModelData sur un item de base (voir resourcepack/README.md).
+ * Rendu visuel via son item-de-base vanilla (pas de resource pack requis).
  *
  * @param sourceOres blocs qui peuvent faire apparaitre cet item a la casse (liste vide = aucune
  *                   source naturelle, obtenable uniquement en recompense : crate/battlepass/quete/luckyblock).
@@ -21,7 +21,6 @@ public record CustomItemDefinition(
         String displayName,
         List<String> lore,
         Material baseItem,
-        int customModelData,
         List<Material> sourceOres,
         double dropChance,
         double sellPrice,
