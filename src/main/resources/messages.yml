@@ -215,3 +215,6 @@ machine:
   protection-cooldown: "&cImpossible de casser cette machine pendant qu'elle recharge ! &7(maintenez shift pour forcer)"
   preset-obstrue: "&cImpossible d'installer le preset : la machine et ses 2 coffres ont besoin de 3 emplacements libres devant vous."
   preset-installee: "&a&lUsine installee ! &aMachine + coffre d'entree + coffre de sortie prets a l'emploi."
+  tier-max: "&cCette machine est deja au tier maximum : &e{tier}&c."
+  tier-mauvais-kit: "&cCe kit ne correspond pas au tier suivant de cette machine. &7Actuellement : &e{tier-actuel}&7, suivant : &e{tier-suivant}&7."
+  tier-ameliore: "&d&lMachine amelioree au tier {tier} ! &7Chance : &e{chance}% &7- Cooldown de base : &e{cooldown}"

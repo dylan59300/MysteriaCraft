@@ -117,7 +117,7 @@ public class MachineCommand implements CommandExecutor {
             return true;
         }
 
-        machineBlock.setType(manager.getBlockMaterial());
+        // tagBlock() place le bloc au tier de base (materiau + PDC + hologramme).
         manager.tagBlock(machineBlock);
         inputBlock.setType(Material.CHEST);
         outputBlock.setType(Material.CHEST);

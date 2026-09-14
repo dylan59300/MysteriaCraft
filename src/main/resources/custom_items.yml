@@ -8,16 +8,23 @@
 #                   recompense (crate/battlepass/quete/luckyblock via "type: OBJET_CUSTOM").
 # prix-vente : 0 = non revendable via /customitem sell.
 
-# Machine a Transformation : un bloc pose (voir /machine give) sur lequel on clique-droit avec
-# un minerai vanilla en main. chance-reussite % (+ bonus d'amelioration, voir "amelioration"
-# ci-dessous) de le transformer en Lucky Block de la famille indiquee (module LuckyBlock).
-# En cas d'echec, le minerai est simplement perdu.
+# Machine a Transformation : un bloc pose (voir /machine give ou /machine preset) sur lequel on
+# clique-droit avec un minerai vanilla en main. chance-reussite % du tier actuel (+ bonus
+# d'amelioration, voir "amelioration" ci-dessous) de le transformer en Lucky Block de la famille
+# indiquee (module LuckyBlock). En cas d'echec, le minerai est simplement perdu.
+# tiers : paliers STRUCTURELS de la machine (Bronze/Argent/Or...), chacun avec son propre bloc,
+#         sa propre chance de reussite, son propre cooldown de base et sa propre jauge de
+#         carburant affichee. Le PREMIER tier declare est celui donne par /machine give et
+#         /machine preset (pas de kit-item-id). Chaque tier SUIVANT necessite le kit-item-id
+#         (objet custom, voir "items" ci-dessous) correspondant, utilise en clic-droit sur une
+#         machine se trouvant EXACTEMENT au tier precedent (progression sequentielle obligatoire :
+#         impossible de sauter du tier Bronze directement au tier Or). Le carburant et le bonus
+#         d'amelioration deja accumules sont conserves lors d'un changement de tier.
 # carburants : chaque entree est un objet custom (voir "items" ci-dessous) utilisable comme
 #              carburant. Clic-droit sur la machine avec l'un d'eux en main la ravitaille :
 #              charges = nombre de tentatives ajoutees, cooldown-secondes = delai applique aux
 #              PROCHAINES tentatives tant que la machine tourne sur ce type de carburant (un
 #              carburant ameliore peut donc a la fois donner plus de charges et reduire l'attente).
-# cooldown-secondes (racine) : cooldown par defaut d'une machine neuve, avant tout ravitaillement.
 # auto-alimentation : si true, coller un coffre/coffre piege/baril/hopper a la machine (n'importe
 #                      quelle face) lui permet de piocher automatiquement les minerais acceptes
 #                      dedans (1 par cooldown ecoule) sans avoir a cliquer. Avec un seul conteneur
@@ -28,18 +35,37 @@
 #                                  echoue (mode economique optionnel, desactive par defaut).
 # hologramme-segments : nombre de blocs "■" dans la barre de progression du cooldown affichee sur
 #                        l'hologramme et en actionbar (10 par defaut).
-# hologramme-jauge-carburant-max : niveau de carburant correspondant a une jauge pleine sur
+# hologramme-jauge-carburant-max : valeur PAR DEFAUT (utilisee si un tier ne definit pas la sienne)
+#                                   de niveau de carburant correspondant a une jauge pleine sur
 #                                   l'hologramme (purement visuel, ne limite pas le stock reel).
 # hologramme-compact : si true, l'hologramme n'affiche que l'essentiel (barre de cooldown + %
-#                       de reussite), sans le nom de la machine ni le detail carburant/entree-sortie.
+#                       de reussite), sans le nom/tier de la machine ni le detail carburant/entree-sortie.
 machine-transformation:
-  bloc: IRON_BLOCK
-  chance-reussite: 20
-  cooldown-secondes: 60
+  hologramme-jauge-carburant-max: 20
+  tiers:
+    bronze:
+      nom: "&7Bronze"
+      bloc: IRON_BLOCK
+      chance-reussite: 20
+      cooldown-secondes: 60
+      jauge-carburant-max: 20
+    argent:
+      nom: "&fArgent"
+      bloc: GOLD_BLOCK
+      chance-reussite: 30
+      cooldown-secondes: 45
+      jauge-carburant-max: 35
+      kit-item-id: kit_argent
+    or:
+      nom: "&6&lOr"
+      bloc: DIAMOND_BLOCK
+      chance-reussite: 45
+      cooldown-secondes: 30
+      jauge-carburant-max: 50
+      kit-item-id: kit_or
   auto-alimentation: true
   carburant-uniquement-si-echec: false
   hologramme-segments: 10
-  hologramme-jauge-carburant-max: 20
   hologramme-compact: false
   carburants:
     carburant:
@@ -244,3 +270,45 @@ items:
         D: DIAMOND
         G: GOLD_INGOT
         N: NETHERITE_SCRAP
+
+  kit_argent:
+    nom: "&fKit d'Amelioration Argent"
+    lore:
+      - "&7Clic-droit sur une Machine a Transformation"
+      - "&7au tier Bronze pour la faire passer"
+      - "&7au tier Argent."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500014
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 8 lingots d'or autour d'un bloc de fer.
+    recette:
+      forme:
+        - "GGG"
+        - "GFG"
+        - "GGG"
+      ingredients:
+        G: GOLD_INGOT
+        F: IRON_BLOCK
+
+  kit_or:
+    nom: "&6&lKit d'Amelioration Or"
+    lore:
+      - "&7Clic-droit sur une Machine a Transformation"
+      - "&7au tier Argent pour la faire passer"
+      - "&7au tier Or."
+    item-de-base: IRON_INGOT
+    custom-model-data: 500015
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 8 diamants autour d'un bloc d'or.
+    recette:
+      forme:
+        - "DDD"
+        - "DGD"
+        - "DDD"
+      ingredients:
+        D: DIAMOND
+        G: GOLD_BLOCK

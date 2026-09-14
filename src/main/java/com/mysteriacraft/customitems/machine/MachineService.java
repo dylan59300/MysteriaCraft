@@ -85,6 +85,12 @@ public class MachineService {
             return;
         }
 
+        MachineManager.MachineTier tierFromKit = manager.getTierForKitItem(customItemId);
+        if (tierFromKit != null) {
+            upgradeTier(player, machineBlock, inHand, tierFromKit);
+            return;
+        }
+
         attemptTransformation(player, machineBlock, inHand);
     }
 
@@ -144,6 +150,48 @@ public class MachineService {
         Location loc = machineBlock.getLocation().add(0.5, 1.0, 0.5);
         loc.getWorld().spawnParticle(Particle.END_ROD, loc, 20, 0.3, 0.5, 0.3, 0.02);
         player.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.6f);
+        updateHologram(machineBlock);
+    }
+
+    /**
+     * Fait passer la machine au tier suivant en utilisant un kit d'amelioration structurelle.
+     * Le kit doit correspondre exactement au tier qui suit le tier ACTUEL de la machine : un kit
+     * "Or" ne fonctionne pas sur une machine encore au tier Bronze, il faut d'abord passer par
+     * "Argent". Change le materiau du bloc et sa chance/cooldown de base ; le carburant et le
+     * bonus d'amelioration deja accumules sont conserves.
+     */
+    private void upgradeTier(Player player, Block machineBlock, ItemStack kitItem, MachineManager.MachineTier kitTargetTier) {
+        MachineManager.MachineTier currentTier = manager.getBlockTier(machineBlock);
+        MachineManager.MachineTier expectedNextTier = manager.getNextTier(currentTier.id());
+
+        if (expectedNextTier == null) {
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("tier", currentTier.displayName());
+            messages.send(player, "machine.tier-max", placeholders);
+            return;
+        }
+        if (!expectedNextTier.id().equalsIgnoreCase(kitTargetTier.id())) {
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("tier-actuel", currentTier.displayName());
+            placeholders.put("tier-suivant", expectedNextTier.displayName());
+            messages.send(player, "machine.tier-mauvais-kit", placeholders);
+            return;
+        }
+
+        int remaining = kitItem.getAmount() - 1;
+        player.getInventory().setItemInMainHand(remaining > 0 ? withAmount(kitItem, remaining) : null);
+
+        manager.setTier(machineBlock, expectedNextTier);
+
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("tier", expectedNextTier.displayName());
+        placeholders.put("chance", String.valueOf((int) manager.getEffectiveChance(machineBlock)));
+        placeholders.put("cooldown", formatDuration(expectedNextTier.cooldownSeconds() * 1000L));
+        messages.send(player, "machine.tier-ameliore", placeholders);
+
+        Location loc = machineBlock.getLocation().add(0.5, 1.0, 0.5);
+        loc.getWorld().spawnParticle(Particle.TOTEM, loc, 40, 0.4, 0.5, 0.4, 0.1);
+        loc.getWorld().playSound(loc, Sound.ITEM_TOTEM_USE, 1f, 1.2f);
         updateHologram(machineBlock);
     }
 
@@ -367,9 +415,11 @@ public class MachineService {
             return;
         }
 
+        MachineManager.MachineTier tier = manager.getBlockTier(machineBlock);
         int fuel = manager.getFuel(machineBlock);
-        String fuelBar = fuelGaugeBar(fuel);
-        String ligne1 = "&b&lMachine &7| &e" + fuel + " " + fuelBar + " &7| &e" + chance + "% &7| " + cooldownBar;
+        String fuelBar = fuelGaugeBar(fuel, tier);
+        String ligne1 = "&b&lMachine &7[" + tier.displayName() + "&7] &7| &e" + fuel + " " + fuelBar
+                + " &7| &e" + chance + "% &7| " + cooldownBar;
         stand.setCustomName(MessageManager.color(ligne1 + autoFeedSuffix(machineBlock)));
     }
 
@@ -386,10 +436,10 @@ public class MachineService {
     }
 
     /** Petite jauge "[■■□□□]" (5 segments fixes, bleue) indiquant le niveau de carburant par
-     * rapport a hologramme-jauge-carburant-max (purement visuel, ne plafonne pas le stock reel). */
-    private String fuelGaugeBar(int fuel) {
+     * rapport a la jauge-carburant-max du tier actuel (purement visuel, ne plafonne pas le stock reel). */
+    private String fuelGaugeBar(int fuel, MachineManager.MachineTier tier) {
         int segments = 5;
-        double progress = Math.min(1.0, (double) fuel / manager.getHologramFuelGaugeMax());
+        double progress = Math.min(1.0, (double) fuel / tier.fuelGaugeMax());
         int filled = Math.max(0, Math.min(segments, (int) Math.round(progress * segments)));
         return "&f[&b" + "■".repeat(filled) + "&7" + "□".repeat(segments - filled) + "&f]";
     }

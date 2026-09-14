@@ -26,9 +26,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Charge la configuration de la Machine a Transformation (bloc, minerais acceptes -> famille
- * de Lucky Block cible, chance de reussite, types de carburant, amelioration) et fabrique/marque
- * son bloc. L'etat de chaque machine posee (charges de carburant restantes, cooldown actif,
+ * Charge la configuration de la Machine a Transformation (tiers structurels, minerais acceptes
+ * -> famille de Lucky Block cible, types de carburant, amelioration) et fabrique/marque son bloc.
+ * L'etat de chaque machine posee (tier actuel, charges de carburant restantes, cooldown actif,
  * bonus de reussite, horodatage de derniere utilisation) est stocke directement sur le bloc via
  * PersistentDataContainer (extension Paper).
  */
@@ -43,9 +43,20 @@ public class MachineManager {
     public record AdjacentContainers(Block input, BlockFace inputFace, Block output, BlockFace outputFace) {
     }
 
+    /**
+     * Un palier structurel de machine (Bronze/Argent/Or...) : son propre materiau de bloc, sa
+     * chance de reussite et son cooldown de base, sa jauge de carburant affichee, et l'id de
+     * l'objet custom ("kit") qui permet d'y acceder DEPUIS le tier precedent. kitItemId est null
+     * pour le tout premier tier (celui donne par /machine give, aucun kit necessaire).
+     */
+    public record MachineTier(String id, String displayName, Material block, double chance,
+                               long cooldownSeconds, int fuelGaugeMax, String kitItemId) {
+    }
+
     private final Plugin plugin;
     private final ConfigManager customItemsConfig;
     private final NamespacedKey machineKey;
+    private final NamespacedKey tierKey;
     private final NamespacedKey fuelKey;
     private final NamespacedKey lastUseKey;
     private final NamespacedKey activeCooldownKey;
@@ -55,9 +66,9 @@ public class MachineManager {
     /** Machines actuellement posees dans le monde, pour l'effet de particules ambiant (perdu au redemarrage). */
     private final Set<Location> activeMachines = ConcurrentHashMap.newKeySet();
 
-    private Material blockMaterial = Material.IRON_BLOCK;
-    private double successChance = 20.0;
-    private long defaultCooldownSeconds = 60L;
+    /** LinkedHashMap : l'ordre de declaration dans machine-transformation.tiers fixe la progression
+     * (le 1er tier declare est le tier de base, chaque tier suivant necessite le kit du precedent). */
+    private final Map<String, MachineTier> tiers = new LinkedHashMap<>();
     private final Map<String, FuelType> fuelTypes = new LinkedHashMap<>();
     private String upgradeItemId = "amelioration_machine";
     private double bonusPerUpgrade = 5.0;
@@ -65,7 +76,7 @@ public class MachineManager {
     private boolean autoAlimentation = true;
     private boolean carburantSeulementSiEchec = false;
     private int hologramSegments = 10;
-    private int hologramFuelGaugeMax = 20;
+    private int hologramFuelGaugeMaxDefault = 20;
     private boolean hologramCompact = false;
     /** LinkedHashMap : l'ordre de declaration dans machine-transformation.minerais fixe la priorite
      * de traitement de l'auto-alimentation (le 1er minerai present dans le coffre d'entree est traite en premier). */
@@ -79,6 +90,7 @@ public class MachineManager {
         this.plugin = plugin;
         this.customItemsConfig = customItemsConfig;
         this.machineKey = new NamespacedKey(plugin, "machine-transformation");
+        this.tierKey = new NamespacedKey(plugin, "machine-tier");
         this.fuelKey = new NamespacedKey(plugin, "machine-carburant");
         this.lastUseKey = new NamespacedKey(plugin, "machine-derniere-utilisation");
         this.activeCooldownKey = new NamespacedKey(plugin, "machine-cooldown-actif");
@@ -90,16 +102,42 @@ public class MachineManager {
     public void loadConfig() {
         acceptedOres.clear();
         fuelTypes.clear();
+        tiers.clear();
         ConfigurationSection section = customItemsConfig.get().getConfigurationSection("machine-transformation");
         if (section == null) {
             plugin.getLogger().warning("Section 'machine-transformation' manquante dans custom_items.yml.");
             return;
         }
 
-        Material material = Material.matchMaterial(section.getString("bloc", "IRON_BLOCK"));
-        blockMaterial = material != null ? material : Material.IRON_BLOCK;
-        successChance = section.getDouble("chance-reussite", 20.0);
-        defaultCooldownSeconds = section.getLong("cooldown-secondes", 60L);
+        hologramFuelGaugeMaxDefault = Math.max(1, section.getInt("hologramme-jauge-carburant-max", 20));
+
+        ConfigurationSection tiersSection = section.getConfigurationSection("tiers");
+        if (tiersSection != null) {
+            for (String tierId : tiersSection.getKeys(false)) {
+                ConfigurationSection tierSection = tiersSection.getConfigurationSection(tierId);
+                if (tierSection == null) {
+                    continue;
+                }
+                Material block = Material.matchMaterial(tierSection.getString("bloc", "IRON_BLOCK"));
+                if (block == null) {
+                    plugin.getLogger().warning("Materiau inconnu pour le tier de machine '" + tierId + "', IRON_BLOCK utilise.");
+                    block = Material.IRON_BLOCK;
+                }
+                String displayName = tierSection.getString("nom", tierId);
+                double chance = tierSection.getDouble("chance-reussite", 20.0);
+                long cooldown = Math.max(0, tierSection.getLong("cooldown-secondes", 60L));
+                int fuelGaugeMax = Math.max(1, tierSection.getInt("jauge-carburant-max", hologramFuelGaugeMaxDefault));
+                String kitItemId = tierSection.contains("kit-item-id")
+                        ? tierSection.getString("kit-item-id").toLowerCase() : null;
+                tiers.put(tierId.toLowerCase(), new MachineTier(
+                        tierId.toLowerCase(), displayName, block, chance, cooldown, fuelGaugeMax, kitItemId));
+            }
+        }
+        if (tiers.isEmpty()) {
+            plugin.getLogger().warning("Aucun tier configure dans machine-transformation.tiers : "
+                    + "un tier 'bronze' par defaut (IRON_BLOCK, 20%, 60s) est utilise.");
+            tiers.put("bronze", new MachineTier("bronze", "&7Bronze", Material.IRON_BLOCK, 20.0, 60L, 20, null));
+        }
 
         ConfigurationSection carburants = section.getConfigurationSection("carburants");
         if (carburants != null) {
@@ -109,7 +147,7 @@ public class MachineManager {
                     continue;
                 }
                 int charges = Math.max(1, fuelSection.getInt("charges", 5));
-                long cooldown = Math.max(0, fuelSection.getLong("cooldown-secondes", defaultCooldownSeconds));
+                long cooldown = Math.max(0, fuelSection.getLong("cooldown-secondes", getBaseTier().cooldownSeconds()));
                 fuelTypes.put(itemId.toLowerCase(), new FuelType(itemId.toLowerCase(), charges, cooldown));
             }
         }
@@ -127,7 +165,6 @@ public class MachineManager {
         autoAlimentation = section.getBoolean("auto-alimentation", true);
         carburantSeulementSiEchec = section.getBoolean("carburant-uniquement-si-echec", false);
         hologramSegments = Math.max(1, section.getInt("hologramme-segments", 10));
-        hologramFuelGaugeMax = Math.max(1, section.getInt("hologramme-jauge-carburant-max", 20));
         hologramCompact = section.getBoolean("hologramme-compact", false);
 
         ConfigurationSection ores = section.getConfigurationSection("minerais");
@@ -142,20 +179,84 @@ public class MachineManager {
             }
         }
         plugin.getLogger().info("Machine a Transformation : " + acceptedOres.size() + " minerai(s) accepte(s), "
-                + successChance + "% de reussite de base, " + fuelTypes.size() + " type(s) de carburant, "
+                + tiers.size() + " tier(s), " + fuelTypes.size() + " type(s) de carburant, "
                 + "auto-alimentation " + (autoAlimentation ? "activee" : "desactivee") + ".");
     }
 
-    public Material getBlockMaterial() {
-        return blockMaterial;
+    // ---- Tiers ----
+
+    /** Le tier de base (le 1er declare dans la config), celui donne par /machine give et /machine preset. */
+    public MachineTier getBaseTier() {
+        return tiers.values().stream().findFirst()
+                .orElse(new MachineTier("bronze", "&7Bronze", Material.IRON_BLOCK, 20.0, 60L, 20, null));
     }
 
-    public double getSuccessChance() {
-        return successChance;
+    public MachineTier getTier(String id) {
+        return id == null ? null : tiers.get(id.toLowerCase());
     }
 
-    public long getDefaultCooldownSeconds() {
-        return defaultCooldownSeconds;
+    /** Le tier suivant celui donne dans la progression, ou null si c'est deja le dernier tier. */
+    public MachineTier getNextTier(String currentTierId) {
+        boolean foundCurrent = false;
+        for (MachineTier tier : tiers.values()) {
+            if (foundCurrent) {
+                return tier;
+            }
+            if (tier.id().equalsIgnoreCase(currentTierId)) {
+                foundCurrent = true;
+            }
+        }
+        return null;
+    }
+
+    /** Le tier accessible grace a cet id d'objet "kit", ou null si aucun tier n'utilise ce kit. */
+    public MachineTier getTierForKitItem(String kitItemId) {
+        if (kitItemId == null) {
+            return null;
+        }
+        for (MachineTier tier : tiers.values()) {
+            if (kitItemId.equalsIgnoreCase(tier.kitItemId())) {
+                return tier;
+            }
+        }
+        return null;
+    }
+
+    /** Le tier actuel de ce bloc (celui stocke en PDC), ou le tier de base si non defini/invalide. */
+    public MachineTier getBlockTier(Block block) {
+        String id = block.getPersistentDataContainer().get(tierKey, PersistentDataType.STRING);
+        MachineTier tier = id != null ? getTier(id) : null;
+        return tier != null ? tier : getBaseTier();
+    }
+
+    /**
+     * Fait passer ce bloc au tier donne : change son materiau physique et sa chance/cooldown de
+     * base, tout en preservant son etat (carburant, bonus, hologramme). Le cooldown actif est
+     * reinitialise a celui du nouveau tier pour que l'amelioration soit immediatement ressentie.
+     */
+    public void setTier(Block block, MachineTier tier) {
+        // Sauvegarde defensive avant de changer le materiau du bloc, au cas ou cela affecterait
+        // le PersistentDataContainer associe a cette position.
+        int fuel = getFuel(block);
+        long lastUse = getLastUseMillis(block);
+        double bonus = getBonusReussite(block);
+        String hologramUuid = block.getPersistentDataContainer().get(hologramKey, PersistentDataType.STRING);
+
+        block.setType(tier.block());
+
+        block.getPersistentDataContainer().set(machineKey, PersistentDataType.BYTE, (byte) 1);
+        block.getPersistentDataContainer().set(tierKey, PersistentDataType.STRING, tier.id());
+        setFuel(block, fuel);
+        if (lastUse > 0) {
+            block.getPersistentDataContainer().set(lastUseKey, PersistentDataType.LONG, lastUse);
+        }
+        setActiveCooldownSeconds(block, tier.cooldownSeconds());
+        if (bonus > 0) {
+            block.getPersistentDataContainer().set(bonusReussiteKey, PersistentDataType.DOUBLE, bonus);
+        }
+        if (hologramUuid != null) {
+            block.getPersistentDataContainer().set(hologramKey, PersistentDataType.STRING, hologramUuid);
+        }
     }
 
     // ---- Carburant ----
@@ -173,7 +274,7 @@ public class MachineManager {
         return fuelTypes.values().stream().findFirst().orElse(null);
     }
 
-    // ---- Amelioration ----
+    // ---- Amelioration (bonus incremental, independant des tiers) ----
 
     public String getUpgradeItemId() {
         return upgradeItemId;
@@ -198,10 +299,6 @@ public class MachineManager {
 
     public int getHologramSegments() {
         return hologramSegments;
-    }
-
-    public int getHologramFuelGaugeMax() {
-        return hologramFuelGaugeMax;
     }
 
     public boolean isHologramCompact() {
@@ -268,7 +365,8 @@ public class MachineManager {
     }
 
     public ItemStack createMachineItem(int amount) {
-        ItemStack item = new ItemStack(blockMaterial, amount);
+        MachineTier baseTier = getBaseTier();
+        ItemStack item = new ItemStack(baseTier.block(), amount);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(MessageManager.color("&b&lMachine a Transformation"));
@@ -276,7 +374,8 @@ public class MachineManager {
                     MessageManager.color("&7Clic-droit avec un minerai en main"),
                     MessageManager.color("&7pour tenter de le transformer"),
                     MessageManager.color("&7en Lucky Block."),
-                    MessageManager.color("&7Chance de reussite : &e" + (int) successChance + "%"),
+                    MessageManager.color("&7Tier : " + baseTier.displayName()
+                            + " &7(&e" + (int) baseTier.chance() + "%&7 de reussite)"),
                     MessageManager.color("&7Necessite du carburant pour fonctionner."),
                     MessageManager.color("&7Clic a vide pour voir son etat.")
             ));
@@ -286,10 +385,10 @@ public class MachineManager {
         return item;
     }
 
-    /** Marque un bloc pose comme etant la Machine a Transformation, l'enregistre pour les particules
-     * ambiantes et fait apparaitre son hologramme d'etat. */
+    /** Marque un bloc pose comme etant la Machine a Transformation (au tier de base), l'enregistre
+     * pour les particules ambiantes et fait apparaitre son hologramme d'etat. */
     public void tagBlock(Block block) {
-        block.getPersistentDataContainer().set(machineKey, PersistentDataType.BYTE, (byte) 1);
+        setTier(block, getBaseTier());
         activeMachines.add(block.getLocation());
         spawnHologram(block);
     }
@@ -380,10 +479,11 @@ public class MachineManager {
         setFuel(block, getFuel(block) - 1);
     }
 
-    /** Cooldown actuellement applique par cette machine (herite du dernier carburant utilise). */
+    /** Cooldown actuellement applique par cette machine (herite du dernier carburant utilise, ou
+     * du tier actuel si jamais ravitaillee depuis sa pose/son dernier changement de tier). */
     public long getActiveCooldownSeconds(Block block) {
         Long value = block.getPersistentDataContainer().get(activeCooldownKey, PersistentDataType.LONG);
-        return value == null ? defaultCooldownSeconds : value;
+        return value != null ? value : getBlockTier(block).cooldownSeconds();
     }
 
     public void setActiveCooldownSeconds(Block block, long seconds) {
@@ -421,8 +521,8 @@ public class MachineManager {
         return newTotal;
     }
 
-    /** Chance de reussite effective de cette machine (base + bonus d'amelioration), plafonnee a 100%. */
+    /** Chance de reussite effective de cette machine (chance du tier + bonus d'amelioration), plafonnee a 100%. */
     public double getEffectiveChance(Block block) {
-        return Math.min(100.0, successChance + getBonusReussite(block));
+        return Math.min(100.0, getBlockTier(block).chance() + getBonusReussite(block));
     }
 }
