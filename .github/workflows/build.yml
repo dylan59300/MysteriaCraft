@@ -7,6 +7,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,7 +27,7 @@ jobs:
       - name: Compiler avec Maven (mvn clean package)
         run: mvn -B clean package
 
-      - name: Publier le jar compile
+      - name: Publier le jar compile (artifact du run, expire au bout de 90 jours)
         uses: actions/upload-artifact@v4
         with:
           name: MysteriaCraft-jar
@@ -34,3 +37,19 @@ jobs:
             target/*.jar
             !target/original-*.jar
           if-no-files-found: error
+
+      - name: Publier une Release GitHub avec le jar (lien stable, sans connexion requise)
+        # Uniquement sur un push (pas sur les runs "pull_request", qui tournent sur une fusion
+        # ephemere non poussee) : le tag "latest-build" est deplace et sa Release mise a jour a
+        # chaque nouveau commit, pour toujours pointer vers le jar le plus recent.
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          JAR=$(ls target/*.jar | grep -v '/original-' | head -n1)
+          gh release delete latest-build --yes --cleanup-tag --repo "${{ github.repository }}" || true
+          gh release create latest-build "$JAR" \
+            --repo "${{ github.repository }}" \
+            --title "MysteriaCraft - dernier build" \
+            --notes "Build automatique depuis la branche \`${{ github.ref_name }}\`, commit ${{ github.sha }}." \
+            --prerelease
