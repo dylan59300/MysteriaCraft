@@ -6,7 +6,6 @@ import com.mysteriacraft.core.reward.RewardGiver;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.title.Title;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -36,23 +35,29 @@ public class QuestService {
         this.messages = messages;
     }
 
-    /** A appeler depuis un listener Bukkit (thread principal) a chaque action pouvant faire progresser une quete. */
+    /**
+     * A appeler depuis un listener Bukkit (thread principal) a chaque action pouvant faire progresser une quete.
+     * Execute volontairement en SYNCHRONE sur le thread appelant (comme le font tous les autres Managers du
+     * plugin qui touchent la base SQLite partagee) : la reserver a un thread asynchrone provoquait des acces
+     * concurrents a la meme Connection SQLite lorsqu'un autre Manager ecrivait au meme instant (typiquement
+     * MachineManager juste avant cet appel lors d'une transformation reussie), ce qui faisait echouer
+     * silencieusement l'ecriture de progression (exception SQLite avalee, quete bloquee a 0). Une requete
+     * SQLite locale etant de toute facon quasi instantanee, l'impact sur le thread principal est negligeable.
+     */
     public void registerProgress(Player player, QuestType type, String target, int amount) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            for (QuestDefinition quest : questManager.getAllQuests()) {
-                if (quest.type() != type) {
-                    continue;
-                }
-                if (quest.target() != null && (target == null || !quest.target().equalsIgnoreCase(target))) {
-                    continue;
-                }
-
-                QuestManager.ProgressResult result = questManager.incrementProgress(player.getUniqueId(), quest, amount);
-                if (result.justCompleted()) {
-                    Bukkit.getScheduler().runTask(plugin, () -> onQuestCompleted(player, quest));
-                }
+        for (QuestDefinition quest : questManager.getAllQuests()) {
+            if (quest.type() != type) {
+                continue;
             }
-        });
+            if (quest.target() != null && (target == null || !quest.target().equalsIgnoreCase(target))) {
+                continue;
+            }
+
+            QuestManager.ProgressResult result = questManager.incrementProgress(player.getUniqueId(), quest, amount);
+            if (result.justCompleted()) {
+                onQuestCompleted(player, quest);
+            }
+        }
     }
 
     private void onQuestCompleted(Player player, QuestDefinition quest) {

@@ -200,6 +200,7 @@ machine:
   usage: "&cUsage : /machine <give <joueur> [quantite]|preset|reload>"
   aucun-item: "&cVous devez tenir un minerai en main pour utiliser la machine."
   minerai-non-accepte: "&cCe minerai n'est pas accepte par la machine."
+  minerai-insuffisant: "&cIl faut au moins &e{quantite}x {minerai} &cen main pour lancer une transformation."
   famille-introuvable: "&cErreur : la famille de Lucky Block ciblee n'existe pas (verifiez la config)."
   reussite: "&a&lTransformation reussie ! &aVous avez obtenu une caisse : &e{caisse}"
   echec: "&c&lTransformation echouee... &7Le minerai a ete perdu."

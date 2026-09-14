@@ -38,12 +38,16 @@ import java.util.concurrent.ThreadLocalRandom;
  *   la machine (ajoute des charges et applique le cooldown de ce type de carburant) ;
  * - clic-droit avec l'objet d'amelioration en main -> augmente durablement la chance de reussite ;
  * - clic-droit a vide -> affiche l'etat (carburant restant, cooldown, bonus de reussite) ;
- * - clic-droit avec un minerai accepte en main -> tente la transformation si du carburant est
- *   disponible et que le cooldown (par machine) est ecoule ; le minerai est consomme dans tous
- *   les cas, avec "chance-reussite" (+ bonus) % de le transformer en Lucky Block. En cas
- *   d'echec, il est perdu.
+ * - clic-droit avec au moins MINERAIS_PAR_TRANSFORMATION minerais acceptes en main -> tente la
+ *   transformation si du carburant est disponible et que le cooldown (par machine) est ecoule ;
+ *   le lot de minerais est consomme dans tous les cas (1 seule charge de carburant, 1 seul jet de
+ *   chance pour tout le lot), avec "chance-reussite" (+ bonus) % de le transformer en Lucky Block.
+ *   En cas d'echec, il est perdu.
  */
 public class MachineService {
+
+    /** Quantite de minerai consommee pour UNE transformation (= 1 charge de carburant, 1 seul jet de chance). */
+    private static final int MINERAIS_PAR_TRANSFORMATION = 10;
 
     private final Plugin plugin;
     private final MachineManager manager;
@@ -224,9 +228,18 @@ public class MachineService {
             return;
         }
 
-        // Consomme exactement 1 exemplaire du minerai et relance le cooldown. Le carburant n'est
-        // consomme tout de suite que si le mode economique (carburant-uniquement-si-echec) est desactive.
-        int remaining = inHand.getAmount() - 1;
+        if (inHand.getAmount() < MINERAIS_PAR_TRANSFORMATION) {
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("quantite", String.valueOf(MINERAIS_PAR_TRANSFORMATION));
+            placeholders.put("minerai", inHand.getType().name());
+            messages.send(player, "machine.minerai-insuffisant", placeholders);
+            return;
+        }
+
+        // Consomme MINERAIS_PAR_TRANSFORMATION exemplaires du minerai (1 seul jet de chance pour le lot)
+        // et relance le cooldown. Le carburant n'est consomme tout de suite que si le mode economique
+        // (carburant-uniquement-si-echec) est desactive.
+        int remaining = inHand.getAmount() - MINERAIS_PAR_TRANSFORMATION;
         player.getInventory().setItemInMainHand(remaining > 0 ? withAmount(inHand, remaining) : null);
         boolean economyMode = manager.isConsumeFuelOnFailureOnly();
         if (!economyMode) {
@@ -299,11 +312,11 @@ public class MachineService {
 
     /**
      * Auto-alimentation : si un/des conteneur(s) sont colles a la machine, pioche automatiquement
-     * 1 minerai accepte dans le conteneur d'entree des que le cooldown est ecoule (et qu'il reste
-     * du carburant), et depose le Lucky Block obtenu (en cas de reussite) dans le conteneur de
-     * sortie. Purement automatique, aucun joueur n'est implique. Si aucun minerai accepte n'est
-     * trouve dans l'entree, un petit indicateur (poudre rouge) apparait au-dessus pour signaler
-     * qu'il faut la reapprovisionner.
+     * MINERAIS_PAR_TRANSFORMATION minerais acceptes dans le conteneur d'entree des que le cooldown
+     * est ecoule (et qu'il reste du carburant), et depose le Lucky Block obtenu (en cas de reussite)
+     * dans le conteneur de sortie. Purement automatique, aucun joueur n'est implique. Si aucun
+     * minerai accepte n'est trouve en quantite suffisante dans l'entree, un petit indicateur
+     * (poudre rouge) apparait au-dessus pour signaler qu'il faut la reapprovisionner.
      */
     private void tickAutoFeed(Block machineBlock) {
         if (!manager.isAutoAlimentationEnabled()) {
@@ -327,11 +340,13 @@ public class MachineService {
         // Parcourt les minerais acceptes dans leur ORDRE DE PRIORITE (celui declare dans
         // machine-transformation.minerais), pas l'ordre des cases du coffre : le premier minerai
         // prioritaire present dans l'entree est traite en premier, quelle que soit sa case.
+        // Ne retient que les piles d'au moins MINERAIS_PAR_TRANSFORMATION minerais : impossible de lancer
+        // une transformation partielle depuis un conteneur, comme pour le clic-droit manuel.
         Material match = null;
         int slot = -1;
         for (Material candidate : manager.getAcceptedMaterials()) {
             int candidateSlot = inputInventory.first(candidate);
-            if (candidateSlot >= 0) {
+            if (candidateSlot >= 0 && inputInventory.getItem(candidateSlot).getAmount() >= MINERAIS_PAR_TRANSFORMATION) {
                 match = candidate;
                 slot = candidateSlot;
                 break;
@@ -339,7 +354,8 @@ public class MachineService {
         }
 
         if (match == null) {
-            // Aucun minerai accepte trouve dans l'entree : petit indicateur visuel de reapprovisionnement.
+            // Aucun minerai accepte (en quantite suffisante) trouve dans l'entree : petit indicateur
+            // visuel de reapprovisionnement.
             Location warningLocation = containers.input().getLocation().add(0.5, 1.1, 0.5);
             containers.input().getWorld().spawnParticle(Particle.REDSTONE, warningLocation, 6, 0.2, 0.1, 0.2, 0.0,
                     new Particle.DustOptions(Color.RED, 1.2f));
@@ -353,8 +369,9 @@ public class MachineService {
         }
 
         ItemStack stack = inputInventory.getItem(slot);
-        if (stack.getAmount() > 1) {
-            stack.setAmount(stack.getAmount() - 1);
+        int remainingInStack = stack.getAmount() - MINERAIS_PAR_TRANSFORMATION;
+        if (remainingInStack > 0) {
+            stack.setAmount(remainingInStack);
             inputInventory.setItem(slot, stack);
         } else {
             inputInventory.setItem(slot, null);

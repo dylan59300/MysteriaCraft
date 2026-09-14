@@ -70,10 +70,10 @@ machine-transformation:
   carburants:
     carburant:
       charges: 5
-      cooldown-secondes: 60
+      cooldown-secondes: 5
     carburant_ameliore:
       charges: 12
-      cooldown-secondes: 20
+      cooldown-secondes: 5
   # Amelioration de machine : objet custom consommable qui augmente durablement la chance de
   # reussite d'UNE machine (stockee sur son bloc), jusqu'a bonus-max.
   amelioration:

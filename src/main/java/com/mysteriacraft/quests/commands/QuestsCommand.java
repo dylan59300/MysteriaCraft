@@ -4,7 +4,6 @@ import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.quests.QuestDefinition;
 import com.mysteriacraft.quests.QuestManager;
 import com.mysteriacraft.quests.gui.QuestsGui;
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -33,14 +32,13 @@ public class QuestsCommand implements CommandExecutor {
             return true;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            Map<String, QuestManager.ProgressSnapshot> progress = new HashMap<>();
-            for (QuestDefinition quest : questManager.getAllQuests()) {
-                progress.put(quest.id(), questManager.getProgress(player.getUniqueId(), quest));
-            }
-            Bukkit.getScheduler().runTask(plugin, () ->
-                    new QuestsGui(player, questManager, messages, progress).open());
-        });
+        // Synchrone comme le reste des acces SQLite du plugin (voir QuestService#registerProgress) :
+        // evite tout acces concurrent a la Connection partagee, une requete locale etant instantanee.
+        Map<String, QuestManager.ProgressSnapshot> progress = new HashMap<>();
+        for (QuestDefinition quest : questManager.getAllQuests()) {
+            progress.put(quest.id(), questManager.getProgress(player.getUniqueId(), quest));
+        }
+        new QuestsGui(player, questManager, messages, progress).open();
         return true;
     }
 }
