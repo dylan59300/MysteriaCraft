@@ -243,7 +243,7 @@ guide:
   reload: "&aLe guide a ete recharge."
 
 ile:
-  usage: "&cUsage : /ile <create|home|spawn|delete confirm|invite <joueur>|accept <joueur>|kick <joueur>|upgrade|niveau|top [page]>"
+  usage: "&cUsage : /ile <create|home|spawn|sethome|delete confirm|invite <joueur>|accept <joueur>|kick <joueur>|membres|visit <joueur>|upgrade|niveau|top [page]>"
   reload: "&aLa configuration des Iles a ete rechargee."
   deja-existante: "&cVous avez deja une ile. Utilisez &e/ile home &cpour vous y teleporter."
   aucune: "&cVous n'avez pas d'ile. Utilisez &e/ile create &cpour en creer une."
@@ -269,3 +269,10 @@ ile:
   top-vide: "&7Aucune ile creee pour le moment."
   top-titre: "&6&l=== Classement des Iles (page {page}/{max}) ==="
   top-ligne: "&7#{rang} &e{joueur} &7- niveau &a{niveau}"
+  sethome-hors-limites: "&cVous devez etre sur VOTRE ile (dans la zone protegee) pour y definir votre point d'atterrissage."
+  sethome-defini: "&a&lPoint d'atterrissage defini ! &7/ile home vous y teleportera desormais."
+  visite: "&b&lVous visitez l'ile de &e{joueur}&b. &7(lecture seule : vous ne pouvez rien y construire)"
+  defi-complete: "&d&l*** Defi d'ile complete ! *** &7({defi}) &a+&e{xp} &axp BattlePass !"
+  gui-membres-titre: "&8Membres de votre ile"
+  gui-membres-clic-exclure: "&cCliquez pour exclure ce membre"
+  gui-membres-aucun: "&7Aucun membre pour le moment (voir /ile invite)"

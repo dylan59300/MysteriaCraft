@@ -4,6 +4,7 @@ import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.island.IslandManager;
 import com.mysteriacraft.island.IslandService;
+import com.mysteriacraft.island.gui.IslandMembersGui;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -15,8 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * /ile create | home | spawn | delete confirm | invite <joueur> | accept <joueur> |
- *      kick <joueur> | upgrade | niveau | top [page]
+ * /ile create | home | spawn | sethome | delete confirm | invite <joueur> | accept <joueur> |
+ *      kick <joueur> | membres | visit <joueur> | upgrade | niveau | top [page]
  * /ile reload | tp <joueur> (admin uniquement)
  */
 public class IslandCommand implements CommandExecutor {
@@ -75,6 +76,27 @@ public class IslandCommand implements CommandExecutor {
                 }
             }
             case "spawn" -> service.teleportToWorldSpawn(player);
+            case "sethome" -> service.setHome(player);
+            case "visit" -> {
+                if (args.length < 2) {
+                    messages.send(player, "ile.usage");
+                    return true;
+                }
+                Player target = Bukkit.getPlayerExact(args[1]);
+                if (target == null) {
+                    messages.send(player, "general.joueur-introuvable");
+                    return true;
+                }
+                service.visit(player, target);
+            }
+            case "membres" -> {
+                IslandManager.Island island = manager.getIsland(player.getUniqueId());
+                if (island == null) {
+                    messages.send(player, "ile.aucune");
+                } else {
+                    new IslandMembersGui(player, island, service, messages).open();
+                }
+            }
             case "delete" -> {
                 if (args.length < 2 || !args[1].equalsIgnoreCase("confirm")) {
                     messages.send(player, "ile.delete-confirmation");

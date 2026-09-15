@@ -25,6 +25,11 @@
 #           atteint "niveau" (une seule fois par palier). Meme format de recompense que
 #           battlepass.yml/quests.yml/luckyblocks.yml (ITEM, ECONOMIE, OBJET_CUSTOM, GENERATEUR,
 #           MACHINE, LUCKYBLOCK, PET, BOOST_XP).
+# defis : objectifs ponctuels donnant de l'XP BattlePass (+ une recompense optionnelle, meme
+#         format que "paliers"), une seule fois par defi et par ile.
+#         type : NIVEAU (valeur d'ile atteinte) | MEMBRES (nombre de membres invites atteint) |
+#                TAILLE (rayon protege atteint, via /ile upgrade).
+#         id : identifiant unique du defi (libre, utilise uniquement en interne pour le suivi).
 monde: "iles"
 espacement-blocs: 300
 spawn-monde:
@@ -92,3 +97,32 @@ paliers:
       type: MACHINE
       machine-id: transformation
       quantite: 1
+
+defis:
+  - id: premiers_pas
+    type: NIVEAU
+    objectif: 25
+    xp: 100
+  - id: bonne_recolte
+    type: NIVEAU
+    objectif: 250
+    xp: 400
+  - id: pas_seul
+    type: MEMBRES
+    objectif: 1
+    xp: 50
+  - id: petite_communaute
+    type: MEMBRES
+    objectif: 4
+    xp: 300
+  - id: premier_agrandissement
+    type: TAILLE
+    objectif: 20
+    xp: 150
+  - id: grande_ile
+    type: TAILLE
+    objectif: 40
+    xp: 500
+    recompense:
+      type: ECONOMIE
+      montant: 15000

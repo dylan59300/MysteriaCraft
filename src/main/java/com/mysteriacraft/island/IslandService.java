@@ -1,5 +1,6 @@
 package com.mysteriacraft.island;
 
+import com.mysteriacraft.battlepass.BattlePassService;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.core.reward.Reward;
 import com.mysteriacraft.core.reward.RewardGiver;
@@ -21,14 +22,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Orchestre les actions du module Iles : creation (plateforme + kit + teleportation),
- * teleportation, invitations (en attente, en memoire), agrandissement (paye via l'economie), et
- * distribution des recompenses de palier (via RewardGiver, comme les autres modules).
+ * teleportation (dont visite d'une autre ile), invitations (en attente, en memoire),
+ * agrandissement (paye via l'economie), et distribution des recompenses de palier ET de defis
+ * (via RewardGiver + BattlePassService, comme les autres modules).
  */
 public class IslandService {
 
     private final IslandManager manager;
     private final EconomyManager economyManager;
     private final RewardGiver rewardGiver;
+    private final BattlePassService battlePassService;
     private final MessageManager messages;
 
     /** Invitations en attente : proprietaire -> ensemble des UUID invites (en memoire uniquement,
@@ -36,10 +39,11 @@ public class IslandService {
     private final Map<UUID, Set<UUID>> pendingInvites = new ConcurrentHashMap<>();
 
     public IslandService(IslandManager manager, EconomyManager economyManager, RewardGiver rewardGiver,
-                          MessageManager messages) {
+                          BattlePassService battlePassService, MessageManager messages) {
         this.manager = manager;
         this.economyManager = economyManager;
         this.rewardGiver = rewardGiver;
+        this.battlePassService = battlePassService;
         this.messages = messages;
     }
 
@@ -112,13 +116,46 @@ public class IslandService {
         }
     }
 
+    /** Teleporte au point d'atterrissage de cette ile : le home personnalise (/ile sethome) si
+     * defini, sinon le centre par defaut. */
     public void teleportToIsland(Player player, IslandManager.Island island) {
-        Location location = new Location(manager.getWorld(), island.centerX + 0.5, island.centerY + 2, island.centerZ + 0.5);
-        player.teleport(location);
+        player.teleport(manager.getHomeLocation(island));
     }
 
     public void teleportToWorldSpawn(Player player) {
         player.teleport(manager.getWorldSpawn());
+    }
+
+    /** /ile sethome : definit le point d'atterrissage de SA PROPRE ile a la position actuelle du
+     * joueur, a condition qu'il s'y trouve reellement (dans les limites protegees). */
+    public void setHome(Player player) {
+        IslandManager.Island island = manager.getIsland(player.getUniqueId());
+        if (island == null) {
+            messages.send(player, "ile.aucune");
+            return;
+        }
+        Location location = player.getLocation();
+        if (!location.getWorld().equals(manager.getWorld())
+                || manager.getIslandAt(location.getBlockX(), location.getBlockZ()) != island) {
+            messages.send(player, "ile.sethome-hors-limites");
+            return;
+        }
+        manager.setHome(island, location);
+        messages.send(player, "ile.sethome-defini");
+    }
+
+    /** /ile visit <joueur> : teleporte en LECTURE SEULE sur l'ile d'un autre joueur (la
+     * protection empeche deja toute construction pour un non-membre). */
+    public void visit(Player visitor, Player target) {
+        IslandManager.Island island = manager.getIsland(target.getUniqueId());
+        if (island == null) {
+            messages.send(visitor, "ile.aucune-pour-joueur");
+            return;
+        }
+        visitor.teleport(manager.getHomeLocation(island));
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("joueur", target.getName());
+        messages.send(visitor, "ile.visite", placeholders);
     }
 
     /** Supprime l'ile du joueur (sans confirmation supplementaire : geree en amont par la commande). */
@@ -179,6 +216,8 @@ public class IslandService {
         Map<String, String> ownerPlaceholders = new HashMap<>();
         ownerPlaceholders.put("joueur", target.getName());
         messages.send(owner, "ile.membre-rejoint", ownerPlaceholders);
+
+        giveChallengeRewards(owner, manager.checkChallenges(island, IslandManager.ChallengeType.MEMBRES, island.members().size()));
     }
 
     public boolean kickMember(Player owner, UUID member) {
@@ -212,6 +251,8 @@ public class IslandService {
         placeholders.put("taille", String.valueOf(newSize));
         placeholders.put("prix", economyManager.format(price));
         messages.send(player, "ile.agrandie", placeholders);
+
+        giveChallengeRewards(player, manager.checkChallenges(island, IslandManager.ChallengeType.TAILLE, newSize));
     }
 
     // ---- Valeur / paliers (appele par IslandProtectionListener a chaque pose/casse) ----
@@ -229,18 +270,78 @@ public class IslandService {
             return;
         }
         List<Reward> newTiers = manager.addValueAndCheckTiers(island, delta);
-        if (newTiers.isEmpty()) {
-            return;
-        }
         Player owner = Bukkit.getPlayer(island.owner());
-        if (owner == null) {
-            return;
+
+        if (!newTiers.isEmpty() && owner != null) {
+            for (Reward reward : newTiers) {
+                rewardGiver.give(owner, reward);
+            }
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("niveau", String.valueOf(island.value()));
+            messages.send(owner, "ile.palier-atteint", placeholders);
         }
-        for (Reward reward : newTiers) {
-            rewardGiver.give(owner, reward);
+
+        if (owner != null) {
+            giveChallengeRewards(owner, manager.checkChallenges(island, IslandManager.ChallengeType.NIVEAU, island.value()));
         }
-        Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("niveau", String.valueOf(island.value()));
-        messages.send(owner, "ile.palier-atteint", placeholders);
+    }
+
+    /**
+     * Affiche une jauge de particules le long du perimetre de l'ile sur laquelle se trouve
+     * CHAQUE joueur actuellement present dans le monde des Iles (appele periodiquement depuis
+     * MysteriaCraft, voir tickAmbientParticles des autres modules). Echantillonne le perimetre
+     * tous les 2 blocs pour rester leger malgre une grande ile.
+     */
+    public void tickBorders() {
+        World islandWorld = manager.getWorld();
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!player.getWorld().equals(islandWorld)) {
+                continue;
+            }
+            IslandManager.Island island = manager.getIslandAt(player.getLocation().getBlockX(), player.getLocation().getBlockZ());
+            if (island == null) {
+                continue;
+            }
+            drawBorder(island, player);
+        }
+    }
+
+    private void drawBorder(IslandManager.Island island, Player player) {
+        World world = manager.getWorld();
+        int cx = island.centerX;
+        int cz = island.centerZ;
+        int size = island.size();
+        double y = player.getLocation().getY();
+        int step = 2;
+
+        for (int dx = -size; dx <= size; dx += step) {
+            spawnBorderParticle(world, player, cx + dx, y, cz - size);
+            spawnBorderParticle(world, player, cx + dx, y, cz + size);
+        }
+        for (int dz = -size; dz <= size; dz += step) {
+            spawnBorderParticle(world, player, cx - size, y, cz + dz);
+            spawnBorderParticle(world, player, cx + size, y, cz + dz);
+        }
+    }
+
+    private void spawnBorderParticle(World world, Player player, int x, double y, int z) {
+        player.spawnParticle(org.bukkit.Particle.END_ROD, x + 0.5, y, z + 0.5, 1, 0, 0, 0, 0);
+    }
+
+    /** Donne l'xp BattlePass + la recompense optionnelle de chaque defi nouvellement complete, et
+     * envoie un message par defi. */
+    private void giveChallengeRewards(Player player, List<IslandManager.Challenge> completed) {
+        for (IslandManager.Challenge challenge : completed) {
+            if (challenge.xp() > 0) {
+                battlePassService.addXp(player, challenge.xp());
+            }
+            if (challenge.reward() != null) {
+                rewardGiver.give(player, challenge.reward());
+            }
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("defi", challenge.id());
+            placeholders.put("xp", String.valueOf(challenge.xp()));
+            messages.send(player, "ile.defi-complete", placeholders);
+        }
     }
 }
