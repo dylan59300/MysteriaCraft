@@ -32,6 +32,8 @@
 # contrat : optionnel (true/false). Si true, la quete ne progresse qu'apres acceptation explicite
 #           via "/quests accepter <id>" (quete plus difficile, opt-in, recompense plus genereuse).
 # lore : optionnelle, ligne de description narrative affichee dans /quests.
+# niveau-pass-requis : optionnel (entier), niveau de BattlePass minimum pour que la quete
+#                       apparaisse dans /quests (module BattlePass, voir "idee #24").
 #
 # echanges-quotidiens-max / boost-prix : voir /quests echanger et /quests boost ci-dessous.
 echanges-quotidiens-max: 1
@@ -216,6 +218,21 @@ hebdomadaires:
       type: LUCKYBLOCK
       famille: legendaire
       quantite: 1
+
+  # Quete "pass" (voir "niveau-pass-requis") : n'apparait dans /quests qu'a partir du niveau 5
+  # de BattlePass, pour recompenser la progression cumulee des deux modules.
+  chasse_veteran:
+    nom: "&6&lQuete du veteran"
+    lore: "&7Debloquee au niveau 5 du BattlePass"
+    icone: NETHERITE_SWORD
+    type: KILL_MOB
+    cible: WITHER_SKELETON
+    niveau-pass-requis: 5
+    objectif: 20
+    xp: 600
+    recompense:
+      type: ECONOMIE
+      montant: 1500
 
   # Quete "contrat" (voir "contrat: true") : version plus difficile de tuer_squelettes, opt-in
   # via /quests accepter tuer_squelettes_elite, avec une bien meilleure recompense.

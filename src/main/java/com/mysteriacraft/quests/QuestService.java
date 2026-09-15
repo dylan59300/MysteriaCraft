@@ -116,6 +116,7 @@ public class QuestService {
         }
 
         battlePassService.addXp(player, xp);
+        battlePassService.grantFirstQuestOfDayBonusIfEligible(player);
         if (reward != null) {
             rewardGiver.give(player, reward);
         }

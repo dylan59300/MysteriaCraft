@@ -23,6 +23,8 @@ import org.bukkit.inventory.ItemStack;
  * @param contrat si vrai, la quete ne progresse qu'apres acceptation explicite via
  *                "/quests accepter" (quete optionnelle plus difficile, recompense plus genereuse).
  * @param lore ligne de description narrative optionnelle affichee dans /quests. Null = aucune.
+ * @param niveauPassRequis niveau de BattlePass minimum requis pour que cette quete apparaisse
+ *                         dans /quests (module BattlePass). 0 = aucune restriction.
  */
 public record QuestDefinition(
         String id,
@@ -39,7 +41,8 @@ public record QuestDefinition(
         WeatherCondition meteo,
         String reveleeApres,
         boolean contrat,
-        String lore
+        String lore,
+        int niveauPassRequis
 ) {
 
     public boolean isActiveNow() {

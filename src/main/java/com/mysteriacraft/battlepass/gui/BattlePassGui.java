@@ -46,6 +46,7 @@ public class BattlePassGui extends Menu {
     private long xp;
     private boolean premium;
     private Set<String> claims;
+    private int prestige;
 
     private Inventory inventory;
     private List<BattlePassLevel> levels;
@@ -53,7 +54,7 @@ public class BattlePassGui extends Menu {
     private final Map<Integer, int[]> slotToLevelAndTrack = new HashMap<>(); // slot -> {niveau, 0=gratuit/1=premium}
 
     public BattlePassGui(Plugin plugin, Player viewer, BattlePassManager manager, BattlePassService service,
-                          MessageManager messages, long xp, boolean premium, Set<String> claims) {
+                          MessageManager messages, long xp, boolean premium, Set<String> claims, int prestige) {
         super(viewer);
         this.plugin = plugin;
         this.manager = manager;
@@ -62,6 +63,7 @@ public class BattlePassGui extends Menu {
         this.xp = xp;
         this.premium = premium;
         this.claims = claims;
+        this.prestige = prestige;
     }
 
     @Override
@@ -80,10 +82,12 @@ public class BattlePassGui extends Menu {
             long newXp = manager.getXp(viewer.getUniqueId());
             boolean newPremium = service.isPremiumEffective(viewer);
             Set<String> newClaims = manager.getAllClaims(viewer.getUniqueId());
+            int newPrestige = manager.getPrestige(viewer.getUniqueId());
             Bukkit.getScheduler().runTask(plugin, () -> {
                 this.xp = newXp;
                 this.premium = newPremium;
                 this.claims = newClaims;
+                this.prestige = newPrestige;
                 open();
             });
         });
@@ -152,22 +156,51 @@ public class BattlePassGui extends Menu {
         if (next != null) {
             long remaining = Math.max(0, next.xpRequired() - xp);
             lore.add(replace(messages.raw("battlepass.gui-info-suivant"), "xp", String.valueOf(remaining)));
+            lore.add(buildProgressBar(currentLevel, next));
         } else {
             lore.add(messages.raw("battlepass.gui-info-max"));
         }
         lore.add(messages.raw(premium ? "battlepass.gui-info-premium-actif" : "battlepass.gui-info-premium-inactif"));
+        if (prestige > 0) {
+            lore.add(replace(messages.raw("battlepass.gui-info-prestige"), "prestige", String.valueOf(prestige)));
+        }
 
         String name = replace(messages.raw("battlepass.gui-info-niveau"), "niveau", String.valueOf(currentLevel));
         inventory.setItem(INFO_SLOT, new ItemBuilder(Material.NETHER_STAR).name(name).lore(lore).build());
     }
 
+    /** Barre de progression animee (20 segments) entre le palier actuel et le suivant. */
+    private String buildProgressBar(int currentLevel, BattlePassLevel next) {
+        BattlePassLevel current = manager.getLevel(currentLevel);
+        long floor = current != null ? current.xpRequired() : 0;
+        long span = Math.max(1, next.xpRequired() - floor);
+        double ratio = Math.min(1.0, Math.max(0.0, (xp - floor) / (double) span));
+        int filled = (int) Math.round(ratio * 20);
+        return "&a" + "▓".repeat(filled) + "&7" + "░".repeat(20 - filled) + " &f" + Math.round(ratio * 100) + "%";
+    }
+
     private ItemStack buildLevelLabel(BattlePassLevel level) {
         String name = replace(messages.raw("battlepass.gui-niveau-label"), "niveau", String.valueOf(level.level()));
-        List<String> lore = List.of(replace(messages.raw("battlepass.gui-niveau-xp-requis"), "xp", String.valueOf(level.xpRequired())));
+        List<String> lore = new ArrayList<>();
+        lore.add(replace(messages.raw("battlepass.gui-niveau-xp-requis"), "xp", String.valueOf(level.xpRequired())));
+        if (level.chapitre() > 0) {
+            String chapterName = manager.getChapterName(level.chapitre());
+            lore.add(replace(messages.raw("battlepass.gui-chapitre"), "chapitre", chapterName));
+        }
         return new ItemBuilder(Material.PAPER).name(name).lore(lore).build();
     }
 
     private ItemStack buildRewardItem(BattlePassLevel level, BattlePassReward reward, boolean unlocked, boolean premiumTrack) {
+        if (reward == null && !premiumTrack && !level.mysteryPool().isEmpty()) {
+            List<String> mysteryLore = new ArrayList<>();
+            mysteryLore.add("");
+            mysteryLore.add(messages.raw(unlocked ? "battlepass.gui-cliquer-reclamer" : "battlepass.gui-verrouille"));
+            boolean claimed = claims.contains(level.level() + "#" + BattlePassService.TRACK_FREE);
+            return new ItemBuilder(claimed ? Material.CHEST : Material.ENDER_CHEST)
+                    .name(claimed ? "&7" + messages.raw("battlepass.gui-mystere") : messages.raw("battlepass.gui-mystere"))
+                    .lore(claimed ? List.of("", messages.raw("battlepass.gui-deja-reclame")) : mysteryLore)
+                    .build();
+        }
         if (reward == null) {
             return new ItemBuilder(Material.LIGHT_GRAY_STAINED_GLASS_PANE)
                     .name(messages.raw("battlepass.gui-aucune-recompense")).build();

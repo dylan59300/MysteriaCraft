@@ -67,6 +67,9 @@ public class QuestsGui extends Menu {
     /** Une quete "secrete" (revelee-apres) n'apparait dans /quests qu'une fois la quete
      * prealable terminee CETTE MEME periode (elle continue de progresser silencieusement avant). */
     private boolean isRevealed(QuestDefinition quest) {
+        if (!questManager.meetsPassRequirement(viewer.getUniqueId(), quest)) {
+            return false;
+        }
         if (quest.reveleeApres() == null) {
             return true;
         }

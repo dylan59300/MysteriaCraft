@@ -18,6 +18,7 @@ import com.mysteriacraft.battlepass.BattlePassService;
 import com.mysteriacraft.battlepass.commands.BattlePassAdminCommand;
 import com.mysteriacraft.battlepass.commands.BattlePassCommand;
 import com.mysteriacraft.battlepass.commands.BattlePassConfirmPremiumCommand;
+import com.mysteriacraft.battlepass.listeners.ChatTitleListener;
 import com.mysteriacraft.quests.QuestManager;
 import com.mysteriacraft.quests.QuestService;
 import com.mysteriacraft.quests.commands.QuestsAdminCommand;
@@ -191,6 +192,8 @@ public final class MysteriaCraft extends JavaPlugin {
         this.battlePassManager = new BattlePassManager(this, database, battlepassConfig);
         this.battlePassService = new BattlePassService(this, battlePassManager, economyManager, rewardGiver, messages);
         rewardGiver.setBoosterHandler(battlePassService);
+        rewardGiver.setTitleUnlockHandler(battlePassService);
+        Bukkit.getPluginManager().registerEvents(new ChatTitleListener(battlePassService), this);
 
         getCommand("battlepass").setExecutor(new BattlePassCommand(this, battlePassManager, battlePassService, messages));
         getCommand("battlepassadmin").setExecutor(
@@ -210,6 +213,7 @@ public final class MysteriaCraft extends JavaPlugin {
     private void setupQuests() {
         this.questsConfig = new ConfigManager(this, "quests.yml");
         this.questManager = new QuestManager(this, database, questsConfig);
+        questManager.setBattlePassLevelProvider(uuid -> battlePassManager.computeLevel(battlePassManager.getXp(uuid)));
         this.questService = new QuestService(this, questManager, battlePassService, rewardGiver, economyManager, messages);
 
         // Verifications periodiques (biomes visites, objets custom differents possedes) : voir

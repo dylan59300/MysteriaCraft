@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * achat de la piste premium (avec confirmation cliquable), et reclamation des recompenses
  * (gratuite/premium) par palier.
  */
-public class BattlePassService implements RewardGiver.XpBoosterHandler {
+public class BattlePassService implements RewardGiver.XpBoosterHandler, RewardGiver.TitleUnlockHandler {
 
     public static final String TRACK_FREE = "GRATUIT";
     public static final String TRACK_PREMIUM = "PREMIUM";
@@ -88,13 +88,16 @@ public class BattlePassService implements RewardGiver.XpBoosterHandler {
         return player.hasPermission(PERMISSION_PREMIUM) || manager.isPremium(player.getUniqueId());
     }
 
-    /** Ajoute de l'xp a un joueur en ligne (multipliee par un eventuel boost actif) et le previent s'il passe un ou plusieurs niveaux. */
+    /** Ajoute de l'xp a un joueur en ligne (multipliee par un eventuel boost actif ET par un
+     * eventuel evenement double xp en cours, voir "evenements-xp" dans battlepass.yml) et le
+     * previent s'il passe un ou plusieurs niveaux. */
     public void addXp(Player player, long amount) {
-        long boostedAmount = Math.round(amount * currentMultiplier(player.getUniqueId()));
+        long boostedAmount = Math.round(amount * currentMultiplier(player.getUniqueId()) * manager.getActiveEventMultiplier());
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             long oldXp = manager.getXp(player.getUniqueId());
             int oldLevel = manager.computeLevel(oldXp);
             long newXp = manager.addXp(player.getUniqueId(), boostedAmount);
+            manager.recordXpGain(player.getUniqueId(), boostedAmount);
             int newLevel = manager.computeLevel(newXp);
 
             if (newLevel > oldLevel) {
@@ -189,6 +192,9 @@ public class BattlePassService implements RewardGiver.XpBoosterHandler {
             }
 
             BattlePassReward reward = TRACK_PREMIUM.equals(track) ? bpLevel.premiumReward() : bpLevel.freeReward();
+            if (reward == null && !TRACK_PREMIUM.equals(track) && !bpLevel.mysteryPool().isEmpty()) {
+                reward = manager.resolveMysteryReward(player.getUniqueId(), bpLevel);
+            }
             if (reward == null) {
                 Bukkit.getScheduler().runTask(plugin, () -> messages.send(player, "battlepass.aucune-recompense"));
                 fail.run();
@@ -221,5 +227,130 @@ public class BattlePassService implements RewardGiver.XpBoosterHandler {
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("recompense", reward.displayName());
         messages.send(player, "battlepass.recompense-recue", placeholders);
+    }
+
+    /** Bonus xp pour la PREMIERE quete terminee de la journee (voir "bonus-premiere-quete-du-jour"
+     * dans battlepass.yml), appele depuis QuestService a chaque completion de quete. */
+    public void grantFirstQuestOfDayBonusIfEligible(Player player) {
+        if (manager.getFirstQuestBonusXp() <= 0) {
+            return;
+        }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            boolean isFirst = manager.registerQuestCompletionAndCheckFirstOfDay(player.getUniqueId());
+            if (isFirst) {
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    addXp(player, manager.getFirstQuestBonusXp());
+                    messages.send(player, "battlepass.bonus-premiere-quete");
+                });
+            }
+        });
+    }
+
+    /** Debloque un titre de chat (voir RewardType.TITRE_CHAT), sans l'activer automatiquement. */
+    @Override
+    public void unlockTitle(Player player, String titre) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> manager.unlockTitle(player.getUniqueId(), titre));
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("titre", titre);
+        messages.send(player, "battlepass.titre-debloque", placeholders);
+    }
+
+    /** /battlepass titre <titre> : active un titre DEJA debloque, ou "aucun" pour le retirer. */
+    public void setActiveTitle(Player player, String titre) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            if (titre == null || titre.equalsIgnoreCase("aucun")) {
+                manager.setActiveTitle(player.getUniqueId(), null);
+                Bukkit.getScheduler().runTask(plugin, () -> messages.send(player, "battlepass.titre-retire"));
+                return;
+            }
+            if (!manager.getUnlockedTitles(player.getUniqueId()).contains(titre)) {
+                Bukkit.getScheduler().runTask(plugin, () -> messages.send(player, "battlepass.titre-non-debloque"));
+                return;
+            }
+            manager.setActiveTitle(player.getUniqueId(), titre);
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("titre", titre);
+                messages.send(player, "battlepass.titre-active", placeholders);
+            });
+        });
+    }
+
+    /** Titre de chat actuellement affiche pour ce joueur, ou null (utilise par ChatTitleListener). */
+    public String getActiveTitle(UUID uuid) {
+        return manager.getActiveTitle(uuid);
+    }
+
+    /** /battlepass prestige : recommence au niveau 1 (xp remise a 0) si le joueur est au niveau
+     * max, en echange d'une recompense cosmetique et d'un compteur de prestige affiche partout. */
+    public void prestige(Player player) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            long xp = manager.getXp(player.getUniqueId());
+            int currentLevel = manager.computeLevel(xp);
+            if (currentLevel < manager.getMaxLevelNumber()) {
+                Bukkit.getScheduler().runTask(plugin, () -> messages.send(player, "battlepass.prestige-niveau-insuffisant"));
+                return;
+            }
+            int newPrestige = manager.prestige(player.getUniqueId());
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (manager.getPrestigeReward() != null) {
+                    rewardGiver.give(player, manager.getPrestigeReward());
+                }
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("prestige", String.valueOf(newPrestige));
+                messages.send(player, "battlepass.prestige-reussi", placeholders);
+            });
+        });
+    }
+
+    /** /battlepass sprint : active un boost d'xp manuel (config sprint-multiplicateur/sprint-duree-secondes),
+     * limite a une utilisation par jour. */
+    public void sprint(Player player) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            if (manager.hasUsedSprintToday(player.getUniqueId())) {
+                Bukkit.getScheduler().runTask(plugin, () -> messages.send(player, "battlepass.sprint-epuise"));
+                return;
+            }
+            manager.markSprintUsedToday(player.getUniqueId());
+            Bukkit.getScheduler().runTask(plugin, () -> activateBooster(player, manager.getSprintDurationSeconds(), manager.getSprintMultiplier()));
+        });
+    }
+
+    /** /battlepass donner <joueur> <niveaux> : transfere l'xp equivalente a N niveaux du niveau
+     * ACTUEL du receveur, deduite de l'xp de l'expediteur (echoue si l'expediteur n'a pas assez). */
+    public void giftLevels(Player sender, Player receiver, int levelsToGift) {
+        if (sender.getUniqueId().equals(receiver.getUniqueId())) {
+            messages.send(sender, "battlepass.don-soi-meme");
+            return;
+        }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            long receiverXp = manager.getXp(receiver.getUniqueId());
+            int receiverLevel = manager.computeLevel(receiverXp);
+            int targetLevel = Math.min(manager.getMaxLevelNumber(), receiverLevel + levelsToGift);
+            BattlePassLevel targetLevelDef = manager.getLevel(targetLevel);
+            if (targetLevelDef == null || targetLevel <= receiverLevel) {
+                Bukkit.getScheduler().runTask(plugin, () -> messages.send(sender, "battlepass.don-impossible"));
+                return;
+            }
+            long xpNeeded = targetLevelDef.xpRequired() - receiverXp;
+            long senderXp = manager.getXp(sender.getUniqueId());
+            if (senderXp < xpNeeded) {
+                Bukkit.getScheduler().runTask(plugin, () -> messages.send(sender, "battlepass.don-fonds-insuffisants"));
+                return;
+            }
+            manager.addXp(sender.getUniqueId(), -xpNeeded);
+            manager.addXp(receiver.getUniqueId(), xpNeeded);
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                Map<String, String> senderPlaceholders = new HashMap<>();
+                senderPlaceholders.put("joueur", receiver.getName());
+                senderPlaceholders.put("niveaux", String.valueOf(targetLevel - receiverLevel));
+                messages.send(sender, "battlepass.don-envoye", senderPlaceholders);
+
+                Map<String, String> receiverPlaceholders = new HashMap<>();
+                receiverPlaceholders.put("joueur", sender.getName());
+                receiverPlaceholders.put("niveaux", String.valueOf(targetLevel - receiverLevel));
+                messages.send(receiver, "battlepass.don-recu", receiverPlaceholders);
+            });
+        });
     }
 }

@@ -22,5 +22,7 @@ public enum RewardType {
     MACHINE,
     /** Agrandit gratuitement le rayon protege de l'ile du joueur, d'un nombre de blocs fixe
      * (module Iles), plafonne a taille-max comme /ile upgrade. */
-    AGRANDISSEMENT_ILE
+    AGRANDISSEMENT_ILE,
+    /** Debloque un titre de chat (module BattlePass), selectionnable ensuite via /battlepass titre. */
+    TITRE_CHAT
 }

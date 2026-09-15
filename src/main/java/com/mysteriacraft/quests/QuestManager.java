@@ -40,6 +40,27 @@ public class QuestManager {
     private final List<QuestDefinition> weeklyQuests = new ArrayList<>();
     private final List<QuestDefinition> permanentQuests = new ArrayList<>();
 
+    /** Petit contrat minimal pour lire le niveau de BattlePass d'un joueur, implemente par
+     * BattlePassManager (branche apres coup depuis MysteriaCraft, voir "niveau-pass-requis"). */
+    public interface BattlePassLevelProvider {
+        int getLevel(UUID uuid);
+    }
+
+    private BattlePassLevelProvider battlePassLevelProvider;
+
+    public void setBattlePassLevelProvider(BattlePassLevelProvider battlePassLevelProvider) {
+        this.battlePassLevelProvider = battlePassLevelProvider;
+    }
+
+    /** Vrai si le joueur remplit la condition "niveau-pass-requis" de cette quete (toujours vrai
+     * si non definie, ou si le fournisseur n'est pas encore branche). */
+    public boolean meetsPassRequirement(UUID uuid, QuestDefinition quest) {
+        if (quest.niveauPassRequis() <= 0 || battlePassLevelProvider == null) {
+            return true;
+        }
+        return battlePassLevelProvider.getLevel(uuid) >= quest.niveauPassRequis();
+    }
+
     public QuestManager(Plugin plugin, Database database, ConfigManager questsConfig) {
         this.plugin = plugin;
         this.database = database;
@@ -148,9 +169,10 @@ public class QuestManager {
                 section.contains("meteo") ? section.getString("meteo") : null);
         String reveleeApres = section.contains("revelee-apres") ? section.getString("revelee-apres") : null;
         boolean contrat = section.getBoolean("contrat", false);
+        int niveauPassRequis = Math.max(0, section.getInt("niveau-pass-requis", 0));
 
         return new QuestDefinition(id, displayName, icon, type, target, objective, xp, reward, period, actifDu, actifAu,
-                meteo, reveleeApres, contrat, lore);
+                meteo, reveleeApres, contrat, lore, niveauPassRequis);
     }
 
     /** Quetes quotidiennes ACTUELLEMENT actives (exclut une quete saisonniere hors periode). */

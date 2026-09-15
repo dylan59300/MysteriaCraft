@@ -1,18 +1,51 @@
 # =========================================
 #   MysteriaCraft - Configuration du BattlePass
 # =========================================
-# Saison permanente : pas de date de fin, la progression n'est jamais reinitialisee.
+# Saison permanente : pas de date de fin, la progression n'est jamais reinitialisee (voir
+# /battlepass prestige pour recommencer volontairement au niveau 1).
 # xp-requis est CUMULATIF (xp totale necessaire depuis le debut pour atteindre ce palier).
-# gratuit / premium : ITEM (materiel + quantite) ou ECONOMIE (montant). Laisser absent = pas de recompense sur cette piste.
-# Tant que les Quetes ne sont pas branchees dessus, l'xp est gagnee passivement (xp-par-minute-de-jeu)
-# et via /battlepassadmin addxp <joueur> <montant> (admin).
+# gratuit / premium : n'importe quel type de Reward (voir RewardParser), ITEM/ECONOMIE/BOOST_XP/
+#                     PET/LUCKYBLOCK/OBJET_CUSTOM/GENERATEUR/MACHINE/AGRANDISSEMENT_ILE/TITRE_CHAT.
+#                     Laisser absent = pas de recompense sur cette piste.
+# mystere-pool : optionnelle, liste de recompenses (meme format que "gratuit") sur la piste
+#                GRATUITE d'un palier. Si presente, remplace "gratuit" : une seule est tiree au
+#                hasard et figee pour chaque joueur des la premiere consultation du palier.
+# chapitre : optionnel (entier), regroupe plusieurs paliers sous un theme commun (voir "chapitres").
+# L'xp est gagnee passivement (xp-par-minute-de-jeu), par les Quetes (voir QuestService#addXp),
+# via /battlepass sprint (defi manuel x3 une fois par jour), et via /battlepassadmin addxp (admin).
 
 xp-par-minute-de-jeu: 5
 prix-premium: 5000
+bonus-premiere-quete-du-jour: 50
+sprint-duree-secondes: 3600
+sprint-multiplicateur: 3.0
+
+# Recompense cosmetique donnee a chaque prestige reussi (voir /battlepass prestige).
+prestige-recompense:
+  type: TITRE_CHAT
+  titre: "Prestige"
+  nom: "Titre de Prestige"
+
+# Evenements double xp (ou autre multiplicateur) programmes a l'avance (voir "idee #20"). Plusieurs
+# evenements actifs simultanement se multiplient entre eux. Meme format que les quetes/lucky blocks
+# saisonniers (actif-du/actif-au en "MM-jj").
+evenements-xp:
+  - actif-du: "12-24"
+    actif-au: "01-01"
+    multiplicateur: 2.0
+  - actif-du: "10-31"
+    actif-au: "11-01"
+    multiplicateur: 2.0
+
+# Chapitres (voir "idee #28") : regroupent les paliers par theme, purement decoratif dans le menu.
+chapitres:
+  1: "Les Fondations"
+  2: "L'Ascension"
 
 niveaux:
   1:
     xp-requis: 0
+    chapitre: 1
     gratuit:
       type: ITEM
       materiel: BREAD
@@ -22,6 +55,7 @@ niveaux:
       montant: 100
   2:
     xp-requis: 100
+    chapitre: 1
     gratuit:
       type: ITEM
       materiel: IRON_INGOT
@@ -32,6 +66,7 @@ niveaux:
       quantite: 1
   3:
     xp-requis: 250
+    chapitre: 1
     gratuit:
       type: ECONOMIE
       montant: 150
@@ -41,6 +76,7 @@ niveaux:
       quantite: 4
   4:
     xp-requis: 450
+    chapitre: 1
     gratuit:
       type: ITEM
       materiel: GOLDEN_APPLE
@@ -51,16 +87,25 @@ niveaux:
       quantite: 1
   5:
     xp-requis: 700
-    gratuit:
-      type: ITEM
-      materiel: DIAMOND
-      quantite: 2
+    chapitre: 1
+    # Palier "mystere" (voir "idee #26") : une seule de ces 3 recompenses sera tiree au hasard et
+    # figee pour chaque joueur, remplacant entierement "gratuit" sur ce palier.
+    mystere-pool:
+      - type: ITEM
+        materiel: DIAMOND
+        quantite: 4
+      - type: ECONOMIE
+        montant: 800
+      - type: OBJET_CUSTOM
+        item-id: carburant_ameliore
+        quantite: 3
     premium:
       type: OBJET_CUSTOM
       item-id: epee_apprenti
       quantite: 1
   6:
     xp-requis: 1000
+    chapitre: 2
     gratuit:
       type: OBJET_CUSTOM
       item-id: carburant_minier
@@ -71,6 +116,7 @@ niveaux:
       quantite: 5
   7:
     xp-requis: 1400
+    chapitre: 2
     gratuit:
       type: ITEM
       materiel: EXPERIENCE_BOTTLE
@@ -81,16 +127,19 @@ niveaux:
       quantite: 1
   8:
     xp-requis: 1900
+    chapitre: 2
+    # Recompense BOOST_XP native au BattlePass (voir "idee #17").
     gratuit:
-      type: ITEM
-      materiel: DIAMOND
-      quantite: 3
+      type: BOOST_XP
+      duree-secondes: 1800
+      multiplicateur: 2.0
     premium:
       type: OBJET_CUSTOM
       item-id: hache_demolisseur
       quantite: 1
   9:
     xp-requis: 2500
+    chapitre: 2
     gratuit:
       type: GENERATEUR
       type-id: fer
@@ -101,6 +150,7 @@ niveaux:
       quantite: 1
   10:
     xp-requis: 3200
+    chapitre: 2
     gratuit:
       type: ITEM
       materiel: DIAMOND_BLOCK
@@ -109,3 +159,27 @@ niveaux:
       type: MACHINE
       machine-id: miniere
       quantite: 1
+
+  # Chapitre 3 (voir "chapitres" ci-dessus, purement decoratif) : paliers avances qui s'appuient
+  # davantage sur les modules du jeu (voir "idee #12"), et une recompense d'agrandissement d'ile.
+  11:
+    xp-requis: 4200
+    chapitre: 3
+    gratuit:
+      type: GENERATEUR
+      type-id: fer
+      quantite: 2
+    premium:
+      type: MACHINE
+      machine-id: transformation
+      quantite: 1
+  12:
+    xp-requis: 5500
+    chapitre: 3
+    gratuit:
+      type: AGRANDISSEMENT_ILE
+      blocs: 10
+    premium:
+      type: TITRE_CHAT
+      titre: "Veteran"
+      nom: "Titre Veteran"

@@ -29,6 +29,7 @@ public class RewardGiver {
     private GeneratorGiveHandler generatorGiveHandler;
     private MachineGiveHandler machineGiveHandler;
     private IslandUpgradeGiveHandler islandUpgradeGiveHandler;
+    private TitleUnlockHandler titleUnlockHandler;
 
     public RewardGiver(EconomyManager economyManager, MessageManager messages) {
         this.economyManager = economyManager;
@@ -72,6 +73,11 @@ public class RewardGiver {
         void giveFreeIslandUpgrade(Player player, int blocks);
     }
 
+    /** Petit contrat minimal pour debloquer un titre de chat, implemente par BattlePassService. */
+    public interface TitleUnlockHandler {
+        void unlockTitle(Player player, String titre);
+    }
+
     public void setBoosterHandler(XpBoosterHandler boosterHandler) {
         this.boosterHandler = boosterHandler;
     }
@@ -98,6 +104,10 @@ public class RewardGiver {
 
     public void setIslandUpgradeGiveHandler(IslandUpgradeGiveHandler islandUpgradeGiveHandler) {
         this.islandUpgradeGiveHandler = islandUpgradeGiveHandler;
+    }
+
+    public void setTitleUnlockHandler(TitleUnlockHandler titleUnlockHandler) {
+        this.titleUnlockHandler = titleUnlockHandler;
     }
 
     public void give(Player player, Reward reward) {
@@ -136,6 +146,11 @@ public class RewardGiver {
             case AGRANDISSEMENT_ILE -> {
                 if (islandUpgradeGiveHandler != null) {
                     islandUpgradeGiveHandler.giveFreeIslandUpgrade(player, Math.max(1, reward.amount()));
+                }
+            }
+            case TITRE_CHAT -> {
+                if (titleUnlockHandler != null) {
+                    titleUnlockHandler.unlockTitle(player, reward.customItemId());
                 }
             }
             case ITEM -> giveItem(player, reward);
