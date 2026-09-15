@@ -100,8 +100,11 @@ public class PetManager {
         List<String> lore = section.getStringList("lore");
         double price = section.getDouble("prix", 0);
         String permission = section.getString("permission", "");
+        double degatsBonus = section.getDouble("degats-bonus", 0);
+        double esquivePourcent = section.getDouble("esquive-pourcent", 0);
 
-        return new PetDefinition(id, displayName, entityType, icon, order, lore, price, permission);
+        return new PetDefinition(id, displayName, entityType, icon, order, lore, price, permission,
+                degatsBonus, esquivePourcent);
     }
 
     public List<PetDefinition> getPetsSorted() {

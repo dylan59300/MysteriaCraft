@@ -5,6 +5,9 @@ import com.mysteriacraft.core.reward.RewardGiver;
 import com.mysteriacraft.economy.EconomyManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
@@ -36,8 +39,11 @@ public class PetService implements RewardGiver.PetUnlockHandler {
     private final EconomyManager economyManager;
     private final MessageManager messages;
 
+    private static final UUID DEGATS_MODIFIER_UUID = UUID.fromString("a1b2c3d4-e5f6-4789-9abc-def012345678");
+
     private final Map<UUID, LivingEntity> activeEntities = new ConcurrentHashMap<>();
     private final Map<UUID, BukkitTask> followTasks = new ConcurrentHashMap<>();
+    private final Map<UUID, PetDefinition> activeDefinitions = new ConcurrentHashMap<>();
 
     public PetService(Plugin plugin, PetManager petManager, EconomyManager economyManager, MessageManager messages) {
         this.plugin = plugin;
@@ -138,11 +144,45 @@ public class PetService implements RewardGiver.PetUnlockHandler {
         }
 
         activeEntities.put(player.getUniqueId(), livingEntity);
+        activeDefinitions.put(player.getUniqueId(), pet);
         startFollowTask(player, livingEntity);
+        applyDegatsBonus(player, pet);
 
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("pet", pet.displayName());
         messages.send(player, "pets.invoque", placeholders);
+    }
+
+    /** Applique le bonus de degats du pet actif au JOUEUR (attribut GENERIC_ATTACK_DAMAGE),
+     * en remplacant tout modificateur precedent (changement de pet). */
+    private void applyDegatsBonus(Player player, PetDefinition pet) {
+        AttributeInstance attribute = player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
+        if (attribute == null) {
+            return;
+        }
+        attribute.getModifiers().stream()
+                .filter(modifier -> modifier.getUniqueId().equals(DEGATS_MODIFIER_UUID))
+                .forEach(attribute::removeModifier);
+        if (pet.degatsBonus() > 0) {
+            attribute.addModifier(new AttributeModifier(DEGATS_MODIFIER_UUID, "mysteriacraft-pet-degats",
+                    pet.degatsBonus(), AttributeModifier.Operation.ADD_NUMBER));
+        }
+    }
+
+    private void removeDegatsBonus(Player player) {
+        AttributeInstance attribute = player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
+        if (attribute == null) {
+            return;
+        }
+        attribute.getModifiers().stream()
+                .filter(modifier -> modifier.getUniqueId().equals(DEGATS_MODIFIER_UUID))
+                .forEach(attribute::removeModifier);
+    }
+
+    /** Chance d'esquive (%) accordee par le pet actif de ce joueur, 0 si aucun pet actif. */
+    public double getEsquivePourcent(UUID uuid) {
+        PetDefinition pet = activeDefinitions.get(uuid);
+        return pet != null ? pet.esquivePourcent() : 0;
     }
 
     private void startFollowTask(Player player, LivingEntity petEntity) {
@@ -182,13 +222,16 @@ public class PetService implements RewardGiver.PetUnlockHandler {
         activeEntities.remove(uuid);
     }
 
-    /** Retire le pet actif du joueur (entite + tache de suivi), sans toucher au deblocage en base. */
+    /** Retire le pet actif du joueur (entite + tache de suivi + bonus de combat), sans toucher
+     * au deblocage en base. */
     public void despawnActive(Player player) {
         LivingEntity entity = activeEntities.remove(player.getUniqueId());
         if (entity != null) {
             entity.remove();
         }
         stopFollowTask(player.getUniqueId());
+        activeDefinitions.remove(player.getUniqueId());
+        removeDegatsBonus(player);
     }
 
     /** Desactive completement le pet actif (retire l'entite ET oublie le choix en base). */

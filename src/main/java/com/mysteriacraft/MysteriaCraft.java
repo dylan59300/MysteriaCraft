@@ -30,6 +30,7 @@ import com.mysteriacraft.pets.PetService;
 import com.mysteriacraft.pets.commands.PetsAdminCommand;
 import com.mysteriacraft.pets.commands.PetsCommand;
 import com.mysteriacraft.pets.listeners.PetJoinQuitListener;
+import com.mysteriacraft.pets.listeners.PetCombatListener;
 import com.mysteriacraft.luckyblock.LuckyBlockManager;
 import com.mysteriacraft.luckyblock.LuckyBlockService;
 import com.mysteriacraft.luckyblock.commands.LuckyBlockAdminCommand;
@@ -276,6 +277,7 @@ public final class MysteriaCraft extends JavaPlugin {
         rewardGiver.setPetUnlockHandler(petService);
 
         Bukkit.getPluginManager().registerEvents(new PetJoinQuitListener(petService), this);
+        Bukkit.getPluginManager().registerEvents(new PetCombatListener(petService), this);
 
         getCommand("pets").setExecutor(new PetsCommand(this, petManager, petService, messages));
         getCommand("petsadmin").setExecutor(new PetsAdminCommand(petsConfig, petManager, messages));

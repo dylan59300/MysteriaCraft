@@ -16,7 +16,9 @@ public record PetDefinition(
         int order,
         List<String> lore,
         double price,
-        String permission
+        String permission,
+        double degatsBonus,
+        double esquivePourcent
 ) {
 
     public boolean hasPermissionRequirement() {
