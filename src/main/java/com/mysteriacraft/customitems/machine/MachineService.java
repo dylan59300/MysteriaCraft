@@ -270,6 +270,7 @@ public class MachineService {
         boolean gotLuckyBlock = ThreadLocalRandom.current().nextDouble(100.0) < chance;
         manager.recordAttempt(player.getUniqueId(), ore, gotLuckyBlock);
 
+        boolean doubleLoot = manager.isDoubleLootActive();
         if (gotLuckyBlock) {
             manager.incrementStreak(machineBlock);
 
@@ -284,6 +285,17 @@ public class MachineService {
             messages.send(player, "machine.reussite", placeholders);
 
             questService.registerProgress(player, QuestType.MACHINE_TRANSFORM, family.id(), 1);
+
+            // "Double loot" actif (voir /machine doubleloot) : ajoute aussi un item custom bonus.
+            if (doubleLoot) {
+                CustomItemDefinition bonus = pickRandomCustomItem();
+                if (bonus != null) {
+                    giveItem(player, customItemManager.createItem(bonus));
+                    Map<String, String> bonusPlaceholders = new HashMap<>();
+                    bonusPlaceholders.put("item", bonus.displayName());
+                    messages.send(player, "machine.doubleloot-bonus-item", bonusPlaceholders);
+                }
+            }
         } else {
             manager.resetStreak(machineBlock);
 
@@ -305,6 +317,14 @@ public class MachineService {
                 Map<String, String> placeholders = new HashMap<>();
                 placeholders.put("item", itemDefinition.displayName());
                 messages.send(player, "machine.reussite-item", placeholders);
+
+                // "Double loot" actif : ajoute aussi le Lucky Block cible en bonus.
+                if (doubleLoot) {
+                    giveItem(player, luckyBlockManager.createItem(family));
+                    Map<String, String> bonusPlaceholders = new HashMap<>();
+                    bonusPlaceholders.put("caisse", family.displayName());
+                    messages.send(player, "machine.doubleloot-bonus-luckyblock", bonusPlaceholders);
+                }
             }
         }
         updateHologram(machineBlock);
@@ -428,27 +448,39 @@ public class MachineService {
         manager.markUsedNow(machineBlock);
 
         Location effectLocation = machineBlock.getLocation().add(0.5, 1.0, 0.5);
+        boolean doubleLoot = manager.isDoubleLootActive();
         boolean gotLuckyBlock = ThreadLocalRandom.current().nextDouble(100.0) < manager.getEffectiveChance(machineBlock);
         if (gotLuckyBlock) {
             manager.incrementStreak(machineBlock);
-
-            ItemStack reward = luckyBlockManager.createItem(family);
-            Map<Integer, ItemStack> leftovers = outputInventory.addItem(reward);
-            leftovers.values().forEach(leftover ->
-                    containers.output().getWorld().dropItemNaturally(containers.output().getLocation(), leftover));
+            outputReward(outputInventory, containers, luckyBlockManager.createItem(family));
             playAutoFeedEffects(effectLocation, false);
+
+            if (doubleLoot) {
+                CustomItemDefinition bonus = pickRandomCustomItem();
+                if (bonus != null) {
+                    outputReward(outputInventory, containers, customItemManager.createItem(bonus));
+                }
+            }
         } else {
             manager.resetStreak(machineBlock);
 
             CustomItemDefinition itemDefinition = pickRandomCustomItem();
             ItemStack reward = itemDefinition != null
                     ? customItemManager.createItem(itemDefinition) : luckyBlockManager.createItem(family);
-            Map<Integer, ItemStack> leftovers = outputInventory.addItem(reward);
-            leftovers.values().forEach(leftover ->
-                    containers.output().getWorld().dropItemNaturally(containers.output().getLocation(), leftover));
+            outputReward(outputInventory, containers, reward);
             playAutoFeedEffects(effectLocation, itemDefinition != null);
+
+            if (doubleLoot) {
+                outputReward(outputInventory, containers, luckyBlockManager.createItem(family));
+            }
         }
         updateHologram(machineBlock);
+    }
+
+    private void outputReward(Inventory outputInventory, MachineManager.AdjacentContainers containers, ItemStack reward) {
+        Map<Integer, ItemStack> leftovers = outputInventory.addItem(reward);
+        leftovers.values().forEach(leftover ->
+                containers.output().getWorld().dropItemNaturally(containers.output().getLocation(), leftover));
     }
 
     /** Effet de particules a chaque echange auto-alimente reussi (toujours une recompense) :

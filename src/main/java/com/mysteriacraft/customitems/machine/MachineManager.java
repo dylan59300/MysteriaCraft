@@ -118,6 +118,11 @@ public class MachineManager {
     private String fuelBoostItemId = "carburant_illimite";
     private long fuelBoostDurationSeconds = 86400L;
 
+    /** "Double loot" temporaire (evenement admin, /machine doubleloot) : tant qu'actif, TOUTES les
+     * machines donnent a la fois le Lucky Block ET un item custom a chaque echange, au lieu de
+     * l'un ou l'autre. En memoire uniquement (evenement ponctuel, pas persiste entre redemarrages). */
+    private volatile long doubleLootUntilMillis = 0L;
+
     private static final BlockFace[] ADJACENT_FACES = {
             BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN
     };
@@ -353,6 +358,23 @@ public class MachineManager {
     public long getFuelBoostRemainingMillis(UUID uuid) {
         Long expiration = fuelBoosts.get(uuid);
         return expiration == null ? 0L : Math.max(0L, expiration - System.currentTimeMillis());
+    }
+
+    // ---- "Double loot" (evenement admin serveur entier) ----
+
+    /** Active (ou prolonge, en remplacant sa duree restante) le "double loot" pour TOUTES les
+     * machines du serveur. */
+    public void activateDoubleLoot(long durationSeconds) {
+        doubleLootUntilMillis = System.currentTimeMillis() + durationSeconds * 1000L;
+    }
+
+    public boolean isDoubleLootActive() {
+        return System.currentTimeMillis() < doubleLootUntilMillis;
+    }
+
+    /** Millisecondes restantes de "double loot" (0 si inactif). */
+    public long getDoubleLootRemainingMillis() {
+        return Math.max(0L, doubleLootUntilMillis - System.currentTimeMillis());
     }
 
     // ---- Statistiques joueur (essais/reussites par minerai, pour le menu /machine stats) ----

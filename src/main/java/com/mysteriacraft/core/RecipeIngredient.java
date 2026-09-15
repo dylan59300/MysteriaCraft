@@ -1,4 +1,4 @@
-package com.mysteriacraft.luckyblock;
+package com.mysteriacraft.core;
 
 import org.bukkit.Material;
 

@@ -101,21 +101,38 @@ public class QuestManager {
         long xp = section.getLong("xp", 0);
         Reward reward = RewardParser.parse(section.getConfigurationSection("recompense"));
 
-        return new QuestDefinition(id, displayName, icon, type, target, objective, xp, reward, period);
+        // Quete saisonniere optionnelle (Halloween, Noel...) : actif-du/actif-au (format "MM-jj").
+        // Absent des deux cotes = quete permanente (comportement par defaut, inchange).
+        String actifDu = section.contains("actif-du") ? section.getString("actif-du") : null;
+        String actifAu = section.contains("actif-au") ? section.getString("actif-au") : null;
+
+        return new QuestDefinition(id, displayName, icon, type, target, objective, xp, reward, period, actifDu, actifAu);
     }
 
+    /** Quetes quotidiennes ACTUELLEMENT actives (exclut une quete saisonniere hors periode). */
     public List<QuestDefinition> getDailyQuests() {
-        return dailyQuests;
+        return activeOnly(dailyQuests);
     }
 
+    /** Quetes hebdomadaires ACTUELLEMENT actives (exclut une quete saisonniere hors periode). */
     public List<QuestDefinition> getWeeklyQuests() {
-        return weeklyQuests;
+        return activeOnly(weeklyQuests);
     }
 
     public List<QuestDefinition> getAllQuests() {
-        List<QuestDefinition> all = new ArrayList<>(dailyQuests);
-        all.addAll(weeklyQuests);
+        List<QuestDefinition> all = new ArrayList<>(getDailyQuests());
+        all.addAll(getWeeklyQuests());
         return all;
+    }
+
+    private List<QuestDefinition> activeOnly(List<QuestDefinition> quests) {
+        List<QuestDefinition> active = new ArrayList<>();
+        for (QuestDefinition quest : quests) {
+            if (quest.isActiveNow()) {
+                active.add(quest);
+            }
+        }
+        return active;
     }
 
     /** Cle de periode courante (change automatiquement a minuit / au changement de semaine ISO). */

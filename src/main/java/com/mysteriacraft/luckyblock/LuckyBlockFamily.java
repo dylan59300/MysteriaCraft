@@ -1,8 +1,9 @@
 package com.mysteriacraft.luckyblock;
 
+import com.mysteriacraft.core.RecipeIngredient;
+import com.mysteriacraft.core.SeasonalWindow;
 import org.bukkit.Material;
 
-import java.time.MonthDay;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,28 +41,7 @@ public record LuckyBlockFamily(
     /** True si cette famille n'est pas saisonniere, ou si la date du jour tombe dans sa periode
      * d'activite (actifDu -> actifAu, gere le passage du nouvel an, ex: "12-15" -> "01-05"). */
     public boolean isActiveNow() {
-        if (!isSaisonniere()) {
-            return true;
-        }
-        MonthDay now = MonthDay.now();
-        MonthDay from = parseMonthDay(actifDu);
-        MonthDay until = parseMonthDay(actifAu);
-        if (from == null || until == null) {
-            return true;
-        }
-        if (from.compareTo(until) <= 0) {
-            return !now.isBefore(from) && !now.isAfter(until);
-        }
-        return !now.isBefore(from) || !now.isAfter(until);
-    }
-
-    private static MonthDay parseMonthDay(String raw) {
-        try {
-            String[] parts = raw.split("-");
-            return MonthDay.of(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
-        } catch (Exception e) {
-            return null;
-        }
+        return SeasonalWindow.isActiveNow(actifDu, actifAu);
     }
 
     public List<LuckyBlockEffect> goodEffects() {

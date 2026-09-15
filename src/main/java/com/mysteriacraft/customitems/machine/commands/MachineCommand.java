@@ -15,11 +15,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * /machine give <joueur> [quantite] | preset | reload (admin uniquement)
- * /machine stats (ouvert a tous les joueurs : affiche ses propres statistiques)
+ * /machine give <joueur> [quantite] | preset | reload | doubleloot <secondes> (admin uniquement)
+ * /machine stats | info (ouvert a tous les joueurs)
  */
 public class MachineCommand implements CommandExecutor {
 
@@ -47,6 +48,12 @@ public class MachineCommand implements CommandExecutor {
                 return true;
             }
             new MachineStatsGui(player, manager, messages).open();
+            return true;
+        }
+
+        // Ouvert a tous les joueurs : liste les minerais acceptes et leur famille cible.
+        if (args[0].equalsIgnoreCase("info")) {
+            sendInfo(sender);
             return true;
         }
 
@@ -99,8 +106,64 @@ public class MachineCommand implements CommandExecutor {
             return handlePreset(sender);
         }
 
+        if (args[0].equalsIgnoreCase("doubleloot")) {
+            if (args.length < 2) {
+                messages.send(sender, "machine.usage");
+                return true;
+            }
+            long seconds;
+            try {
+                seconds = Long.parseLong(args[1]);
+            } catch (NumberFormatException e) {
+                messages.send(sender, "machine.usage");
+                return true;
+            }
+            if (seconds <= 0) {
+                messages.send(sender, "machine.usage");
+                return true;
+            }
+            manager.activateDoubleLoot(seconds);
+            Bukkit.broadcastMessage(MessageManager.color(
+                    messages.raw("machine.doubleloot-annonce").replace("{duree}", formatDuration(seconds * 1000L))));
+            return true;
+        }
+
         messages.send(sender, "machine.usage");
         return true;
+    }
+
+    /** Liste tous les minerais acceptes par la machine et leur famille cible, ouvert a tous. */
+    private void sendInfo(CommandSender sender) {
+        List<Material> materials = manager.getAcceptedMaterials();
+        if (materials.isEmpty()) {
+            messages.send(sender, "machine.info-vide");
+            return;
+        }
+        messages.send(sender, "machine.info-titre");
+        for (Material material : materials) {
+            String familyId = manager.getTargetFamily(material);
+            sender.sendMessage(MessageManager.color("&7- &e" + material.name() + " &7-> &6" + familyId));
+        }
+    }
+
+    /** Formate une duree en millisecondes en "XhYmZs" (n'affiche que les unites non nulles). */
+    private static String formatDuration(long millis) {
+        long totalSeconds = Math.max(0, millis / 1000);
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+
+        StringBuilder builder = new StringBuilder();
+        if (hours > 0) {
+            builder.append(hours).append("h");
+        }
+        if (minutes > 0) {
+            builder.append(minutes).append("m");
+        }
+        if (hours == 0 && (seconds > 0 || builder.isEmpty())) {
+            builder.append(seconds).append("s");
+        }
+        return builder.toString();
     }
 
     /**

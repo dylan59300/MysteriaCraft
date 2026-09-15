@@ -35,6 +35,7 @@ public class CustomItemManager {
     private final Plugin plugin;
     private final ConfigManager customItemsConfig;
     private final NamespacedKey itemKey;
+    private final NamespacedKey durabilityKey;
 
     private final Map<String, CustomItemDefinition> items = new LinkedHashMap<>();
     /** Index inverse pour retrouver rapidement, a la casse d'un bloc, quels items custom peuvent en tomber. */
@@ -44,6 +45,7 @@ public class CustomItemManager {
         this.plugin = plugin;
         this.customItemsConfig = customItemsConfig;
         this.itemKey = new NamespacedKey(plugin, "custom-item");
+        this.durabilityKey = new NamespacedKey(plugin, "custom-item-durabilite");
         loadItems();
     }
 
@@ -163,9 +165,12 @@ public class CustomItemManager {
         double extraAttackDamage = section.getDouble("degats-bonus", 0);
         double extraArmor = section.getDouble("armure-bonus", 0);
         boolean unbreakable = section.getBoolean("incassable", false);
+        double volDeVie = section.getDouble("vol-de-vie", 0);
+        int durabiliteCustom = Math.max(0, section.getInt("durabilite-custom", 0));
 
         return new CustomItemDefinition(id, displayName, lore, baseItem, sourceOres, dropChance,
-                sellPrice, recipeShape, recipeIngredients, enchantments, extraAttackDamage, extraArmor, unbreakable);
+                sellPrice, recipeShape, recipeIngredients, enchantments, extraAttackDamage, extraArmor, unbreakable,
+                volDeVie, durabiliteCustom);
     }
 
     public List<CustomItemDefinition> getItemsSorted() {
@@ -194,8 +199,15 @@ public class CustomItemManager {
             for (String line : definition.lore()) {
                 coloredLore.add(MessageManager.color(line));
             }
+            if (definition.hasCustomDurability()) {
+                coloredLore.add(MessageManager.color("&7Durabilite : &e" + definition.durabiliteCustom()
+                        + "&7/&e" + definition.durabiliteCustom()));
+            }
             meta.setLore(coloredLore);
             meta.getPersistentDataContainer().set(itemKey, PersistentDataType.STRING, definition.id());
+            if (definition.hasCustomDurability()) {
+                meta.getPersistentDataContainer().set(durabilityKey, PersistentDataType.INTEGER, definition.durabiliteCustom());
+            }
 
             // Enchantements "sans limite" (leur niveau vanilla max est ignore) : indispensable pour
             // un equipement "full custom" nettement au-dessus de son equivalent vanilla.
@@ -260,5 +272,36 @@ public class CustomItemManager {
         }
         ItemMeta meta = item.getItemMeta();
         return meta.getPersistentDataContainer().get(itemKey, PersistentDataType.STRING);
+    }
+
+    // ---- Durabilite custom (voir CustomItemDefinition#durabiliteCustom) ----
+
+    /** Utilisations restantes stockees sur cet ItemStack, ou -1 s'il n'a pas de durabilite custom. */
+    public int getRemainingDurability(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return -1;
+        }
+        Integer remaining = item.getItemMeta().getPersistentDataContainer().get(durabilityKey, PersistentDataType.INTEGER);
+        return remaining == null ? -1 : remaining;
+    }
+
+    /** Met a jour, EN PLACE sur cet ItemStack, les utilisations restantes et la ligne de lore
+     * "Durabilite : X/Y" correspondante (toujours la DERNIERE ligne de lore, ajoutee par
+     * createItem() pour tout item avec durabilite custom active). */
+    public void setRemainingDurability(ItemStack item, CustomItemDefinition definition, int remaining) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null || !definition.hasCustomDurability()) {
+            return;
+        }
+        meta.getPersistentDataContainer().set(durabilityKey, PersistentDataType.INTEGER, remaining);
+        List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
+        String durabilityLine = MessageManager.color("&7Durabilite : &e" + remaining + "&7/&e" + definition.durabiliteCustom());
+        if (!lore.isEmpty()) {
+            lore.set(lore.size() - 1, durabilityLine);
+        } else {
+            lore.add(durabilityLine);
+        }
+        meta.setLore(lore);
+        item.setItemMeta(meta);
     }
 }

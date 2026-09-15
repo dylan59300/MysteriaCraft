@@ -1,5 +1,6 @@
 package com.mysteriacraft.quests;
 
+import com.mysteriacraft.core.SeasonalWindow;
 import com.mysteriacraft.core.reward.Reward;
 import org.bukkit.inventory.ItemStack;
 
@@ -11,6 +12,9 @@ import org.bukkit.inventory.ItemStack;
  * @param xpReward xp de BattlePass creditee automatiquement a la completion.
  * @param reward recompense directe optionnelle (objet ou economie), donnee automatiquement a la completion.
  * @param icon icone affichee dans le menu /quests.
+ * @param actifDu date de debut (format "MM-jj") d'une quete SAISONNIERE (Halloween...), null pour
+ *                une quete permanente. Doit etre defini AVEC actifAu.
+ * @param actifAu date de fin (format "MM-jj") d'une quete saisonniere, ou null.
  */
 public record QuestDefinition(
         String id,
@@ -21,6 +25,12 @@ public record QuestDefinition(
         int objective,
         long xpReward,
         Reward reward,
-        QuestPeriod period
+        QuestPeriod period,
+        String actifDu,
+        String actifAu
 ) {
+
+    public boolean isActiveNow() {
+        return SeasonalWindow.isActiveNow(actifDu, actifAu);
+    }
 }

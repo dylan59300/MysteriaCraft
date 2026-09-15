@@ -18,6 +18,11 @@
 #                marge aux joueurs qui ne repassent pas regulierement).
 # obtenable-en-recompense-uniquement : purement informatif (ajoute une ligne de lore) ; n'empeche
 #                                       pas un admin de le donner via /generateur give.
+# recette : ingredients d'un craft shapeless (n'importe quel agencement dans la table), optionnel.
+# generateur-precedent : id d'un AUTRE generateur requis EN PLUS de "recette" (1 exemplaire, tel
+#                        quel, non consomme separement du reste) pour craft ce palier suivant :
+#                        cree une PROGRESSION EN PLUSIEURS PALIERS (fer -> or -> diamant ->
+#                        legendaire), chaque generateur craftable servant d'ingredient au suivant.
 generateurs:
   fer:
     nom: "&7Generateur de Fer"
@@ -25,6 +30,14 @@ generateurs:
     montant: 100000
     intervalle-secondes: 18000   # 5 heures
     stockage-max: 100000
+    # Palier 1/4 : craftable directement, aucun generateur requis.
+    recette:
+      - materiel: IRON_BLOCK
+        quantite: 4
+      - materiel: REDSTONE_BLOCK
+        quantite: 2
+      - materiel: IRON_INGOT
+        quantite: 2
 
   or:
     nom: "&6Generateur d'Or"
@@ -32,6 +45,13 @@ generateurs:
     montant: 200000
     intervalle-secondes: 3600    # 1 heure
     stockage-max: 200000
+    # Palier 2/4 : necessite un Generateur de Fer.
+    generateur-precedent: fer
+    recette:
+      - materiel: GOLD_BLOCK
+        quantite: 4
+      - materiel: REDSTONE_BLOCK
+        quantite: 2
 
   diamant:
     nom: "&bGenerateur de Diamant"
@@ -39,6 +59,15 @@ generateurs:
     montant: 500000
     intervalle-secondes: 1800    # 30 minutes
     stockage-max: 500000
+    # Palier 3/4 : necessite un Generateur d'Or.
+    generateur-precedent: or
+    recette:
+      - materiel: DIAMOND_BLOCK
+        quantite: 2
+      - materiel: EMERALD_BLOCK
+        quantite: 2
+      - materiel: REDSTONE_BLOCK
+        quantite: 2
 
   legendaire:
     nom: "&5&lGenerateur Legendaire"
@@ -46,6 +75,16 @@ generateurs:
     montant: 1000000
     intervalle-secondes: 900     # 15 minutes
     stockage-max: 1000000
+    # Palier 4/4 : necessite un Generateur de Diamant. Reste egalement obtenable en recompense
+    # (obtenable-en-recompense-uniquement n'empeche PAS le craft : c'est juste une ligne de lore).
+    generateur-precedent: diamant
+    recette:
+      - materiel: NETHERITE_BLOCK
+        quantite: 1
+      - materiel: NETHER_STAR
+        quantite: 1
+      - materiel: DIAMOND_BLOCK
+        quantite: 2
     obtenable-en-recompense-uniquement: true
 
 # Frequence (en secondes) a laquelle le stock de chaque generateur pose est recalcule et son

@@ -46,8 +46,9 @@ niveaux:
       materiel: GOLDEN_APPLE
       quantite: 1
     premium:
-      type: ECONOMIE
-      montant: 500
+      type: MACHINE
+      machine-id: transformation
+      quantite: 1
   5:
     xp-requis: 700
     gratuit:
@@ -91,8 +92,9 @@ niveaux:
   9:
     xp-requis: 2500
     gratuit:
-      type: ECONOMIE
-      montant: 400
+      type: GENERATEUR
+      type-id: fer
+      quantite: 1
     premium:
       type: OBJET_CUSTOM
       item-id: armure_paladin_plastron
@@ -104,5 +106,6 @@ niveaux:
       materiel: DIAMOND_BLOCK
       quantite: 1
     premium:
-      type: ECONOMIE
-      montant: 5000
+      type: MACHINE
+      machine-id: miniere
+      quantite: 1

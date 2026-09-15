@@ -23,6 +23,13 @@ import java.util.Map;
  * @param extraArmor bonus d'armure (attribut GENERIC_ARMOR) ajoute pour une piece d'armure
  *                    (casque/plastron/jambieres/bottes). 0 = aucun bonus.
  * @param unbreakable si true, l'item ne perd jamais de durabilite (indicateur Unbreakable vanilla).
+ * @param volDeVie enchantement custom "Vol de vie" : % des degats infliges (arme en main) rendus
+ *                 en soin a l'attaquant. 0 = desactive. Ignore si unbreakable est aussi actif sur
+ *                 une arme (pas de sens a combiner les deux, mais aucun conflit technique).
+ * @param durabiliteCustom nombre d'utilisations (coups portes pour une arme, blocs casses pour un
+ *                          outil) avant que l'item ne se brise et disparaisse. 0 = desactive
+ *                          (durabilite vanilla normale uniquement). Reparable via l'item custom
+ *                          "kit_reparation" (voir CustomItemService/CustomItemListener).
  */
 public record CustomItemDefinition(
         String id,
@@ -37,7 +44,9 @@ public record CustomItemDefinition(
         Map<Enchantment, Integer> enchantments,
         double extraAttackDamage,
         double extraArmor,
-        boolean unbreakable
+        boolean unbreakable,
+        double volDeVie,
+        int durabiliteCustom
 ) {
 
     public boolean hasNaturalSource() {
@@ -54,5 +63,9 @@ public record CustomItemDefinition(
 
     public boolean isGear() {
         return extraAttackDamage > 0 || extraArmor > 0 || !enchantments.isEmpty();
+    }
+
+    public boolean hasCustomDurability() {
+        return durabiliteCustom > 0;
     }
 }

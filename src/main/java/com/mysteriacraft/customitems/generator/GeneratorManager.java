@@ -1,5 +1,6 @@
 package com.mysteriacraft.customitems.generator;
 
+import com.mysteriacraft.core.RecipeIngredient;
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.core.storage.Database;
@@ -15,6 +16,8 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.RecipeChoice;
+import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
@@ -47,12 +50,19 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class GeneratorManager {
 
-    /** Un type de generateur : bloc, argent genere par cycle complet, duree du cycle, plafond de stockage. */
+    /** Un type de generateur : bloc, argent genere par cycle complet, duree du cycle, plafond de
+     * stockage, et sa recette de craft optionnelle (voir "recette"/"generateur-precedent" dans
+     * generateurs.yml : plusieurs paliers de craft progressifs vers le generateur legendaire). */
     public record GeneratorType(String id, String displayName, Material block, double amount,
-                                 long intervalSeconds, double storageMax, boolean rewardOnly) {
+                                 long intervalSeconds, double storageMax, boolean rewardOnly,
+                                 List<RecipeIngredient> recipe, String requiresGeneratorId) {
         /** Argent genere par seconde reelle (avant bonus d'amelioration). */
         public double ratePerSecond() {
             return intervalSeconds > 0 ? amount / intervalSeconds : 0.0;
+        }
+
+        public boolean isCraftable() {
+            return !recipe.isEmpty();
         }
     }
 
@@ -71,6 +81,7 @@ public class GeneratorManager {
     private final ConfigManager generatorsConfig;
     private final NamespacedKey generatorKey;
     private final NamespacedKey typeKey;
+    private static final String RECIPE_KEY_PREFIX = "generateur-";
 
     /** Generateurs actuellement poses, indexes par position (charges au demarrage depuis la base). */
     private final Map<Location, GeneratorState> generators = new ConcurrentHashMap<>();
@@ -97,6 +108,7 @@ public class GeneratorManager {
         createTable();
         loadGenerators();
         loadConfig();
+        registerRecipes();
     }
 
     private void createTable() {
@@ -232,8 +244,22 @@ public class GeneratorManager {
                 long intervalSeconds = Math.max(1, section.getLong("intervalle-secondes", 3600));
                 double storageMax = Math.max(0, section.getDouble("stockage-max", amount));
                 boolean rewardOnly = section.getBoolean("obtenable-en-recompense-uniquement", false);
+
+                List<RecipeIngredient> recipe = new ArrayList<>();
+                for (Map<?, ?> raw : section.getMapList("recette")) {
+                    Material ingredientMaterial = Material.matchMaterial(String.valueOf(raw.get("materiel")));
+                    if (ingredientMaterial == null) {
+                        continue;
+                    }
+                    int ingredientAmount = raw.containsKey("quantite") ? Integer.parseInt(String.valueOf(raw.get("quantite"))) : 1;
+                    recipe.add(new RecipeIngredient(ingredientMaterial, Math.max(1, ingredientAmount)));
+                }
+                String requiresGeneratorId = section.contains("generateur-precedent")
+                        ? section.getString("generateur-precedent").toLowerCase() : null;
+
                 types.put(id.toLowerCase(), new GeneratorType(
-                        id.toLowerCase(), displayName, block, amount, intervalSeconds, storageMax, rewardOnly));
+                        id.toLowerCase(), displayName, block, amount, intervalSeconds, storageMax, rewardOnly,
+                        recipe, requiresGeneratorId));
             }
         }
 
@@ -250,6 +276,54 @@ public class GeneratorManager {
 
         plugin.getLogger().info("Generateurs d'argent : " + types.size() + " type(s) charge(s), tick toutes les "
                 + tickSeconds + "s, max " + maxPerPlayer + " par joueur, taxe " + taxPercent + "%.");
+    }
+
+    // ---- Recettes de craft (progression de paliers vers le generateur legendaire) ----
+
+    /** (Re)enregistre les recettes de craft de chaque type de generateur qui en declare une (voir
+     * "recette"/"generateur-precedent" dans generateurs.yml). Retire d'abord l'ancienne recette de
+     * chaque type (meme ceux qui n'en ont plus), pour qu'un rechargement de config qui supprime
+     * une recette la desenregistre bien du jeu. */
+    public void registerRecipes() {
+        unregisterRecipes();
+        for (GeneratorType type : types.values()) {
+            if (!type.isCraftable()) {
+                continue;
+            }
+            // Construction de la recette protegee de bout en bout (shape/ingredients compris, pas
+            // seulement Bukkit.addRecipe()) : une recette mal configuree dans generateurs.yml ne
+            // doit jamais empecher le plugin entier de demarrer (meme pattern que LuckyBlockManager
+            // et CustomItemManager).
+            try {
+                NamespacedKey key = recipeKey(type.id());
+                ShapelessRecipe recipe = new ShapelessRecipe(key, createGeneratorItem(type));
+                for (RecipeIngredient ingredient : type.recipe()) {
+                    recipe.addIngredient(ingredient.amount(), ingredient.material());
+                }
+                if (type.requiresGeneratorId() != null) {
+                    GeneratorType previous = getType(type.requiresGeneratorId());
+                    if (previous == null) {
+                        plugin.getLogger().warning("generateur-precedent inconnu pour le generateur '"
+                                + type.id() + "' : " + type.requiresGeneratorId());
+                        continue;
+                    }
+                    recipe.addIngredient(new RecipeChoice.ExactChoice(createGeneratorItem(previous)));
+                }
+                Bukkit.addRecipe(recipe);
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().severe("Recette invalide pour le generateur '" + type.id() + "' : " + e.getMessage());
+            }
+        }
+    }
+
+    public void unregisterRecipes() {
+        for (String typeId : types.keySet()) {
+            Bukkit.removeRecipe(recipeKey(typeId));
+        }
+    }
+
+    private NamespacedKey recipeKey(String typeId) {
+        return new NamespacedKey(plugin, RECIPE_KEY_PREFIX + typeId);
     }
 
     public GeneratorType getType(String id) {

@@ -14,6 +14,12 @@
 # degats-bonus : bonus de degats d'attaque (armes/outils tenus en main uniquement).
 # armure-bonus : bonus d'armure (pieces d'armure uniquement : casque/plastron/jambieres/bottes).
 # incassable : si true, l'item ne perd jamais de durabilite.
+# vol-de-vie : enchantement custom EXCLUSIF (au-dela des enchantements vanilla renommes ci-dessus) :
+#              % des degats infliges en main principale rendus en soin a l'attaquant. 0 = desactive.
+# durabilite-custom : nombre d'utilisations (coups portes pour une arme, blocs casses pour un
+#                      outil) avant que l'item ne se brise et disparaisse. 0 = desactive (durabilite
+#                      vanilla normale uniquement). Reparable a 100% via "kit_reparation" (clic
+#                      droit accroupi, kit en main principale + item abime en main secondaire).
 
 # Machine a Transformation : un bloc pose (voir /machine give ou /machine preset) sur lequel on
 # clique-droit avec un minerai vanilla en main. CHAQUE minerai insere (1 minerai = 1 charge = 1
@@ -408,6 +414,31 @@ items:
         G: GOLD_INGOT
         D: DIAMOND
 
+  # Objet consommable (clic-droit accroupi, en main principale, avec l'item full-custom abime en
+  # main secondaire) qui repare a 100% la durabilite-custom d'un item full-custom. Voir
+  # CustomItemService#repairItem / CustomItemListener#onInteract.
+  kit_reparation:
+    nom: "&bKit de Reparation"
+    lore:
+      - "&7Clic-droit accroupi en tenant cet objet"
+      - "&7en main principale et l'item full-custom"
+      - "&7abime en main secondaire pour le reparer"
+      - "&7a 100% de sa durabilite."
+    item-de-base: AMETHYST_SHARD
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : lingot de fer + eclat d'amethyste autour d'une pierre a aiguiser (colonne de fer).
+    recette:
+      forme:
+        - "IAI"
+        - "IPI"
+        - "III"
+      ingredients:
+        I: IRON_INGOT
+        A: AMETHYST_SHARD
+        P: PHANTOM_MEMBRANE
+
   # =========================================
   #   Equipement "full custom" (armes/outils/armures)
   # =========================================
@@ -510,6 +541,7 @@ items:
       - "&7La lame la plus puissante jamais forgee,"
       - "&7trempee dans le souffle du dragon."
       - "&7+6 degats &7- &7Tranchant VI &7- &7Feu II &7- &7Butin III"
+      - "&7Vol de vie : 15% des degats infliges"
       - "&7Uniquement obtenable en recompense"
       - "&7(battlepass, quete, luckyblock)."
     item-de-base: NETHERITE_SWORD
@@ -517,6 +549,8 @@ items:
     chance-drop: 0
     prix-vente: 5000
     degats-bonus: 6
+    vol-de-vie: 15
+    durabilite-custom: 800
     enchantements:
       DAMAGE_ALL: 6
       FIRE_ASPECT: 2
@@ -600,6 +634,7 @@ items:
     minerais-source: []
     chance-drop: 0
     prix-vente: 3000
+    durabilite-custom: 1500
     enchantements:
       DIG_SPEED: 6
       LOOT_BONUS_BLOCKS: 4

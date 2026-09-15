@@ -2,6 +2,8 @@ package com.mysteriacraft.customitems.miningmachine;
 
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.customitems.CustomItemManager;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -12,27 +14,40 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Traite l'utilisation de la Machine a Miner :
  * - clic-droit avec un carburant en main -> ajoute des blocs minables et (re)demarre une passe
  *   sur le chunk actuel si elle etait a l'arret ;
- * - clic-droit a vide -> affiche la progression (carburant restant, % du chunk mine) ;
+ * - clic-droit a vide -> affiche la progression (carburant restant, % du chunk mine) et une
+ *   jauge de progression en actionbar pendant quelques secondes ;
  * - sneak + clic-droit a vide -> arrete la passe en cours (le carburant restant est conserve).
  * Les blocs mines sont deposes dans un conteneur colle a la machine, ou au sol a defaut.
  */
 public class MiningMachineService {
 
+    /** Duree (en ticks) de la jauge de progression affichee en actionbar apres un clic a vide. */
+    private static final long PROGRESS_ACTIONBAR_TICKS = 100L; // 5 secondes
+
+    private final Plugin plugin;
     private final MiningMachineManager manager;
     private final CustomItemManager customItemManager;
     private final MessageManager messages;
 
-    public MiningMachineService(MiningMachineManager manager, CustomItemManager customItemManager, MessageManager messages) {
+    /** Tache d'actionbar en cours par joueur, pour eviter d'en empiler plusieurs en parallele. */
+    private final Map<UUID, BukkitTask> progressActionbarTasks = new ConcurrentHashMap<>();
+
+    public MiningMachineService(Plugin plugin, MiningMachineManager manager, CustomItemManager customItemManager, MessageManager messages) {
+        this.plugin = plugin;
         this.manager = manager;
         this.customItemManager = customItemManager;
         this.messages = messages;
@@ -83,10 +98,50 @@ public class MiningMachineService {
 
         if (manager.isActive(machineBlock)) {
             messages.send(player, "machine-miniere.statut-active", placeholders);
+            startProgressActionbar(player, machineBlock);
         } else {
             messages.send(player, "machine-miniere.statut-arretee", placeholders);
         }
         updateHologram(machineBlock);
+    }
+
+    /** Barre "[■■■□□]" (10 segments, du rouge au vert selon l'avancement) representant le % du
+     * chunk actuel deja mine par cette machine. */
+    private String progressBar(int percent) {
+        int segments = 10;
+        int filled = Math.max(0, Math.min(segments, (int) Math.round(percent / 100.0 * segments)));
+        String filledColor = percent < 34 ? "&c" : percent < 67 ? "&6" : "&a";
+        return "&f[" + filledColor + "■".repeat(filled) + "&7" + "□".repeat(segments - filled) + "&f]";
+    }
+
+    /** Affiche une jauge de progression en actionbar pendant quelques secondes apres un clic a
+     * vide sur une machine active, pour un retour visuel immediat sans avoir a rester devant
+     * l'hologramme. S'arrete automatiquement (delai ecoule, joueur deconnecte, ou machine
+     * cassee/arretee entre-temps). */
+    private void startProgressActionbar(Player player, Block machineBlock) {
+        UUID uuid = player.getUniqueId();
+        BukkitTask existing = progressActionbarTasks.get(uuid);
+        if (existing != null) {
+            existing.cancel();
+        }
+
+        long[] ticksRemaining = {PROGRESS_ACTIONBAR_TICKS};
+        BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            ticksRemaining[0] -= 5L;
+            if (!player.isOnline() || ticksRemaining[0] <= 0
+                    || !manager.isMachineBlock(machineBlock) || !manager.isActive(machineBlock)) {
+                BukkitTask self = progressActionbarTasks.remove(uuid);
+                if (self != null) {
+                    self.cancel();
+                }
+                return;
+            }
+            int percent = progressPercent(machineBlock);
+            player.sendActionBar(LegacyComponentSerializer.legacySection().deserialize(
+                    MessageManager.color("&b&lMachine a Miner : " + progressBar(percent) + " &e" + percent + "%")));
+        }, 0L, 5L);
+
+        progressActionbarTasks.put(uuid, task);
     }
 
     private int progressPercent(Block machineBlock) {

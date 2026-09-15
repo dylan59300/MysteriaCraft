@@ -55,6 +55,7 @@ public class GeneratorCommand implements CommandExecutor {
         if (args[0].equalsIgnoreCase("reload")) {
             generatorsConfig.reload();
             manager.loadConfig();
+            manager.registerRecipes();
             messages.send(sender, "generateur.reload");
             return true;
         }

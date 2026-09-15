@@ -231,7 +231,7 @@ public final class MysteriaCraft extends JavaPlugin {
         this.customItemService = new CustomItemService(customItemManager, economyManager, messages);
         rewardGiver.setCustomItemGiveHandler(customItemService);
 
-        Bukkit.getPluginManager().registerEvents(new CustomItemListener(customItemService), this);
+        Bukkit.getPluginManager().registerEvents(new CustomItemListener(customItemService, customItemManager), this);
 
         getCommand("customitem").setExecutor(
                 new CustomItemCommand(customItemsConfig, customItemManager, customItemService, messages));
@@ -248,7 +248,7 @@ public final class MysteriaCraft extends JavaPlugin {
         // Machine a Miner : mine automatiquement un chunk entier au fil du temps, avec du carburant.
         this.miningMachineConfig = new ConfigManager(this, "mining_machine.yml");
         this.miningMachineManager = new MiningMachineManager(this, database, miningMachineConfig);
-        this.miningMachineService = new MiningMachineService(miningMachineManager, customItemManager, messages);
+        this.miningMachineService = new MiningMachineService(this, miningMachineManager, customItemManager, messages);
         Bukkit.getPluginManager().registerEvents(
                 new MiningMachineListener(miningMachineManager, miningMachineService, messages), this);
         getCommand("machineminiere").setExecutor(
@@ -291,6 +291,9 @@ public final class MysteriaCraft extends JavaPlugin {
     public void onDisable() {
         if (luckyBlockManager != null) {
             luckyBlockManager.unregisterRecipes();
+        }
+        if (generatorManager != null) {
+            generatorManager.unregisterRecipes();
         }
         if (petService != null) {
             Bukkit.getOnlinePlayers().forEach(petService::despawnActive);

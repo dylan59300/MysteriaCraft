@@ -1,5 +1,6 @@
 package com.mysteriacraft.luckyblock;
 
+import com.mysteriacraft.core.RecipeIngredient;
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.gui.ItemBuilder;
 import com.mysteriacraft.core.reward.Reward;

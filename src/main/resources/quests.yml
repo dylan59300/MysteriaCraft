@@ -11,6 +11,10 @@
 #              OBJET_CUSTOM, GENERATEUR (type-id + quantite) ou MACHINE (machine-id:
 #              "transformation" ou "miniere" + quantite).
 #              Donnee automatiquement a la completion (optionnel).
+# actif-du / actif-au : DEUX cles optionnelles (format "MM-jj") qui rendent une quete SAISONNIERE
+#                       (Halloween, Noel...) : n'apparait dans /quests et ne progresse QUE durant
+#                       cette periode (meme mecanique que les familles Lucky Block saisonnieres,
+#                       voir luckyblocks.yml). Absentes des deux cotes = quete permanente.
 
 quotidiennes:
   casser_pierre:
@@ -117,3 +121,19 @@ hebdomadaires:
       type: BOOST_XP
       duree-secondes: 1800
       multiplicateur: 2.0
+
+  # Quete SAISONNIERE (voir actif-du/actif-au ci-dessus) : meme periode que le Lucky Block
+  # Halloween (luckyblocks.yml). N'apparait dans /quests que du 20 octobre au 5 novembre.
+  chasse_halloween:
+    nom: "&6Tuer des creepers (Halloween)"
+    icone: CARVED_PUMPKIN
+    type: KILL_MOB
+    cible: CREEPER
+    objectif: 15
+    xp: 400
+    actif-du: "10-20"
+    actif-au: "11-05"
+    recompense:
+      type: LUCKYBLOCK
+      famille: halloween
+      quantite: 1
