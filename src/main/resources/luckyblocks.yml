@@ -74,6 +74,12 @@ effets-communs-bons:
       materiel: CREEPER_SPAWN_EGG
       quantite: 8
   - type: BON
+    chance: 15
+    recompense:
+      type: OBJET_CUSTOM
+      item-id: piece_echange
+      quantite: 2
+  - type: BON
     chance: 18
     recompense:
       type: ITEM

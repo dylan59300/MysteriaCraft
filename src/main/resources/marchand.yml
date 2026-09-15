@@ -1,67 +1,142 @@
 # =========================================
-#   MysteriaCraft - Configuration du PNJ Marchand
+#   MysteriaCraft - Configuration du/des PNJ Marchand(s)
 # =========================================
-# Le PNJ Marchand s'invoque en clic-droit sur un bloc avec l'item custom "oeuf_pnj_marchand"
-# (voir custom_items.yml) en main. Une fois invoque, il est invulnerable, immobile et persiste
-# au redemarrage du serveur (comme n'importe quelle entite normale du monde). Clic-droit dessus
+# Chaque PNJ Marchand s'invoque en clic-droit sur un bloc avec SON item custom "oeuf-id" (voir
+# custom_items.yml) en main. Une fois invoque, il est invulnerable, immobile et persiste au
+# redemarrage du serveur (comme n'importe quelle entite normale du monde). Clic-droit dessus
 # ouvre son menu d'echange.
 #
-# id-piece : id de l'item custom (voir custom_items.yml) utilise comme monnaie d'echange.
-# nom-pnj : nom affiche au-dessus du PNJ.
+# drop-passif : petite chance d'obtenir des pieces d'echange en minant ou en tuant un mob, pour
+#               ne pas dependre uniquement du craft. 0 = desactive.
 #
-# offres : chaque entree coute "cout" pieces d'echange (retirees de l'inventaire du joueur, meme
-#          reparties sur plusieurs piles) contre la "recompense" (n'importe quel type de Reward :
-#          ITEM, ECONOMIE, OBJET_CUSTOM, GENERATEUR, MACHINE, AGRANDISSEMENT_ILE, TITRE_CHAT...).
-#          nom/icone optionnels : par defaut, repris de la recompense elle-meme.
+# Pour chaque marchand (cle sous "marchands") :
+#   oeuf-id : id de l'item custom qui invoque CE marchand precis.
+#   id-piece : id de l'item custom utilise comme monnaie pour CE marchand.
+#   nom-pnj : nom affiche au-dessus du PNJ.
+#   offres-actives-par-jour : si > 0, seules N offres (tirees au hasard, MEME tirage pour tous les
+#                             joueurs, renouvele chaque jour) parmi "offres" sont proposees ce
+#                             jour-la. 0 = toutes les offres sont toujours proposees.
+#   fidelite : reduction progressive sur TOUTES les offres de ce marchand, basee sur le nombre
+#              total d'echanges DEJA effectues avec lui (tous historique confondu) :
+#              reduction = min(reduction-max, (total / seuil) * reduction-pourcent), en %.
+#   offres : chaque entree coute "cout" pieces d'echange (avant reduction fidelite, retirees de
+#            l'inventaire du joueur, meme reparties sur plusieurs piles) contre la "recompense"
+#            (n'importe quel type de Reward : ITEM, ECONOMIE, OBJET_CUSTOM, GENERATEUR, MACHINE,
+#            AGRANDISSEMENT_ILE, TITRE_CHAT...). limite-periode (JOUR/SEMAINE/absent) + limite-
+#            quantite : nombre maximum d'achats de CETTE offre par joueur sur la periode donnee.
 
-id-piece: piece_echange
-nom-pnj: "&6&lMarchand"
+drop-passif:
+  item-id: piece_echange
+  chance-minage: 1.5
+  chance-mob: 2.0
+  quantite: 1
 
-offres:
-  fer_rapide:
-    cout: 5
-    recompense:
-      type: GENERATEUR
-      type-id: fer
-      quantite: 1
+marchands:
+  marchand:
+    oeuf-id: oeuf_pnj_marchand
+    id-piece: piece_echange
+    nom-pnj: "&6&lMarchand"
+    offres-actives-par-jour: 4
+    fidelite:
+      seuil: 10
+      reduction-pourcent: 5
+      reduction-max: 30
+    offres:
+      fer_rapide:
+        cout: 5
+        limite-periode: JOUR
+        limite-quantite: 3
+        recompense:
+          type: GENERATEUR
+          type-id: fer
+          quantite: 1
 
-  carburant_ameliore_lot:
-    cout: 8
-    recompense:
-      type: OBJET_CUSTOM
-      item-id: carburant_ameliore
-      quantite: 5
+      carburant_ameliore_lot:
+        cout: 8
+        limite-periode: JOUR
+        limite-quantite: 2
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: carburant_ameliore
+          quantite: 5
 
-  machine_transformation:
-    cout: 25
-    recompense:
-      type: MACHINE
-      machine-id: transformation
-      quantite: 1
+      machine_transformation:
+        cout: 25
+        limite-periode: SEMAINE
+        limite-quantite: 1
+        recompense:
+          type: MACHINE
+          machine-id: transformation
+          quantite: 1
 
-  machine_miniere:
-    cout: 40
-    recompense:
-      type: MACHINE
-      machine-id: miniere
-      quantite: 1
+      machine_miniere:
+        cout: 40
+        limite-periode: SEMAINE
+        limite-quantite: 1
+        recompense:
+          type: MACHINE
+          machine-id: miniere
+          quantite: 1
 
-  agrandissement_ile:
-    cout: 15
-    recompense:
-      type: AGRANDISSEMENT_ILE
-      blocs: 10
-      nom: "&aAgrandissement d'ile (+10 blocs)"
+      agrandissement_ile:
+        cout: 15
+        limite-periode: SEMAINE
+        limite-quantite: 2
+        recompense:
+          type: AGRANDISSEMENT_ILE
+          blocs: 10
+          nom: "&aAgrandissement d'ile (+10 blocs)"
 
-  boost_xp:
-    cout: 6
-    recompense:
-      type: BOOST_XP
-      duree-secondes: 1800
-      multiplicateur: 2.0
+      boost_xp:
+        cout: 6
+        limite-periode: JOUR
+        limite-quantite: 3
+        recompense:
+          type: BOOST_XP
+          duree-secondes: 1800
+          multiplicateur: 2.0
 
-  economie_lot:
-    cout: 3
-    recompense:
-      type: ECONOMIE
-      montant: 500
+      economie_lot:
+        cout: 3
+        recompense:
+          type: ECONOMIE
+          montant: 500
+
+  # Deuxieme marchand (voir "idee #1") : specialise equipement/objets custom, propose TOUJOURS
+  # toutes ses offres (pas de rotation), invoque via un item custom distinct.
+  forgeron:
+    oeuf-id: oeuf_pnj_forgeron
+    id-piece: piece_echange
+    nom-pnj: "&7&l&nForgeron"
+    offres-actives-par-jour: 0
+    fidelite:
+      seuil: 8
+      reduction-pourcent: 5
+      reduction-max: 25
+    offres:
+      pioche_expert:
+        cout: 20
+        limite-periode: SEMAINE
+        limite-quantite: 1
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: pioche_expert
+          quantite: 1
+
+      epee_guerrier:
+        cout: 20
+        limite-periode: SEMAINE
+        limite-quantite: 1
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: epee_guerrier
+          quantite: 1
+
+      kit_reparation_lot:
+        cout: 4
+        limite-periode: JOUR
+        limite-quantite: 5
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: kit_reparation
+          quantite: 1

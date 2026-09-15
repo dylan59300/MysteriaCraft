@@ -352,7 +352,7 @@ public final class MysteriaCraft extends JavaPlugin {
     private void setupMarchand() {
         this.marchandConfig = new ConfigManager(this, "marchand.yml");
         this.marchandManager = new MarchandManager(this, marchandConfig);
-        this.marchandService = new MarchandService(this, marchandManager, customItemManager, rewardGiver, messages);
+        this.marchandService = new MarchandService(this, database, customItemManager, rewardGiver, messages);
 
         Bukkit.getPluginManager().registerEvents(
                 new MarchandListener(marchandManager, marchandService, customItemManager, messages), this);

@@ -4,7 +4,7 @@ import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.core.gui.ItemBuilder;
 import com.mysteriacraft.core.gui.Menu;
 import com.mysteriacraft.core.gui.MenuHolder;
-import com.mysteriacraft.marchand.MarchandManager;
+import com.mysteriacraft.marchand.MarchandDefinition;
 import com.mysteriacraft.marchand.MarchandOffer;
 import com.mysteriacraft.marchand.MarchandService;
 import org.bukkit.Bukkit;
@@ -20,8 +20,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Menu du PNJ Marchand : liste des offres, achat au clic si le joueur a assez de pieces
- * d'echange (voir MarchandService#purchase).
+ * Menu d'un PNJ Marchand : liste des offres ACTUELLEMENT actives (voir MarchandService#getActiveOffers),
+ * avec cout effectif (reduction fidelite deja appliquee) et limite de periode restante. Achat au
+ * clic si le joueur a assez de pieces d'echange et n'a pas atteint la limite.
  */
 public class MarchandGui extends Menu {
 
@@ -30,7 +31,7 @@ public class MarchandGui extends Menu {
     private static final int PREVIOUS_SLOT = 18;
     private static final int NEXT_SLOT = 26;
 
-    private final MarchandManager manager;
+    private final MarchandDefinition definition;
     private final MarchandService service;
     private final MessageManager messages;
 
@@ -39,9 +40,9 @@ public class MarchandGui extends Menu {
     private int page = 0;
     private final Map<Integer, MarchandOffer> slotToOffer = new HashMap<>();
 
-    public MarchandGui(Player viewer, MarchandManager manager, MarchandService service, MessageManager messages) {
+    public MarchandGui(Player viewer, MarchandDefinition definition, MarchandService service, MessageManager messages) {
         super(viewer);
-        this.manager = manager;
+        this.definition = definition;
         this.service = service;
         this.messages = messages;
     }
@@ -49,9 +50,10 @@ public class MarchandGui extends Menu {
     @Override
     public Inventory build() {
         MenuHolder holder = new MenuHolder(this);
-        this.inventory = Bukkit.createInventory(holder, SIZE, MessageManager.color(messages.raw("marchand.titre-gui")));
+        String title = MessageManager.color(messages.raw("marchand.titre-gui").replace("{nom}", definition.npcName()));
+        this.inventory = Bukkit.createInventory(holder, SIZE, title);
         holder.setInventory(inventory);
-        this.offers = manager.getOffers();
+        this.offers = service.getActiveOffers(definition);
         render();
         return inventory;
     }
@@ -68,7 +70,7 @@ public class MarchandGui extends Menu {
             inventory.setItem(i, border);
         }
 
-        int pieces = service.countPieces(viewer);
+        int pieces = service.countPieces(viewer, definition.pieceItemId());
 
         int firstIndex = page * OFFER_SLOTS.length;
         for (int i = 0; i < OFFER_SLOTS.length; i++) {
@@ -93,22 +95,44 @@ public class MarchandGui extends Menu {
     }
 
     private ItemStack buildOfferItem(MarchandOffer offer, int pieces) {
-        boolean canAfford = pieces >= offer.cout();
+        int cost = service.getEffectiveCost(viewer.getUniqueId(), definition, offer);
+        boolean canAfford = pieces >= cost;
+
+        int done = offer.isLimited() ? service.countPurchasesThisPeriod(viewer.getUniqueId(), definition, offer) : 0;
+        boolean limitReached = offer.isLimited() && done >= offer.limiteQuantite();
 
         List<String> lore = new ArrayList<>();
-        lore.add(replace(messages.raw("marchand.gui-cout"), "cout", String.valueOf(offer.cout())));
+        if (cost != offer.cout()) {
+            lore.add(replace(messages.raw("marchand.gui-cout-reduit"), "cout", String.valueOf(cost), "cout-base", String.valueOf(offer.cout())));
+        } else {
+            lore.add(replace(messages.raw("marchand.gui-cout"), "cout", String.valueOf(cost)));
+        }
         lore.add(replace(messages.raw("marchand.gui-vos-pieces"), "pieces", String.valueOf(pieces)));
+        if (offer.isLimited()) {
+            lore.add(replace(messages.raw("marchand.gui-limite"), "fait", String.valueOf(done), "max", String.valueOf(offer.limiteQuantite())));
+        }
         lore.add("");
-        lore.add(canAfford ? messages.raw("marchand.gui-cliquer-echanger") : messages.raw("marchand.gui-pieces-insuffisantes"));
+        if (limitReached) {
+            lore.add(messages.raw("marchand.gui-limite-atteinte"));
+        } else if (canAfford) {
+            lore.add(messages.raw("marchand.gui-cliquer-echanger"));
+        } else {
+            lore.add(messages.raw("marchand.gui-pieces-insuffisantes"));
+        }
 
-        Material material = canAfford ? offer.icon().getType() : Material.GRAY_DYE;
-        String name = canAfford ? offer.displayName() : "&7" + offer.displayName();
+        boolean available = canAfford && !limitReached;
+        Material material = available ? offer.icon().getType() : Material.GRAY_DYE;
+        String name = available ? offer.displayName() : "&7" + offer.displayName();
 
         return new ItemBuilder(material).name(name).lore(lore).build();
     }
 
     private String replace(String text, String key, String value) {
         return text.replace("{" + key + "}", value);
+    }
+
+    private String replace(String text, String key1, String value1, String key2, String value2) {
+        return text.replace("{" + key1 + "}", value1).replace("{" + key2 + "}", value2);
     }
 
     @Override
@@ -129,7 +153,7 @@ public class MarchandGui extends Menu {
         if (offer == null || !(event.getWhoClicked() instanceof Player player)) {
             return;
         }
-        service.purchase(player, offer);
+        service.purchase(player, definition, offer);
         render();
     }
 }

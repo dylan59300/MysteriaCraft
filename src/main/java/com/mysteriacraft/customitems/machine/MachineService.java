@@ -334,9 +334,12 @@ public class MachineService {
         updateHologram(machineBlock);
     }
 
-    /** Pioche un item custom au hasard parmi TOUS ceux charges depuis custom_items.yml, ou null si aucun. */
+    /** Pioche un item custom au hasard parmi TOUS ceux charges depuis custom_items.yml qui
+     * n'excluent pas ce tirage (voir CustomItemDefinition#excluLootMachine), ou null si aucun. */
     private CustomItemDefinition pickRandomCustomItem() {
-        List<CustomItemDefinition> items = customItemManager.getItemsSorted();
+        List<CustomItemDefinition> items = customItemManager.getItemsSorted().stream()
+                .filter(item -> !item.excluLootMachine())
+                .toList();
         if (items.isEmpty()) {
             return null;
         }

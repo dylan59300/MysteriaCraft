@@ -30,6 +30,10 @@ import java.util.Map;
  *                          outil) avant que l'item ne se brise et disparaisse. 0 = desactive
  *                          (durabilite vanilla normale uniquement). Reparable via l'item custom
  *                          "kit_reparation" (voir CustomItemService/CustomItemListener).
+ * @param excluLootMachine si true, exclu du tirage aleatoire "item custom au hasard" de la
+ *                          Machine a Transformation (voir MachineService#pickRandomCustomItem) :
+ *                          reserve aux items qui ne doivent PAS sortir du RNG (ex: l'oeuf du PNJ
+ *                          Marchand, deliberement uniquement craftable/en recompense ciblee).
  */
 public record CustomItemDefinition(
         String id,
@@ -46,7 +50,8 @@ public record CustomItemDefinition(
         double extraArmor,
         boolean unbreakable,
         double volDeVie,
-        int durabiliteCustom
+        int durabiliteCustom,
+        boolean excluLootMachine
 ) {
 
     public boolean hasNaturalSource() {

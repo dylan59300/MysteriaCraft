@@ -1009,6 +1009,8 @@ items:
     minerais-source: []
     chance-drop: 0
     prix-vente: 0
+    # Uniquement craftable/en recompense ciblee : jamais tire au hasard par la Machine.
+    exclu-loot-machine: true
     # Craftable a l'etabli, mais volontairement couteux (rare, usage admin/recompense recommande).
     recette:
       forme:
@@ -1018,3 +1020,22 @@ items:
       ingredients:
         D: DIAMOND_BLOCK
         N: NETHER_STAR
+
+  oeuf_pnj_forgeron:
+    nom: "&7&lOeuf du PNJ Forgeron"
+    lore:
+      - "&7Clic-droit sur un bloc pour"
+      - "&7invoquer le Forgeron a cet endroit."
+    item-de-base: VILLAGER_SPAWN_EGG
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    exclu-loot-machine: true
+    recette:
+      forme:
+        - "III"
+        - "IAI"
+        - "III"
+      ingredients:
+        I: IRON_BLOCK
+        A: ANVIL

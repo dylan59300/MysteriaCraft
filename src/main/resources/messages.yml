@@ -214,14 +214,18 @@ customitem:
 
 marchand:
   usage: "&cUsage : /pnjmarchand reload"
-  reload: "&aLa configuration du PNJ Marchand a ete rechargee."
-  invoque: "&aLe PNJ Marchand a ete invoque !"
-  titre-gui: "&8Le Marchand"
+  reload: "&aLa configuration du/des PNJ Marchand(s) a ete rechargee."
+  invoque: "&aLe PNJ a ete invoque !"
+  titre-gui: "&8{nom}"
   offre-invalide: "&cCette offre n'est pas configuree correctement."
   pieces-insuffisantes: "&cIl vous manque des pieces d'echange (cout : &e{cout}&c)."
+  limite-atteinte: "&cVous avez deja atteint la limite d'achats de cette offre pour cette periode."
   echange-reussi: "&a&lEchange reussi ! &aVous avez recu : &e{recompense} &7(-&e{cout} pieces&7)"
   gui-cout: "&7Cout : &e{cout} &7piece(s) d'echange"
+  gui-cout-reduit: "&7Cout : &e{cout} &7piece(s) &8(&mfidelite : {cout-base}&8)"
   gui-vos-pieces: "&7Vos pieces : &e{pieces}"
+  gui-limite: "&7Limite periode : &e{fait}&7/&e{max}"
+  gui-limite-atteinte: "&c&lLimite atteinte pour cette periode"
   gui-cliquer-echanger: "&eCliquez pour echanger"
   gui-pieces-insuffisantes: "&c&lPieces insuffisantes"
 

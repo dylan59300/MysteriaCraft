@@ -167,10 +167,11 @@ public class CustomItemManager {
         boolean unbreakable = section.getBoolean("incassable", false);
         double volDeVie = section.getDouble("vol-de-vie", 0);
         int durabiliteCustom = Math.max(0, section.getInt("durabilite-custom", 0));
+        boolean excluLootMachine = section.getBoolean("exclu-loot-machine", false);
 
         return new CustomItemDefinition(id, displayName, lore, baseItem, sourceOres, dropChance,
                 sellPrice, recipeShape, recipeIngredients, enchantments, extraAttackDamage, extraArmor, unbreakable,
-                volDeVie, durabiliteCustom);
+                volDeVie, durabiliteCustom, excluLootMachine);
     }
 
     public List<CustomItemDefinition> getItemsSorted() {
