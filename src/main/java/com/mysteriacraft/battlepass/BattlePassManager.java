@@ -1,0 +1,597 @@
+package com.mysteriacraft.battlepass;
+
+import com.mysteriacraft.core.SeasonalWindow;
+import com.mysteriacraft.core.config.ConfigManager;
+import com.mysteriacraft.core.reward.Reward;
+import com.mysteriacraft.core.reward.RewardParser;
+import com.mysteriacraft.core.storage.Database;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.plugin.Plugin;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * Charge les paliers du BattlePass depuis battlepass.yml et gere la progression des joueurs
+ * (xp, statut premium, recompenses reclamees) en SQLite. Saison permanente : pas de reset.
+ */
+public class BattlePassManager {
+
+    private final Plugin plugin;
+    private final Database database;
+    private final ConfigManager battlepassConfig;
+
+    private final List<BattlePassLevel> levels = new ArrayList<>();
+    private long xpPerMinute = 0;
+    private double premiumPrice = 0;
+    private Reward prestigeReward;
+    private long firstQuestBonusXp = 0;
+    private long sprintDurationSeconds = 3600;
+    private double sprintMultiplier = 3.0;
+
+    /** Fenetres d'evenement double xp (ou autre multiplicateur) optionnelles, voir "evenements-xp"
+     * dans battlepass.yml. Reutilise le meme format actif-du/actif-au que les quetes saisonnieres. */
+    public record XpEvent(String actifDu, String actifAu, double multiplicateur) {
+        public boolean isActiveNow() {
+            return SeasonalWindow.isActiveNow(actifDu, actifAu);
+        }
+    }
+
+    private final List<XpEvent> xpEvents = new ArrayList<>();
+    private final java.util.Map<Integer, String> chapterNames = new java.util.HashMap<>();
+
+    public BattlePassManager(Plugin plugin, Database database, ConfigManager battlepassConfig) {
+        this.plugin = plugin;
+        this.database = database;
+        this.battlepassConfig = battlepassConfig;
+        createTables();
+        loadLevels();
+    }
+
+    private void createTables() {
+        String[] statements = {
+                "CREATE TABLE IF NOT EXISTS battlepass_joueurs (" +
+                        "uuid TEXT PRIMARY KEY, xp INTEGER NOT NULL DEFAULT 0, premium INTEGER NOT NULL DEFAULT 0);",
+                "CREATE TABLE IF NOT EXISTS battlepass_reclamations (" +
+                        "uuid TEXT NOT NULL, niveau INTEGER NOT NULL, piste TEXT NOT NULL, " +
+                        "PRIMARY KEY (uuid, niveau, piste));",
+                // Prestige : recommencer au niveau 1 apres le niveau max (voir /battlepass prestige).
+                "CREATE TABLE IF NOT EXISTS battlepass_prestige (" +
+                        "uuid TEXT NOT NULL PRIMARY KEY, prestige INTEGER NOT NULL DEFAULT 0);",
+                // Historique d'xp gagnee par jour (voir /battlepass stats).
+                "CREATE TABLE IF NOT EXISTS battlepass_xp_historique (" +
+                        "uuid TEXT NOT NULL, jour TEXT NOT NULL, xp_gagne INTEGER NOT NULL DEFAULT 0, " +
+                        "PRIMARY KEY (uuid, jour));",
+                // Defi "sprint" (xp temporairement multipliee), limite a une fois par jour.
+                "CREATE TABLE IF NOT EXISTS battlepass_sprint (" +
+                        "uuid TEXT NOT NULL, jour TEXT NOT NULL, PRIMARY KEY (uuid, jour));",
+                // Roulement fige d'un palier "mystere" (voir BattlePassLevel#mysteryPool), une fois par joueur.
+                "CREATE TABLE IF NOT EXISTS battlepass_mystere_roule (" +
+                        "uuid TEXT NOT NULL, niveau INTEGER NOT NULL, index_roule INTEGER NOT NULL, " +
+                        "PRIMARY KEY (uuid, niveau));",
+                // Titres de chat debloques et titre actuellement affiche (voir RewardType.TITRE_CHAT).
+                "CREATE TABLE IF NOT EXISTS battlepass_titres_debloques (" +
+                        "uuid TEXT NOT NULL, titre TEXT NOT NULL, PRIMARY KEY (uuid, titre));",
+                "CREATE TABLE IF NOT EXISTS battlepass_titre_actif (" +
+                        "uuid TEXT NOT NULL PRIMARY KEY, titre TEXT NOT NULL);",
+                // Premiere quete terminee du jour (bonus xp, voir QuestService).
+                "CREATE TABLE IF NOT EXISTS battlepass_premiere_quete (" +
+                        "uuid TEXT NOT NULL, jour TEXT NOT NULL, PRIMARY KEY (uuid, jour));"
+        };
+        Connection connection = database.getConnection();
+        for (String sql : statements) {
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Erreur creation table battlepass : " + e.getMessage());
+            }
+        }
+    }
+
+    public void loadLevels() {
+        levels.clear();
+        xpEvents.clear();
+        chapterNames.clear();
+        ConfigurationSection chapitresSection = battlepassConfig.get().getConfigurationSection("chapitres");
+        if (chapitresSection != null) {
+            for (String key : chapitresSection.getKeys(false)) {
+                try {
+                    chapterNames.put(Integer.parseInt(key), chapitresSection.getString(key, "Chapitre " + key));
+                } catch (NumberFormatException ignored) {
+                    // Cle de chapitre invalide : ignoree.
+                }
+            }
+        }
+        xpPerMinute = battlepassConfig.get().getLong("xp-par-minute-de-jeu", 0);
+        premiumPrice = battlepassConfig.get().getDouble("prix-premium", 0);
+        firstQuestBonusXp = battlepassConfig.get().getLong("bonus-premiere-quete-du-jour", 0);
+        sprintDurationSeconds = battlepassConfig.get().getLong("sprint-duree-secondes", 3600);
+        sprintMultiplier = battlepassConfig.get().getDouble("sprint-multiplicateur", 3.0);
+        prestigeReward = RewardParser.parse(battlepassConfig.get().getConfigurationSection("prestige-recompense"));
+
+        List<?> eventsRaw = battlepassConfig.get().getMapList("evenements-xp");
+        for (Object raw : eventsRaw) {
+            if (raw instanceof java.util.Map<?, ?> map) {
+                String du = String.valueOf(map.get("actif-du"));
+                String au = String.valueOf(map.get("actif-au"));
+                double multiplicateur = map.get("multiplicateur") instanceof Number n ? n.doubleValue() : 2.0;
+                xpEvents.add(new XpEvent(du, au, multiplicateur));
+            }
+        }
+
+        ConfigurationSection root = battlepassConfig.get().getConfigurationSection("niveaux");
+        if (root == null) {
+            plugin.getLogger().warning("Aucun palier trouve dans battlepass.yml (section 'niveaux' manquante).");
+            return;
+        }
+
+        for (String key : root.getKeys(false)) {
+            ConfigurationSection section = root.getConfigurationSection(key);
+            if (section == null) {
+                continue;
+            }
+            try {
+                int level = Integer.parseInt(key);
+                long xpRequired = section.getLong("xp-requis", 0);
+                BattlePassReward free = parseReward(section.getConfigurationSection("gratuit"));
+                BattlePassReward premium = parseReward(section.getConfigurationSection("premium"));
+                int chapitre = Math.max(0, section.getInt("chapitre", 0));
+
+                List<BattlePassReward> mysteryPool = new ArrayList<>();
+                List<?> mysteryRaw = section.getMapList("mystere-pool");
+                for (int i = 0; i < mysteryRaw.size(); i++) {
+                    ConfigurationSection mysterySection = section.createSection("mystere-pool-temp-" + i, (java.util.Map<?, ?>) mysteryRaw.get(i));
+                    BattlePassReward option = parseReward(mysterySection);
+                    if (option != null) {
+                        mysteryPool.add(option);
+                    }
+                    section.set("mystere-pool-temp-" + i, null);
+                }
+                if (!mysteryPool.isEmpty()) {
+                    free = null;
+                }
+
+                levels.add(new BattlePassLevel(level, xpRequired, free, premium, mysteryPool, chapitre));
+            } catch (NumberFormatException e) {
+                plugin.getLogger().warning("Cle de palier invalide dans battlepass.yml : " + key);
+            }
+        }
+        levels.sort(Comparator.comparingInt(BattlePassLevel::level));
+        plugin.getLogger().info(levels.size() + " palier(s) de BattlePass charge(s).");
+    }
+
+    private BattlePassReward parseReward(ConfigurationSection section) {
+        Reward reward = RewardParser.parse(section);
+        return reward == null ? null : new BattlePassReward(reward);
+    }
+
+    public List<BattlePassLevel> getLevels() {
+        return levels;
+    }
+
+    public long getXpPerMinute() {
+        return xpPerMinute;
+    }
+
+    public double getPremiumPrice() {
+        return premiumPrice;
+    }
+
+    public long getFirstQuestBonusXp() {
+        return firstQuestBonusXp;
+    }
+
+    public long getSprintDurationSeconds() {
+        return sprintDurationSeconds;
+    }
+
+    public double getSprintMultiplier() {
+        return sprintMultiplier;
+    }
+
+    public Reward getPrestigeReward() {
+        return prestigeReward;
+    }
+
+    /** Multiplicateur d'xp cumule de tous les evenements actuellement actifs (voir "evenements-xp"),
+     * 1.0 si aucun n'est actif. Plusieurs evenements simultanes se MULTIPLIENT entre eux. */
+    public double getActiveEventMultiplier() {
+        double multiplier = 1.0;
+        for (XpEvent event : xpEvents) {
+            if (event.isActiveNow()) {
+                multiplier *= event.multiplicateur();
+            }
+        }
+        return multiplier;
+    }
+
+    public String getChapterName(int chapitre) {
+        return chapterNames.getOrDefault(chapitre, "Chapitre " + chapitre);
+    }
+
+    public int getMaxLevelNumber() {
+        int max = 0;
+        for (BattlePassLevel level : levels) {
+            max = Math.max(max, level.level());
+        }
+        return max;
+    }
+
+    /** Le palier atteint pour une quantite d'xp donnee (le plus haut niveau dont xp-requis <= xp). */
+    public int computeLevel(long xp) {
+        int current = 0;
+        for (BattlePassLevel level : levels) {
+            if (xp >= level.xpRequired()) {
+                current = level.level();
+            }
+        }
+        return current;
+    }
+
+    public BattlePassLevel getLevel(int level) {
+        for (BattlePassLevel l : levels) {
+            if (l.level() == level) {
+                return l;
+            }
+        }
+        return null;
+    }
+
+    // ---- Progression joueur ----
+
+    public synchronized long getXp(UUID uuid) {
+        String select = "SELECT xp FROM battlepass_joueurs WHERE uuid = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong("xp");
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture xp battlepass pour " + uuid + " : " + e.getMessage());
+        }
+        return 0L;
+    }
+
+    public synchronized boolean isPremium(UUID uuid) {
+        String select = "SELECT premium FROM battlepass_joueurs WHERE uuid = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("premium") != 0;
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture statut premium pour " + uuid + " : " + e.getMessage());
+        }
+        return false;
+    }
+
+    /** Ajoute de l'xp au joueur (creant son enregistrement si besoin) et renvoie la nouvelle xp totale. */
+    public synchronized long addXp(UUID uuid, long amount) {
+        long newXp = Math.max(0, getXp(uuid) + amount);
+        String upsert = "INSERT INTO battlepass_joueurs (uuid, xp, premium) VALUES (?, ?, 0) " +
+                "ON CONFLICT(uuid) DO UPDATE SET xp = excluded.xp;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(upsert)) {
+            statement.setString(1, uuid.toString());
+            statement.setLong(2, newXp);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur mise a jour xp battlepass pour " + uuid + " : " + e.getMessage());
+        }
+        return newXp;
+    }
+
+    public synchronized void setPremium(UUID uuid, boolean premium) {
+        String upsert = "INSERT INTO battlepass_joueurs (uuid, xp, premium) VALUES (?, 0, ?) " +
+                "ON CONFLICT(uuid) DO UPDATE SET premium = excluded.premium;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(upsert)) {
+            statement.setString(1, uuid.toString());
+            statement.setInt(2, premium ? 1 : 0);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur mise a jour statut premium pour " + uuid + " : " + e.getMessage());
+        }
+    }
+
+    public synchronized boolean hasClaimed(UUID uuid, int level, String track) {
+        String select = "SELECT 1 FROM battlepass_reclamations WHERE uuid = ? AND niveau = ? AND piste = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            statement.setInt(2, level);
+            statement.setString(3, track);
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur verification reclamation battlepass : " + e.getMessage());
+            return false;
+        }
+    }
+
+    public synchronized void markClaimed(UUID uuid, int level, String track) {
+        String insert = "INSERT OR IGNORE INTO battlepass_reclamations (uuid, niveau, piste) VALUES (?, ?, ?);";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(insert)) {
+            statement.setString(1, uuid.toString());
+            statement.setInt(2, level);
+            statement.setString(3, track);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur enregistrement reclamation battlepass : " + e.getMessage());
+        }
+    }
+
+    /** Charge en un seul passage l'ensemble des reclamations d'un joueur (uuid#niveau#piste). A appeler hors thread principal. */
+    public synchronized Set<String> getAllClaims(UUID uuid) {
+        Set<String> claims = new HashSet<>();
+        String select = "SELECT niveau, piste FROM battlepass_reclamations WHERE uuid = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    claims.add(rs.getInt("niveau") + "#" + rs.getString("piste"));
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture reclamations battlepass pour " + uuid + " : " + e.getMessage());
+        }
+        return claims;
+    }
+
+    // ---- Prestige ----
+
+    public synchronized int getPrestige(UUID uuid) {
+        String select = "SELECT prestige FROM battlepass_prestige WHERE uuid = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("prestige");
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture prestige pour " + uuid + " : " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /** Reinitialise l'xp a 0 et incremente le prestige. A appeler seulement si le joueur est au
+     * niveau max (verifie par l'appelant, voir BattlePassService#prestige). Renvoie le nouveau prestige. */
+    public synchronized int prestige(UUID uuid) {
+        int newPrestige = getPrestige(uuid) + 1;
+        Connection connection = database.getConnection();
+        String resetXp = "UPDATE battlepass_joueurs SET xp = 0 WHERE uuid = ?;";
+        try (PreparedStatement statement = connection.prepareStatement(resetXp)) {
+            statement.setString(1, uuid.toString());
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur reinitialisation xp pour prestige de " + uuid + " : " + e.getMessage());
+        }
+        String upsert = "INSERT INTO battlepass_prestige (uuid, prestige) VALUES (?, ?) " +
+                "ON CONFLICT(uuid) DO UPDATE SET prestige = excluded.prestige;";
+        try (PreparedStatement statement = connection.prepareStatement(upsert)) {
+            statement.setString(1, uuid.toString());
+            statement.setInt(2, newPrestige);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur mise a jour prestige pour " + uuid + " : " + e.getMessage());
+        }
+        return newPrestige;
+    }
+
+    // ---- Historique d'xp (voir /battlepass stats) ----
+
+    public synchronized void recordXpGain(UUID uuid, long amount) {
+        if (amount == 0) {
+            return;
+        }
+        String jour = LocalDate.now().toString();
+        String upsert = "INSERT INTO battlepass_xp_historique (uuid, jour, xp_gagne) VALUES (?, ?, ?) " +
+                "ON CONFLICT(uuid, jour) DO UPDATE SET xp_gagne = xp_gagne + excluded.xp_gagne;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(upsert)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, jour);
+            statement.setLong(3, amount);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur enregistrement historique xp pour " + uuid + " : " + e.getMessage());
+        }
+    }
+
+    public record XpHistoryEntry(String jour, long xpGagne) {
+    }
+
+    public synchronized List<XpHistoryEntry> getRecentXpHistory(UUID uuid, int days) {
+        List<XpHistoryEntry> entries = new ArrayList<>();
+        String select = "SELECT jour, xp_gagne FROM battlepass_xp_historique WHERE uuid = ? ORDER BY jour DESC LIMIT ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            statement.setInt(2, days);
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    entries.add(new XpHistoryEntry(rs.getString("jour"), rs.getLong("xp_gagne")));
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture historique xp pour " + uuid + " : " + e.getMessage());
+        }
+        return entries;
+    }
+
+    // ---- Sprint (defi manuel, xp multipliee, une fois par jour) ----
+
+    public synchronized boolean hasUsedSprintToday(UUID uuid) {
+        String select = "SELECT 1 FROM battlepass_sprint WHERE uuid = ? AND jour = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, LocalDate.now().toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture sprint pour " + uuid + " : " + e.getMessage());
+            return false;
+        }
+    }
+
+    public synchronized void markSprintUsedToday(UUID uuid) {
+        String insert = "INSERT INTO battlepass_sprint (uuid, jour) VALUES (?, ?) ON CONFLICT DO NOTHING;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(insert)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, LocalDate.now().toString());
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur enregistrement sprint pour " + uuid + " : " + e.getMessage());
+        }
+    }
+
+    // ---- Palier "mystere" (voir BattlePassLevel#mysteryPool) ----
+
+    /** Renvoie la recompense EFFECTIVE (deja roulee et figee pour ce joueur) d'un palier mystere,
+     * en la tirant au hasard et en la persistant a la premiere consultation. */
+    public synchronized BattlePassReward resolveMysteryReward(UUID uuid, BattlePassLevel level) {
+        if (level.mysteryPool().isEmpty()) {
+            return null;
+        }
+        String select = "SELECT index_roule FROM battlepass_mystere_roule WHERE uuid = ? AND niveau = ?;";
+        Connection connection = database.getConnection();
+        Integer rolled = null;
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            statement.setInt(2, level.level());
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    rolled = rs.getInt("index_roule");
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture roulement mystere pour " + uuid + " : " + e.getMessage());
+        }
+
+        if (rolled == null) {
+            rolled = new Random().nextInt(level.mysteryPool().size());
+            String insert = "INSERT INTO battlepass_mystere_roule (uuid, niveau, index_roule) VALUES (?, ?, ?);";
+            try (PreparedStatement statement = connection.prepareStatement(insert)) {
+                statement.setString(1, uuid.toString());
+                statement.setInt(2, level.level());
+                statement.setInt(3, rolled);
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Erreur enregistrement roulement mystere pour " + uuid + " : " + e.getMessage());
+            }
+        }
+        return level.mysteryPool().get(Math.min(rolled, level.mysteryPool().size() - 1));
+    }
+
+    // ---- Titres de chat (voir RewardType.TITRE_CHAT) ----
+
+    public synchronized void unlockTitle(UUID uuid, String titre) {
+        String insert = "INSERT INTO battlepass_titres_debloques (uuid, titre) VALUES (?, ?) ON CONFLICT DO NOTHING;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(insert)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, titre);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur deblocage titre pour " + uuid + " : " + e.getMessage());
+        }
+    }
+
+    public synchronized Set<String> getUnlockedTitles(UUID uuid) {
+        Set<String> titres = new HashSet<>();
+        String select = "SELECT titre FROM battlepass_titres_debloques WHERE uuid = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    titres.add(rs.getString("titre"));
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture titres debloques pour " + uuid + " : " + e.getMessage());
+        }
+        return titres;
+    }
+
+    public synchronized void setActiveTitle(UUID uuid, String titre) {
+        Connection connection = database.getConnection();
+        if (titre == null) {
+            try (PreparedStatement statement = connection.prepareStatement("DELETE FROM battlepass_titre_actif WHERE uuid = ?;")) {
+                statement.setString(1, uuid.toString());
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Erreur suppression titre actif pour " + uuid + " : " + e.getMessage());
+            }
+            return;
+        }
+        String upsert = "INSERT INTO battlepass_titre_actif (uuid, titre) VALUES (?, ?) " +
+                "ON CONFLICT(uuid) DO UPDATE SET titre = excluded.titre;";
+        try (PreparedStatement statement = connection.prepareStatement(upsert)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, titre);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur mise a jour titre actif pour " + uuid + " : " + e.getMessage());
+        }
+    }
+
+    public synchronized String getActiveTitle(UUID uuid) {
+        String select = "SELECT titre FROM battlepass_titre_actif WHERE uuid = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("titre");
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture titre actif pour " + uuid + " : " + e.getMessage());
+        }
+        return null;
+    }
+
+    // ---- Bonus xp pour la premiere quete terminee du jour (voir QuestService) ----
+
+    /** Enregistre qu'une quete a ete terminee aujourd'hui pour ce joueur, et renvoie true si
+     * c'etait la PREMIERE de la journee (donc si le bonus doit etre donne). */
+    public synchronized boolean registerQuestCompletionAndCheckFirstOfDay(UUID uuid) {
+        String jour = LocalDate.now().toString();
+        String insert = "INSERT INTO battlepass_premiere_quete (uuid, jour) VALUES (?, ?) ON CONFLICT DO NOTHING;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(insert)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, jour);
+            int inserted = statement.executeUpdate();
+            return inserted > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur verification premiere quete du jour pour " + uuid + " : " + e.getMessage());
+            return false;
+        }
+    }
+}

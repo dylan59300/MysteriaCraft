@@ -1,0 +1,163 @@
+name: MysteriaCraft
+version: '${project.version}'
+main: com.mysteriacraft.MysteriaCraft
+api-version: '1.20'
+author: dylan59300
+description: Plugin serveur - Economie, BattlePass, Quetes, Pets, LuckyBlock, Custom Items
+
+commands:
+  balance:
+    description: Affiche votre solde ou celui d'un joueur
+    usage: /<command> [joueur]
+    aliases: [bal, argent]
+  pay:
+    description: Envoie de l'argent a un autre joueur
+    usage: /<command> <joueur> <montant>
+  payconfirm:
+    description: Confirme un paiement en attente (montant superieur au seuil configure)
+    usage: /<command>
+  baltop:
+    description: Classement des joueurs les plus riches
+    usage: /<command> [page]
+  eco:
+    description: Commande admin pour gerer l'economie
+    usage: /<command> <give|take|set|reset> <joueur> [montant]
+    permission: mysteriacraft.eco.admin
+  ecoreload:
+    description: Recharge la configuration et les messages du plugin
+    usage: /<command>
+    permission: mysteriacraft.eco.admin
+  battlepass:
+    description: Ouvre le menu du BattlePass (saison permanente)
+    usage: /<command>
+  battlepassadmin:
+    description: Gere le BattlePass (addxp, reload)
+    usage: /<command> <addxp <joueur> <montant>|reload>
+    permission: mysteriacraft.battlepass.admin
+  battlepassconfirmpremium:
+    description: Confirme l'achat en attente du Pass Premium
+    usage: /<command>
+  quests:
+    description: Ouvre le menu des quetes quotidiennes et hebdomadaires
+    usage: /<command>
+  questsadmin:
+    description: Recharge quests.yml ou reinitialise la progression d'un joueur
+    usage: /<command> [reset <joueur>]
+    permission: mysteriacraft.quests.admin
+  pets:
+    description: Ouvre le menu des pets (achat, invocation)
+    usage: /<command>
+  petsadmin:
+    description: Recharge pets.yml
+    usage: /<command>
+    permission: mysteriacraft.pets.admin
+  luckyblock:
+    description: Ouvre le menu des Lucky Blocks, ou achete directement avec buy
+    usage: /<command> [buy <famille> [quantite]]
+  luckyblockadmin:
+    description: Donne un Lucky Block, simule N casses reelles (test/preview), ou recharge luckyblocks.yml
+    usage: /<command> <give <joueur> <famille> [quantite]|simulate <famille> <nombre>|reload>
+    permission: mysteriacraft.luckyblock.admin
+  customitem:
+    description: Catalogue des items custom, gere les minerais/objets (give admin, sell, reload admin)
+    usage: /<command> [gui|give <joueur> <id> [quantite]|sell <id>|reload]
+  machine:
+    description: Donne/recharge/simule la Machine a Transformation (admin), ou affiche vos stats/infos
+    usage: /<command> <give <joueur> [quantite]|preset|reload|stats|info|doubleloot <secondes>|simulate <minerai> <nombre>>
+    # Pas de "permission:" ici : /machine stats et /machine info doivent rester accessibles a
+    # tout joueur (les sous-commandes admin restent protegees dans le code par mysteriacraft.machine.admin).
+  machineminiere:
+    description: Donne/recharge la Machine a Miner (admin)
+    usage: /<command> <give <joueur> [quantite]|reload>
+    permission: mysteriacraft.machineminiere.admin
+  generateur:
+    description: Liste vos generateurs actifs, ou donne/recharge (admin)
+    usage: /<command> <liste|give <joueur> <fer|or|diamant> [quantite]|reload>
+    # Pas de "permission:" ici : /generateur liste doit rester accessible a tout joueur.
+    # give/reload sont verifies manuellement dans le code (mysteriacraft.generateur.admin).
+  guide:
+    description: Ouvre le guide du serveur (s'ouvre aussi automatiquement a la 1ere connexion)
+    usage: /<command> [reload]
+    # Pas de "permission:" ici : /guide doit rester accessible a tout joueur.
+    # reload est verifie manuellement dans le code (mysteriacraft.guide.admin).
+  ile:
+    description: Gere votre ile privee (skyblock) - creation, invitations, agrandissement
+    usage: /<command> <create|home|spawn|sethome|delete confirm|invite <joueur>|accept <joueur>|kick <joueur>|membres|visit <joueur>|upgrade|niveau|top [page]>
+    # Pas de "permission:" ici : la plupart des sous-commandes doivent rester accessibles a tout
+    # joueur. reload/tp sont verifies manuellement dans le code (mysteriacraft.island.admin).
+  pnjmarchand:
+    description: Recharge la configuration du PNJ Marchand (offres, nom)
+    usage: /<command> reload
+    permission: mysteriacraft.pnjmarchand.admin
+  banque:
+    description: Gere votre solde en banque (interets journaliers, separe du solde principal)
+    usage: /<command> [solde|deposer <montant>|retirer <montant>|reload]
+    # Pas de "permission:" ici : solde/deposer/retirer doivent rester accessibles a tout joueur.
+    # reload est verifie manuellement dans le code (mysteriacraft.banque.admin).
+  enchantementadmin:
+    description: Recharge la configuration de la Table d'Enchantement Custom
+    usage: /<command> reload
+    permission: mysteriacraft.enchantement.admin
+  classe:
+    description: Choisit ou affiche votre classe/metier (bonus passif)
+    usage: /<command> [choisir <id>|reload]
+    # Pas de "permission:" ici : le choix doit rester accessible a tout joueur.
+    # reload est verifie manuellement dans le code (mysteriacraft.classes.admin).
+  hoteldesventes:
+    description: Achete/vend des objets entre joueurs a prix fixe
+    usage: /<command> [vendre <prix>|mesventes|annuler <id>|reload]
+    # Pas de "permission:" ici : vendre/mesventes/annuler doivent rester accessibles a tout joueur.
+    # reload est verifie manuellement dans le code (mysteriacraft.encheres.admin).
+
+permissions:
+  mysteriacraft.eco.admin:
+    description: Autorise la gestion admin de l'economie
+    default: op
+  mysteriacraft.battlepass.admin:
+    description: Autorise la gestion admin du BattlePass (xp, reload)
+    default: op
+  mysteriacraft.battlepass.premium:
+    description: Accorde le Pass Premium sans achat (a lier a un rang ou un kit VIP)
+    default: false
+  mysteriacraft.quests.admin:
+    description: Autorise la gestion admin des quetes (reload)
+    default: op
+  mysteriacraft.pets.admin:
+    description: Autorise la gestion admin des pets (reload)
+    default: op
+  mysteriacraft.luckyblock.admin:
+    description: Autorise la gestion admin des Lucky Blocks (give, reload)
+    default: op
+  mysteriacraft.customitem.admin:
+    description: Autorise la gestion admin des items custom (give, reload)
+    default: op
+  mysteriacraft.machine.admin:
+    description: Autorise la gestion admin de la Machine a Transformation (give, preset, reload)
+    default: op
+  mysteriacraft.machineminiere.admin:
+    description: Autorise la gestion admin de la Machine a Miner (give, reload, casse pendant le minage)
+    default: op
+  mysteriacraft.generateur.admin:
+    description: Autorise la gestion admin des Generateurs d'Argent (give, reload)
+    default: op
+  mysteriacraft.guide.admin:
+    description: Autorise la gestion admin du guide (reload)
+    default: op
+  mysteriacraft.island.admin:
+    description: Autorise la gestion admin des Iles (reload, tp sur l'ile d'un joueur, bypass protection)
+    default: op
+  mysteriacraft.pnjmarchand.admin:
+    description: Autorise la gestion admin du PNJ Marchand (reload)
+    default: op
+  mysteriacraft.banque.admin:
+    description: Autorise la gestion admin de la Banque (reload)
+    default: op
+  mysteriacraft.enchantement.admin:
+    description: Autorise la gestion admin de la Table d'Enchantement Custom (reload)
+    default: op
+  mysteriacraft.classes.admin:
+    description: Autorise la gestion admin des Classes/Metiers (reload)
+    default: op
+  mysteriacraft.encheres.admin:
+    description: Autorise la gestion admin de l'Hotel des Ventes (reload)
+    default: op

@@ -1,0 +1,68 @@
+# =========================================
+#   MysteriaCraft - Configuration des Pets
+# =========================================
+# Ce sont de vrais mobs Bukkit (apprivoises quand possible) qui suivent le joueur.
+# Un seul pet actif a la fois par joueur.
+# Deblocage : achat direct (/pets, prix en monnaie interne) OU recompense (battlepass/quete
+# via une recompense de type PET avec le meme pet-id que ci-dessous).
+# prix : 0 = non achetable directement (uniquement obtenable en recompense).
+# degats-bonus : bonus de degats d'attaque (attribut GENERIC_ATTACK_DAMAGE) applique au JOUEUR
+#                tant que ce pet est actif. 0 = aucun bonus.
+# esquive-pourcent : % de chance d'annuler COMPLETEMENT des degats subis, tant que ce pet est
+#                    actif. 0 = aucun bonus.
+
+pets:
+  loup:
+    nom: "&fLoup fidele"
+    type: WOLF
+    icone: BONE
+    ordre: 1
+    prix: 1000
+    permission: ""
+    degats-bonus: 1
+    esquive-pourcent: 0
+    lore:
+      - "&7Un compagnon loyal qui vous suit"
+      - "&7partout sur le serveur."
+      - "&7+1 degat d'attaque tant qu'il est actif."
+
+  chat:
+    nom: "&6Chat"
+    type: CAT
+    icone: COD
+    ordre: 2
+    prix: 800
+    permission: ""
+    degats-bonus: 0
+    esquive-pourcent: 5
+    lore:
+      - "&7Un chat curieux et affectueux."
+      - "&75% d'esquive tant qu'il est actif."
+
+  renard:
+    nom: "&cRenard"
+    type: FOX
+    icone: SWEET_BERRIES
+    ordre: 3
+    prix: 2000
+    permission: ""
+    degats-bonus: 1.5
+    esquive-pourcent: 0
+    lore:
+      - "&7Un renard vif et malin."
+      - "&7+1.5 degat d'attaque tant qu'il est actif."
+
+  allay:
+    nom: "&d&lAllay Scintillant"
+    type: ALLAY
+    icone: AMETHYST_SHARD
+    ordre: 4
+    prix: 0
+    permission: ""
+    degats-bonus: 0
+    esquive-pourcent: 10
+    lore:
+      - "&7Un pet legendaire, uniquement"
+      - "&7obtenable en recompense speciale"
+      - "&7(battlepass ou quete)."
+      - "&710% d'esquive tant qu'il est actif."

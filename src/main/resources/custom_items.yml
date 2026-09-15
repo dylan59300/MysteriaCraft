@@ -1,0 +1,1062 @@
+# =========================================
+#   MysteriaCraft - Configuration des minerais/objets custom
+# =========================================
+# Chaque minerai/objet custom est visuellement un item vanilla existant (item-de-base) renomme
+# et redecrit : AUCUN resource pack requis, tout fonctionne avec le client Minecraft standard.
+# minerais-source : blocs dont la casse a une chance (chance-drop, en %) de donner ce minerai.
+#                   Liste vide/absente = pas de source naturelle, uniquement obtenable en
+#                   recompense (battlepass/quete/luckyblock via "type: OBJET_CUSTOM").
+# prix-vente : 0 = non revendable via /customitem sell.
+# enchantements : niveau vanilla IGNORE (ex: DAMAGE_ALL: 6 fonctionne). Noms legacy Bukkit :
+#                 DAMAGE_ALL (Tranchant), DIG_SPEED (Efficacite), DURABILITY (Solidite),
+#                 LOOT_BONUS_BLOCKS (Fortune), LOOT_BONUS_MOBS (Butin), FIRE_ASPECT,
+#                 PROTECTION_ENVIRONMENTAL (Protection).
+# degats-bonus : bonus de degats d'attaque (armes/outils tenus en main uniquement).
+# armure-bonus : bonus d'armure (pieces d'armure uniquement : casque/plastron/jambieres/bottes).
+# incassable : si true, l'item ne perd jamais de durabilite.
+# vol-de-vie : enchantement custom EXCLUSIF (au-dela des enchantements vanilla renommes ci-dessus) :
+#              % des degats infliges en main principale rendus en soin a l'attaquant. 0 = desactive.
+# durabilite-custom : nombre d'utilisations (coups portes pour une arme, blocs casses pour un
+#                      outil) avant que l'item ne se brise et disparaisse. 0 = desactive (durabilite
+#                      vanilla normale uniquement). Reparable a 100% via "kit_reparation" (clic
+#                      droit accroupi, kit en main principale + item abime en main secondaire).
+
+# Machine a Transformation : un bloc pose (voir /machine give ou /machine preset) sur lequel on
+# clique-droit avec un minerai vanilla en main. CHAQUE minerai insere (1 minerai = 1 charge = 1
+# loot, plus de lot de 10) donne TOUJOURS une recompense, jamais rien de perdu. chance-luckyblock
+# % du tier actuel (+ bonus d'amelioration, voir "amelioration" ci-dessous) determine seulement SI
+# la recompense est le Lucky Block de la famille ciblee (module LuckyBlock) ou, le reste du temps,
+# un item custom aleatoire pioche parmi TOUS ceux charges depuis ce fichier (voir "items"), tirage
+# equitable entre chacun d'eux.
+# tiers : paliers STRUCTURELS de la machine (Bronze/Argent/Or...), chacun avec son propre bloc,
+#         sa propre chance-luckyblock de base, son propre cooldown de base et sa propre jauge de
+#         carburant affichee. Le PREMIER tier declare est celui donne par /machine give et
+#         /machine preset (pas de kit-item-id). Chaque tier SUIVANT necessite le kit-item-id
+#         (objet custom, voir "items" ci-dessous) correspondant, utilise en clic-droit sur une
+#         machine se trouvant EXACTEMENT au tier precedent (progression sequentielle obligatoire :
+#         impossible de sauter du tier Bronze directement au tier Or). Le carburant et le bonus
+#         d'amelioration deja accumules sont conserves lors d'un changement de tier.
+# carburants : chaque entree est un objet custom (voir "items" ci-dessous) utilisable comme
+#              carburant. Clic-droit sur la machine avec l'un d'eux en main la ravitaille :
+#              charges = nombre de tentatives ajoutees, cooldown-secondes = delai applique aux
+#              PROCHAINES tentatives tant que la machine tourne sur ce type de carburant (un
+#              carburant ameliore peut donc a la fois donner plus de charges et reduire l'attente).
+# auto-alimentation : si true, coller un coffre/coffre piege/baril/hopper a la machine (n'importe
+#                      quelle face) lui permet de piocher automatiquement les minerais acceptes
+#                      dedans (1 par cooldown ecoule) sans avoir a cliquer. Avec un seul conteneur
+#                      colle, il sert aussi de sortie pour les recompenses obtenues ; avec 2
+#                      conteneurs ou plus colles, le 1er (ordre nord/sud/est/ouest/haut/bas) sert
+#                      d'entree et le 2eme de sortie, pour separer minerais et recompenses.
+# hologramme-segments : nombre de blocs "■" dans la barre de progression du cooldown affichee sur
+#                        l'hologramme et en actionbar (10 par defaut).
+# hologramme-jauge-carburant-max : valeur PAR DEFAUT (utilisee si un tier ne definit pas la sienne)
+#                                   de niveau de carburant correspondant a une jauge pleine sur
+#                                   l'hologramme (purement visuel, ne limite pas le stock reel).
+# hologramme-compact : si true, l'hologramme n'affiche que l'essentiel (barre de cooldown + %
+#                       chance-luckyblock), sans le nom/tier de la machine ni le detail carburant/entree-sortie.
+machine-transformation:
+  hologramme-jauge-carburant-max: 20
+  tiers:
+    bronze:
+      nom: "&7Bronze"
+      bloc: IRON_BLOCK
+      chance-luckyblock: 20
+      cooldown-secondes: 60
+      jauge-carburant-max: 20
+    argent:
+      nom: "&fArgent"
+      bloc: GOLD_BLOCK
+      chance-luckyblock: 30
+      cooldown-secondes: 45
+      jauge-carburant-max: 35
+      kit-item-id: kit_argent
+    or:
+      nom: "&6&lOr"
+      bloc: DIAMOND_BLOCK
+      chance-luckyblock: 45
+      cooldown-secondes: 30
+      jauge-carburant-max: 50
+      kit-item-id: kit_or
+    mythique:
+      nom: "&d&lMythique"
+      bloc: BEACON
+      chance-luckyblock: 60
+      cooldown-secondes: 20
+      jauge-carburant-max: 75
+      kit-item-id: kit_mythique
+  auto-alimentation: true
+  hologramme-segments: 10
+  hologramme-compact: false
+  # Bonus de chance-luckyblock TEMPORAIRE qui s'accumule a chaque Lucky Block obtenu CONSECUTIF sur
+  # une machine (remis a 0 des qu'un item custom sort a la place) : recompense les series de gros
+  # gains sans etre permanent. bonus-par-succes: 0 (ou section absente) desactive completement le systeme.
+  streak:
+    bonus-par-succes: 2
+    bonus-max: 20
+  # Systeme de pity : nombre d'echanges CONSECUTIFS d'un joueur (toutes ses machines confondues,
+  # clic-droit uniquement, pas l'auto-alimentation) sans obtenir de Lucky Block avant que le
+  # PROCHAIN echange ne soit garanti Lucky Block. Visible via /machine stats. 0 = desactive.
+  pity-seuil: 25
+  carburants:
+    carburant:
+      charges: 5
+      cooldown-secondes: 5
+    carburant_ameliore:
+      charges: 12
+      cooldown-secondes: 5
+    carburant_legendaire:
+      charges: 25
+      cooldown-secondes: 1
+  # Objet consommable (obtenable-en-recompense-uniquement) qui, en clic-droit (pas besoin de viser
+  # une machine), active pour le joueur X secondes durant lesquelles TOUTES ses transformations
+  # manuelles (clic-droit) sont gratuites : plus de consommation de charge ni de blocage "sans carburant".
+  # Ne s'applique PAS a l'auto-alimentation (qui n'a pas de joueur associe a une machine posee).
+  boost-carburant-illimite:
+    item-id: carburant_illimite
+    duree-secondes: 86400
+  # Amelioration de machine : objet custom consommable qui augmente durablement la chance-luckyblock
+  # d'UNE machine (stockee sur son bloc), jusqu'a bonus-max.
+  amelioration:
+    item-id: amelioration_machine
+    bonus-par-amelioration: 5
+    bonus-max: 30
+  # ORDRE DE PRIORITE pour l'auto-alimentation : quand plusieurs minerais acceptes sont presents
+  # dans le coffre d'entree, celui declare EN PREMIER ici est traite en premier (peu importe sa
+  # case dans le coffre). Range ici du plus rare au plus commun pour prioriser les gros gains.
+  # La valeur associee a chaque minerai est l'id de la famille de Lucky Block obtenue en echange
+  # (voir luckyblocks.yml) : un nouveau Lucky Block n'a donc besoin QUE d'une nouvelle ligne ici,
+  # aucun changement de code n'est necessaire pour qu'il fonctionne avec la machine.
+  minerais:
+    # legendaire
+    NETHERITE_INGOT: legendaire
+    NETHERITE_SCRAP: legendaire
+    ANCIENT_DEBRIS: legendaire
+    # epique
+    DIAMOND: epique
+    EMERALD: epique
+    # rare
+    GOLD_INGOT: rare
+    RAW_GOLD: rare
+    LAPIS_LAZULI: rare
+    AMETHYST_SHARD: rare
+    # commune
+    IRON_INGOT: commune
+    RAW_IRON: commune
+    COPPER_INGOT: commune
+    RAW_COPPER: commune
+    COAL: commune
+    REDSTONE: commune
+    QUARTZ: commune
+
+items:
+  rubis:
+    nom: "&cRubis Brut"
+    lore:
+      - "&7Une pierre precieuse rougeoyante,"
+      - "&7chaude au toucher."
+    item-de-base: RED_DYE
+    minerais-source: [REDSTONE_ORE, DEEPSLATE_REDSTONE_ORE]
+    chance-drop: 8
+    prix-vente: 40
+
+  saphir:
+    nom: "&9Saphir Brut"
+    lore:
+      - "&7Un cristal bleu profond,"
+      - "&7froid comme la glace."
+    item-de-base: LAPIS_LAZULI
+    minerais-source: [LAPIS_ORE, DEEPSLATE_LAPIS_ORE]
+    chance-drop: 8
+    prix-vente: 40
+
+  topaze:
+    nom: "&6Topaze Brute"
+    lore:
+      - "&7Une gemme doree scintillante."
+    item-de-base: ORANGE_DYE
+    minerais-source: [GOLD_ORE, DEEPSLATE_GOLD_ORE, NETHER_GOLD_ORE]
+    chance-drop: 6
+    prix-vente: 60
+
+  onyx:
+    nom: "&8Onyx Brut"
+    lore:
+      - "&7Une pierre noire et lisse."
+    item-de-base: BLACK_DYE
+    minerais-source: [COAL_ORE, DEEPSLATE_COAL_ORE]
+    chance-drop: 10
+    prix-vente: 20
+
+  grenat:
+    nom: "&4Grenat Brut"
+    lore:
+      - "&7Une gemme rouge sombre,"
+      - "&7veinee de metal."
+    item-de-base: MAGENTA_DYE
+    minerais-source: [IRON_ORE, DEEPSLATE_IRON_ORE]
+    chance-drop: 8
+    prix-vente: 35
+
+  aquamarine:
+    nom: "&bAquamarine Brute"
+    lore:
+      - "&7Une pierre bleu-vert claire,"
+      - "&7rare et prisee."
+    item-de-base: LIGHT_BLUE_DYE
+    minerais-source: [DIAMOND_ORE, DEEPSLATE_DIAMOND_ORE]
+    chance-drop: 5
+    prix-vente: 150
+
+  opale:
+    nom: "&fOpale Brute"
+    lore:
+      - "&7Une pierre laiteuse aux reflets"
+      - "&7changeants."
+    item-de-base: WHITE_DYE
+    minerais-source: [NETHER_QUARTZ_ORE]
+    chance-drop: 7
+    prix-vente: 45
+
+  amethyste:
+    nom: "&5Amethyste Brute"
+    lore:
+      - "&7Un cristal violet perce"
+      - "&7dans les grottes profondes."
+    item-de-base: AMETHYST_SHARD
+    minerais-source: [AMETHYST_CLUSTER]
+    chance-drop: 12
+    prix-vente: 55
+
+  peridot:
+    nom: "&2Peridot Brut"
+    lore:
+      - "&7Une gemme vert olive extremement"
+      - "&7rare, trouvee pres du bedrock."
+    item-de-base: LIME_DYE
+    minerais-source: [ANCIENT_DEBRIS]
+    chance-drop: 4
+    prix-vente: 300
+
+  jade:
+    nom: "&a&lJade Imperiale"
+    lore:
+      - "&7Une gemme legendaire, introuvable"
+      - "&7dans la nature."
+      - "&7Uniquement obtenable en recompense"
+      - "&7(battlepass, quete, luckyblock)."
+    item-de-base: GREEN_DYE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 500
+
+  carburant:
+    nom: "&6Carburant de Machine"
+    lore:
+      - "&7Alimente la Machine a Transformation."
+      - "&7Clic-droit sur la machine pour la ravitailler."
+    item-de-base: GLOWSTONE_DUST
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 4 charbon + 1 poudre de blaze + 4 redstone (croix).
+    recette:
+      forme:
+        - "CBC"
+        - "BRB"
+        - "CBC"
+      ingredients:
+        C: COAL
+        B: BLAZE_POWDER
+        R: REDSTONE
+
+  carburant_ameliore:
+    nom: "&6&lCarburant Ameliore"
+    lore:
+      - "&7Une version raffinee du carburant standard."
+      - "&7Donne plus de charges et reduit le"
+      - "&7temps de recharge de la machine."
+    item-de-base: BLAZE_ROD
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 4 lingots d'or + poudre de blaze + pierre de lumiere.
+    recette:
+      forme:
+        - "GBG"
+        - "BLB"
+        - "GBG"
+      ingredients:
+        G: GOLD_INGOT
+        B: BLAZE_POWDER
+        L: GLOWSTONE
+
+  carburant_legendaire:
+    nom: "&5&lCarburant Legendaire"
+    lore:
+      - "&7La version la plus puissante du"
+      - "&7carburant de Machine a Transformation :"
+      - "&7enormement de charges, cooldown quasi nul."
+      - "&7Uniquement obtenable en recompense"
+      - "&7(battlepass, quete, luckyblock)."
+    item-de-base: DRAGON_BREATH
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+
+  carburant_illimite:
+    nom: "&e&lCarburant Illimite (24h)"
+    lore:
+      - "&7Clic-droit (pas besoin de viser une machine)"
+      - "&7pour rendre GRATUITES toutes vos"
+      - "&7transformations manuelles pendant 24h."
+      - "&7Uniquement obtenable en recompense"
+      - "&7(battlepass, quete, luckyblock)."
+    item-de-base: HEART_OF_THE_SEA
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+
+  amelioration_machine:
+    nom: "&d&lAmelioration de Machine"
+    lore:
+      - "&7Clic-droit sur une Machine a Transformation"
+      - "&7pour augmenter durablement sa chance"
+      - "&7de reussite."
+    item-de-base: NETHER_STAR
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 4 diamants + 4 lingots d'or + 1 fragment de netherite.
+    recette:
+      forme:
+        - "DGD"
+        - "GNG"
+        - "DGD"
+      ingredients:
+        D: DIAMOND
+        G: GOLD_INGOT
+        N: NETHERITE_SCRAP
+
+  kit_argent:
+    nom: "&fKit d'Amelioration Argent"
+    lore:
+      - "&7Clic-droit sur une Machine a Transformation"
+      - "&7au tier Bronze pour la faire passer"
+      - "&7au tier Argent."
+    item-de-base: IRON_NUGGET
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 8 lingots d'or autour d'un bloc de fer.
+    recette:
+      forme:
+        - "GGG"
+        - "GFG"
+        - "GGG"
+      ingredients:
+        G: GOLD_INGOT
+        F: IRON_BLOCK
+
+  kit_or:
+    nom: "&6&lKit d'Amelioration Or"
+    lore:
+      - "&7Clic-droit sur une Machine a Transformation"
+      - "&7au tier Argent pour la faire passer"
+      - "&7au tier Or."
+    item-de-base: GOLD_NUGGET
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 8 diamants autour d'un bloc d'or.
+    recette:
+      forme:
+        - "DDD"
+        - "DGD"
+        - "DDD"
+      ingredients:
+        D: DIAMOND
+        G: GOLD_BLOCK
+
+  kit_mythique:
+    nom: "&d&lKit d'Amelioration Mythique"
+    lore:
+      - "&7Clic-droit sur une Machine a Transformation"
+      - "&7au tier Or pour la faire passer"
+      - "&7au tier Mythique."
+    item-de-base: NETHERITE_INGOT
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 8 lingots de netherite autour d'une etoile du Nether.
+    recette:
+      forme:
+        - "NNN"
+        - "NEN"
+        - "NNN"
+      ingredients:
+        N: NETHERITE_INGOT
+        E: NETHER_STAR
+
+  boost_generateur:
+    nom: "&d&lBoost de Generateur"
+    lore:
+      - "&7Clic-droit sur un Generateur d'Argent"
+      - "&7pour augmenter durablement son rythme"
+      - "&7de production."
+    item-de-base: EMERALD
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 4 emeraudes + 4 lingots d'or autour d'un diamant.
+    recette:
+      forme:
+        - "EGE"
+        - "GDG"
+        - "EGE"
+      ingredients:
+        E: EMERALD
+        G: GOLD_INGOT
+        D: DIAMOND
+
+  # Objet consommable (clic-droit accroupi, en main principale, avec l'item full-custom abime en
+  # main secondaire) qui repare a 100% la durabilite-custom d'un item full-custom. Voir
+  # CustomItemService#repairItem / CustomItemListener#onInteract.
+  kit_reparation:
+    nom: "&bKit de Reparation"
+    lore:
+      - "&7Clic-droit accroupi en tenant cet objet"
+      - "&7en main principale et l'item full-custom"
+      - "&7abime en main secondaire pour le reparer"
+      - "&7a 100% de sa durabilite."
+    item-de-base: AMETHYST_SHARD
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : lingot de fer + eclat d'amethyste autour d'une pierre a aiguiser (colonne de fer).
+    recette:
+      forme:
+        - "IAI"
+        - "IPI"
+        - "III"
+      ingredients:
+        I: IRON_INGOT
+        A: AMETHYST_SHARD
+        P: PHANTOM_MEMBRANE
+
+  # =========================================
+  #   Equipement "full custom" (armes/outils/armures)
+  # =========================================
+  # Chaque piece reprend un item vanilla de base (visuel + degats/durabilite/vitesse d'origine),
+  # ameliore avec de vrais enchantements (sans limite de niveau) et un bonus de degats/armure.
+  # Craftable en surchargeant l'equivalent vanilla d'ameliorations (recette 3x3), sauf les pieces
+  # "legendaires" haut de gamme, obtenables uniquement en recompense.
+
+  epee_apprenti:
+    nom: "&7Epee de l'Apprenti"
+    lore:
+      - "&7Une premiere lame amelioree,"
+      - "&7pour les guerriers en devenir."
+      - "&7+1 degat &7- &7Tranchant II"
+    item-de-base: IRON_SWORD
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 150
+    degats-bonus: 1
+    enchantements:
+      DAMAGE_ALL: 2
+    recette:
+      forme:
+        - "III"
+        - "ISI"
+        - "III"
+      ingredients:
+        I: IRON_INGOT
+        S: IRON_SWORD
+
+  epee_guerrier:
+    nom: "&fEpee du Guerrier"
+    lore:
+      - "&7Forgee pour les combattants aguerris."
+      - "&7+2 degats &7- &7Tranchant III"
+    item-de-base: DIAMOND_SWORD
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 400
+    degats-bonus: 2
+    enchantements:
+      DAMAGE_ALL: 3
+    recette:
+      forme:
+        - "DDD"
+        - "DSD"
+        - "DDD"
+      ingredients:
+        D: DIAMOND
+        S: DIAMOND_SWORD
+
+  epee_spectrale:
+    nom: "&b&lEpee Spectrale"
+    lore:
+      - "&7Une lame enveloppee de flammes"
+      - "&7fantomatiques."
+      - "&7+3 degats &7- &7Tranchant IV &7- &7Feu I"
+    item-de-base: NETHERITE_SWORD
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 800
+    degats-bonus: 3
+    enchantements:
+      DAMAGE_ALL: 4
+      FIRE_ASPECT: 1
+    recette:
+      forme:
+        - "GGG"
+        - "GSG"
+        - "GGG"
+      ingredients:
+        G: GHAST_TEAR
+        S: NETHERITE_SWORD
+
+  epee_du_vide:
+    nom: "&5&lEpee du Vide"
+    lore:
+      - "&7Forgee dans les profondeurs de l'End."
+      - "&7+4 degats &7- &7Tranchant V &7- &7Butin II"
+    item-de-base: NETHERITE_SWORD
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 1500
+    degats-bonus: 4
+    enchantements:
+      DAMAGE_ALL: 5
+      LOOT_BONUS_MOBS: 2
+    recette:
+      forme:
+        - "EEE"
+        - "ESE"
+        - "EEE"
+      ingredients:
+        E: ENDER_PEARL
+        S: NETHERITE_SWORD
+
+  epee_legendaire_dragon:
+    nom: "&4&l&nEpee Legendaire du Dragon"
+    lore:
+      - "&7La lame la plus puissante jamais forgee,"
+      - "&7trempee dans le souffle du dragon."
+      - "&7+6 degats &7- &7Tranchant VI &7- &7Feu II &7- &7Butin III"
+      - "&7Vol de vie : 15% des degats infliges"
+      - "&7Uniquement obtenable en recompense"
+      - "&7(battlepass, quete, luckyblock)."
+    item-de-base: NETHERITE_SWORD
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 5000
+    degats-bonus: 6
+    vol-de-vie: 15
+    durabilite-custom: 800
+    enchantements:
+      DAMAGE_ALL: 6
+      FIRE_ASPECT: 2
+      LOOT_BONUS_MOBS: 3
+
+  pioche_mineur:
+    nom: "&7Pioche du Mineur"
+    lore:
+      - "&7Une pioche renforcee pour les"
+      - "&7premieres grandes excavations."
+      - "&7Efficacite III &7- &7Solidite II"
+    item-de-base: IRON_PICKAXE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 150
+    enchantements:
+      DIG_SPEED: 3
+      DURABILITY: 2
+    recette:
+      forme:
+        - "III"
+        - "IPI"
+        - "III"
+      ingredients:
+        I: IRON_INGOT
+        P: IRON_PICKAXE
+
+  pioche_expert:
+    nom: "&fPioche de l'Expert"
+    lore:
+      - "&7Pour miner vite et miner riche."
+      - "&7Efficacite IV &7- &7Fortune II"
+    item-de-base: DIAMOND_PICKAXE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 400
+    enchantements:
+      DIG_SPEED: 4
+      LOOT_BONUS_BLOCKS: 2
+    recette:
+      forme:
+        - "DDD"
+        - "DPD"
+        - "DDD"
+      ingredients:
+        D: DIAMOND
+        P: DIAMOND_PICKAXE
+
+  pioche_du_gouffre:
+    nom: "&8&lPioche du Gouffre"
+    lore:
+      - "&7Forgee au plus profond du Nether,"
+      - "&7pres du gisement le plus rare."
+      - "&7Efficacite V &7- &7Fortune III &7- &7Solidite III"
+    item-de-base: NETHERITE_PICKAXE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 1000
+    enchantements:
+      DIG_SPEED: 5
+      LOOT_BONUS_BLOCKS: 3
+      DURABILITY: 3
+    recette:
+      forme:
+        - "AAA"
+        - "APA"
+        - "AAA"
+      ingredients:
+        A: ANCIENT_DEBRIS
+        P: NETHERITE_PICKAXE
+
+  pioche_celeste:
+    nom: "&e&l&nPioche Celeste"
+    lore:
+      - "&7Une pioche legendaire, benie par les"
+      - "&7cieux eux-memes."
+      - "&7Efficacite VI &7- &7Fortune IV &7- &7Solidite IV"
+      - "&7Uniquement obtenable en recompense"
+      - "&7(battlepass, quete, luckyblock)."
+    item-de-base: NETHERITE_PICKAXE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 3000
+    durabilite-custom: 1500
+    enchantements:
+      DIG_SPEED: 6
+      LOOT_BONUS_BLOCKS: 4
+      DURABILITY: 4
+
+  hache_bucheron:
+    nom: "&7Hache du Bucheron"
+    lore:
+      - "&7Coupe le bois... et les ennemis."
+      - "&7+1 degat &7- &7Efficacite III &7- &7Tranchant II"
+    item-de-base: IRON_AXE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 150
+    degats-bonus: 1
+    enchantements:
+      DIG_SPEED: 3
+      DAMAGE_ALL: 2
+    recette:
+      forme:
+        - "III"
+        - "IHI"
+        - "III"
+      ingredients:
+        I: IRON_INGOT
+        H: IRON_AXE
+
+  hache_demolisseur:
+    nom: "&fHache du Demolisseur"
+    lore:
+      - "&7Rien ne lui resiste."
+      - "&7+2 degats &7- &7Efficacite IV &7- &7Tranchant III"
+    item-de-base: DIAMOND_AXE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 400
+    degats-bonus: 2
+    enchantements:
+      DIG_SPEED: 4
+      DAMAGE_ALL: 3
+    recette:
+      forme:
+        - "DDD"
+        - "DHD"
+        - "DDD"
+      ingredients:
+        D: DIAMOND
+        H: DIAMOND_AXE
+
+  hache_titan:
+    nom: "&6&l&nHache du Titan"
+    lore:
+      - "&7Une hache titanesque, taillee"
+      - "&7dans le metal des enfers."
+      - "&7+3 degats &7- &7Efficacite V &7- &7Tranchant IV"
+      - "&7Uniquement obtenable en recompense"
+      - "&7(battlepass, quete, luckyblock)."
+    item-de-base: NETHERITE_AXE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 1200
+    degats-bonus: 3
+    enchantements:
+      DIG_SPEED: 5
+      DAMAGE_ALL: 4
+
+  armure_garde_casque:
+    nom: "&7Casque de la Garde"
+    lore:
+      - "&7Protection standard des gardes du royaume."
+      - "&7+1 armure &7- &7Protection II"
+    item-de-base: IRON_HELMET
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 150
+    armure-bonus: 1
+    enchantements:
+      PROTECTION_ENVIRONMENTAL: 2
+    recette:
+      forme:
+        - "III"
+        - "IHI"
+      ingredients:
+        I: IRON_INGOT
+        H: IRON_HELMET
+
+  armure_garde_plastron:
+    nom: "&7Plastron de la Garde"
+    lore:
+      - "&7Protection standard des gardes du royaume."
+      - "&7+1 armure &7- &7Protection II"
+    item-de-base: IRON_CHESTPLATE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 200
+    armure-bonus: 1
+    enchantements:
+      PROTECTION_ENVIRONMENTAL: 2
+    recette:
+      forme:
+        - "IHI"
+        - "III"
+        - "III"
+      ingredients:
+        I: IRON_INGOT
+        H: IRON_CHESTPLATE
+
+  armure_garde_jambieres:
+    nom: "&7Jambieres de la Garde"
+    lore:
+      - "&7Protection standard des gardes du royaume."
+      - "&7+1 armure &7- &7Protection II"
+    item-de-base: IRON_LEGGINGS
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 180
+    armure-bonus: 1
+    enchantements:
+      PROTECTION_ENVIRONMENTAL: 2
+    recette:
+      forme:
+        - "III"
+        - "IHI"
+        - "I I"
+      ingredients:
+        I: IRON_INGOT
+        H: IRON_LEGGINGS
+
+  armure_garde_bottes:
+    nom: "&7Bottes de la Garde"
+    lore:
+      - "&7Protection standard des gardes du royaume."
+      - "&7+1 armure &7- &7Protection II"
+    item-de-base: IRON_BOOTS
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 130
+    armure-bonus: 1
+    enchantements:
+      PROTECTION_ENVIRONMENTAL: 2
+    recette:
+      forme:
+        - "I I"
+        - "IHI"
+      ingredients:
+        I: IRON_INGOT
+        H: IRON_BOOTS
+
+  armure_paladin_casque:
+    nom: "&bCasque du Paladin"
+    lore:
+      - "&7Beni par les gardiens sacres."
+      - "&7+2 armure &7- &7Protection III"
+    item-de-base: DIAMOND_HELMET
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 400
+    armure-bonus: 2
+    enchantements:
+      PROTECTION_ENVIRONMENTAL: 3
+    recette:
+      forme:
+        - "DDD"
+        - "DHD"
+      ingredients:
+        D: DIAMOND
+        H: DIAMOND_HELMET
+
+  armure_paladin_plastron:
+    nom: "&bPlastron du Paladin"
+    lore:
+      - "&7Beni par les gardiens sacres."
+      - "&7+2 armure &7- &7Protection III"
+    item-de-base: DIAMOND_CHESTPLATE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 550
+    armure-bonus: 2
+    enchantements:
+      PROTECTION_ENVIRONMENTAL: 3
+    recette:
+      forme:
+        - "DHD"
+        - "DDD"
+        - "DDD"
+      ingredients:
+        D: DIAMOND
+        H: DIAMOND_CHESTPLATE
+
+  armure_paladin_jambieres:
+    nom: "&bJambieres du Paladin"
+    lore:
+      - "&7Beni par les gardiens sacres."
+      - "&7+2 armure &7- &7Protection III"
+    item-de-base: DIAMOND_LEGGINGS
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 500
+    armure-bonus: 2
+    enchantements:
+      PROTECTION_ENVIRONMENTAL: 3
+    recette:
+      forme:
+        - "DDD"
+        - "DHD"
+        - "D D"
+      ingredients:
+        D: DIAMOND
+        H: DIAMOND_LEGGINGS
+
+  armure_paladin_bottes:
+    nom: "&bBottes du Paladin"
+    lore:
+      - "&7Beni par les gardiens sacres."
+      - "&7+2 armure &7- &7Protection III"
+    item-de-base: DIAMOND_BOOTS
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 350
+    armure-bonus: 2
+    enchantements:
+      PROTECTION_ENVIRONMENTAL: 3
+    recette:
+      forme:
+        - "D D"
+        - "DHD"
+      ingredients:
+        D: DIAMOND
+        H: DIAMOND_BOOTS
+
+  armure_immortelle_casque:
+    nom: "&4&l&nCasque Immortel"
+    lore:
+      - "&7Forge dans le feu eternel, incassable."
+      - "&7+3 armure &7- &7Protection IV &7- &7Incassable"
+      - "&7Uniquement obtenable en recompense"
+      - "&7(battlepass, quete, luckyblock)."
+    item-de-base: NETHERITE_HELMET
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 2000
+    armure-bonus: 3
+    incassable: true
+    enchantements:
+      PROTECTION_ENVIRONMENTAL: 4
+      DURABILITY: 3
+
+  armure_immortelle_plastron:
+    nom: "&4&l&nPlastron Immortel"
+    lore:
+      - "&7Forge dans le feu eternel, incassable."
+      - "&7+3 armure &7- &7Protection IV &7- &7Incassable"
+      - "&7Uniquement obtenable en recompense"
+      - "&7(battlepass, quete, luckyblock)."
+    item-de-base: NETHERITE_CHESTPLATE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 2500
+    armure-bonus: 3
+    incassable: true
+    enchantements:
+      PROTECTION_ENVIRONMENTAL: 4
+      DURABILITY: 3
+
+  armure_immortelle_jambieres:
+    nom: "&4&l&nJambieres Immortelles"
+    lore:
+      - "&7Forge dans le feu eternel, incassable."
+      - "&7+3 armure &7- &7Protection IV &7- &7Incassable"
+      - "&7Uniquement obtenable en recompense"
+      - "&7(battlepass, quete, luckyblock)."
+    item-de-base: NETHERITE_LEGGINGS
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 2200
+    armure-bonus: 3
+    incassable: true
+    enchantements:
+      PROTECTION_ENVIRONMENTAL: 4
+      DURABILITY: 3
+
+  armure_immortelle_bottes:
+    nom: "&4&l&nBottes Immortelles"
+    lore:
+      - "&7Forge dans le feu eternel, incassable."
+      - "&7+3 armure &7- &7Protection IV &7- &7Incassable"
+      - "&7Uniquement obtenable en recompense"
+      - "&7(battlepass, quete, luckyblock)."
+    item-de-base: NETHERITE_BOOTS
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 1800
+    armure-bonus: 3
+    incassable: true
+    enchantements:
+      PROTECTION_ENVIRONMENTAL: 4
+      DURABILITY: 3
+
+  carburant_minier:
+    nom: "&6Carburant de Machine a Miner"
+    lore:
+      - "&7Alimente la Machine a Miner."
+      - "&7Clic-droit sur la machine pour la ravitailler."
+    item-de-base: REDSTONE_BLOCK
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 4 blocs de charbon + 1 TNT + 4 blocs de redstone (croix).
+    recette:
+      forme:
+        - "CBC"
+        - "RTR"
+        - "CBC"
+      ingredients:
+        C: COAL_BLOCK
+        B: BLAZE_POWDER
+        R: REDSTONE_BLOCK
+        T: TNT
+
+  carburant_minier_ameliore:
+    nom: "&6&lCarburant de Machine a Miner Ameliore"
+    lore:
+      - "&7Une version raffinee du carburant minier :"
+      - "&7permet de miner bien plus de blocs."
+    item-de-base: NETHERITE_SCRAP
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 4 blocs de fer + 4 poudre de blaze autour d'un carburant minier de base.
+    recette:
+      forme:
+        - "FBF"
+        - "BCB"
+        - "FBF"
+      ingredients:
+        F: IRON_BLOCK
+        B: BLAZE_POWDER
+        C: REDSTONE_BLOCK
+
+  # ---- Module PNJ Marchand (voir marchand.yml) ----
+
+  piece_echange:
+    nom: "&6&lPiece d'Echange"
+    lore:
+      - "&7Monnaie du PNJ Marchand :"
+      - "&7clic-droit sur lui pour echanger"
+      - "&7ces pieces contre des objets rares."
+    item-de-base: GOLD_NUGGET
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : un lingot d'or entoure d'emeraudes.
+    recette:
+      forme:
+        - "EEE"
+        - "EGE"
+        - "EEE"
+      ingredients:
+        E: EMERALD
+        G: GOLD_INGOT
+
+  oeuf_pnj_marchand:
+    nom: "&6&lOeuf du PNJ Marchand"
+    lore:
+      - "&7Clic-droit sur un bloc pour"
+      - "&7invoquer le Marchand a cet endroit."
+    item-de-base: VILLAGER_SPAWN_EGG
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Uniquement craftable/en recompense ciblee : jamais tire au hasard par la Machine.
+    exclu-loot-machine: true
+    # Craftable a l'etabli, mais volontairement couteux (rare, usage admin/recompense recommande).
+    recette:
+      forme:
+        - "DDD"
+        - "DND"
+        - "DDD"
+      ingredients:
+        D: DIAMOND_BLOCK
+        N: NETHER_STAR
+
+  essence_enchantement:
+    nom: "&d&lEssence d'Enchantement"
+    lore:
+      - "&7Catalyseur pour la Table"
+      - "&7d'Enchantement Custom (clic-droit"
+      - "&7en main secondaire, item a enchanter"
+      - "&7en main principale)."
+    item-de-base: LAPIS_LAZULI
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    recette:
+      forme:
+        - "LEL"
+        - "EXE"
+        - "LEL"
+      ingredients:
+        L: LAPIS_LAZULI
+        E: EXPERIENCE_BOTTLE
+        X: NETHER_STAR
+
+  oeuf_pnj_forgeron:
+    nom: "&7&lOeuf du PNJ Forgeron"
+    lore:
+      - "&7Clic-droit sur un bloc pour"
+      - "&7invoquer le Forgeron a cet endroit."
+    item-de-base: VILLAGER_SPAWN_EGG
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    exclu-loot-machine: true
+    recette:
+      forme:
+        - "III"
+        - "IAI"
+        - "III"
+      ingredients:
+        I: IRON_BLOCK
+        A: ANVIL

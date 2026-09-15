@@ -1,0 +1,39 @@
+# =========================================
+#   MysteriaCraft - Configuration de la Machine a Miner
+# =========================================
+# Un bloc pose (voir /machineminiere give) qui, une fois alimente en carburant, mine
+# AUTOMATIQUEMENT tout un chunk (largeur x largeur, de hauteur-min a hauteur-max) au fil du temps,
+# quelques blocs a la fois (blocs-par-tick) pour ne jamais impacter les performances du serveur.
+# Les blocs mines sont deposes dans un coffre/coffre piege/baril/hopper colle a la machine (n'importe
+# quelle face), ou au sol au pied de la machine si aucun conteneur n'est colle.
+#
+# bloc : materiau visuel du bloc pose.
+# largeur : taille du cote de la zone minee (16 = 1 chunk Minecraft complet, le maximum).
+# hauteur-min / hauteur-max : bornes Y (inclusif/exclusif) de la zone minee.
+# blocs-par-tick : nombre de blocs traites par tick serveur (20 ticks/seconde) et par machine
+#                  active. Plus haut = minage plus rapide mais plus couteux en performance.
+# carburants : chaque entree est un objet custom (voir custom_items.yml) utilisable comme
+#              carburant. "blocs" = nombre de blocs que ce carburant permet de miner.
+# blocs-ignores : materiaux jamais mines (en plus de l'air et du bedrock, toujours ignores).
+machine-a-miner:
+  bloc: DRIPSTONE_BLOCK
+  largeur: 16
+  hauteur-min: -32
+  hauteur-max: 64
+  blocs-par-tick: 40
+  # Nombre max de Machines a Miner qu'un meme joueur peut poser (0 = illimite). Bloque la pose
+  # au-dela de cette limite. Limitation connue : le comptage ne suit que les machines vues depuis
+  # le dernier demarrage du plugin (comme les autres effets ambiants de MysteriaCraft).
+  max-machines-par-joueur: 5
+  carburants:
+    carburant_minier:
+      blocs: 2000
+    carburant_minier_ameliore:
+      blocs: 8000
+  blocs-ignores:
+    - WATER
+    - LAVA
+    - BARRIER
+    - END_PORTAL_FRAME
+    - END_PORTAL
+    - NETHER_PORTAL

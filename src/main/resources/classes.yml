@@ -1,0 +1,37 @@
+# =========================================
+#   MysteriaCraft - Configuration des Classes/Metiers
+# =========================================
+# Chaque joueur choisit UNE classe (/classe choisir <id>), qui applique un effet de potion
+# permanent (bonus passif) tant qu'elle est active. Le premier choix est gratuit ; en changer
+# ensuite coute "prix-changement" (argent, module Economie).
+#
+# effet : nom d'effet de potion vanilla (ex: FAST_DIGGING = Hate, INCREASE_DAMAGE = Force,
+#         SATURATION, REGENERATION, SPEED, JUMP...).
+# amplificateur : niveau de l'effet (0 = niveau I).
+
+prix-changement: 2000
+
+classes:
+  mineur:
+    nom: "&6&lMineur"
+    icone: DIAMOND_PICKAXE
+    lore:
+      - "&7Rapidite de minage accrue."
+    effet: FAST_DIGGING
+    amplificateur: 1
+
+  guerrier:
+    nom: "&c&lGuerrier"
+    icone: DIAMOND_SWORD
+    lore:
+      - "&7Degats de melee augmentes."
+    effet: INCREASE_DAMAGE
+    amplificateur: 0
+
+  fermier:
+    nom: "&a&lFermier"
+    icone: WHEAT
+    lore:
+      - "&7Regeneration et faim reduites."
+    effet: SATURATION
+    amplificateur: 0
