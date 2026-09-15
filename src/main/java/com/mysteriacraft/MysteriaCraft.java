@@ -62,6 +62,9 @@ import com.mysteriacraft.marchand.MarchandManager;
 import com.mysteriacraft.marchand.MarchandService;
 import com.mysteriacraft.marchand.commands.MarchandAdminCommand;
 import com.mysteriacraft.marchand.listeners.MarchandListener;
+import com.mysteriacraft.banque.BanqueManager;
+import com.mysteriacraft.banque.BanqueService;
+import com.mysteriacraft.banque.commands.BanqueCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -123,6 +126,9 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager marchandConfig;
     private MarchandManager marchandManager;
     private MarchandService marchandService;
+    private ConfigManager banqueConfig;
+    private BanqueManager banqueManager;
+    private BanqueService banqueService;
 
     @Override
     public void onEnable() {
@@ -195,6 +201,12 @@ public final class MysteriaCraft extends JavaPlugin {
         Bukkit.getScheduler().runTaskAsynchronously(this, () ->
                 Bukkit.getOnlinePlayers().forEach(player ->
                         economyManager.loadAccount(player.getUniqueId(), player.getName())));
+
+        // ---- Module Banque (solde separe avec interets, depend d'EconomyManager) ----
+        this.banqueConfig = new ConfigManager(this, "banque.yml");
+        this.banqueManager = new BanqueManager(this, database, banqueConfig);
+        this.banqueService = new BanqueService(this, banqueManager, economyManager, messages);
+        getCommand("banque").setExecutor(new BanqueCommand(banqueConfig, banqueManager, banqueService, messages));
     }
 
     private void setupBattlePass() {

@@ -89,6 +89,11 @@ commands:
     description: Recharge la configuration du PNJ Marchand (offres, nom)
     usage: /<command> reload
     permission: mysteriacraft.pnjmarchand.admin
+  banque:
+    description: Gere votre solde en banque (interets journaliers, separe du solde principal)
+    usage: /<command> [solde|deposer <montant>|retirer <montant>|reload]
+    # Pas de "permission:" ici : solde/deposer/retirer doivent rester accessibles a tout joueur.
+    # reload est verifie manuellement dans le code (mysteriacraft.banque.admin).
 
 permissions:
   mysteriacraft.eco.admin:
@@ -129,4 +134,7 @@ permissions:
     default: op
   mysteriacraft.pnjmarchand.admin:
     description: Autorise la gestion admin du PNJ Marchand (reload)
+    default: op
+  mysteriacraft.banque.admin:
+    description: Autorise la gestion admin de la Banque (reload)
     default: op

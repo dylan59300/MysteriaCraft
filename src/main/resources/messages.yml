@@ -212,6 +212,17 @@ customitem:
   reparation-inutile: "&eCet item est deja a durabilite maximale."
   reparation-reussie: "&a&lReparation reussie ! &a{item} &arestaure a 100% de durabilite."
 
+banque:
+  usage: "&cUsage : /banque <solde|deposer <montant>|retirer <montant>>"
+  reload: "&aLa configuration de la Banque a ete rechargee."
+  solde: "&6&lBanque : &e{solde}"
+  interets-gagnes: "&d&l*** Interets bancaires ! *** &a+{montant}"
+  depot-minimum: "&cDepot minimum : &e{minimum}"
+  fonds-insuffisants: "&cVous n'avez pas assez d'argent sur votre solde principal."
+  depot-reussi: "&aVous avez depose &e{montant} &aen banque &7(nouveau solde banque : &e{solde}&7)"
+  solde-insuffisant: "&cVous n'avez pas assez d'argent en banque."
+  retrait-reussi: "&aVous avez retire &e{montant} &ade la banque &7(nouveau solde banque : &e{solde}&7)"
+
 marchand:
   usage: "&cUsage : /pnjmarchand reload"
   reload: "&aLa configuration du/des PNJ Marchand(s) a ete rechargee."
