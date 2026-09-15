@@ -1,0 +1,10 @@
+# =========================================
+#   MysteriaCraft - Configuration de l'Hotel des Ventes
+# =========================================
+# Un joueur met en vente l'item en main (/hoteldesventes vendre <prix>) a un prix fixe ; un autre
+# l'achete en argent (module Economie) directement dans le menu (/hoteldesventes). Une commission
+# est retenue sur chaque vente (economie interne, pas reversee).
+
+commission-pourcent: 5
+max-annonces-par-joueur: 5
+prix-minimum: 1

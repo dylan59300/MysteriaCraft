@@ -212,6 +212,28 @@ customitem:
   reparation-inutile: "&eCet item est deja a durabilite maximale."
   reparation-reussie: "&a&lReparation reussie ! &a{item} &arestaure a 100% de durabilite."
 
+encheres:
+  usage: "&cUsage : /hoteldesventes [vendre <prix>|mesventes|annuler <id>]"
+  reload: "&aLa configuration de l'Hotel des Ventes a ete rechargee."
+  titre-gui: "&8Hotel des Ventes"
+  titre-mesventes: "&8Mes annonces"
+  prix-minimum: "&cPrix minimum : &e{minimum}"
+  aucun-item: "&cVous devez tenir l'item a vendre en main principale."
+  limite-annonces: "&cVous avez atteint votre nombre maximum d'annonces actives."
+  erreur-creation: "&cErreur lors de la creation de l'annonce, reessayez."
+  mise-en-vente: "&a&lAnnonce creee ! &aVotre item est en vente pour &e{prix}&a."
+  deja-vendue: "&cCette annonce n'est plus disponible (deja vendue ou annulee)."
+  propre-annonce: "&cVous ne pouvez pas acheter votre propre annonce."
+  fonds-insuffisants: "&cVous n'avez pas assez d'argent pour cet achat."
+  achat-reussi: "&a&lAchat reussi ! &a-{prix} &7(vendu par &e{vendeur}&7)"
+  vente-effectuee: "&a&lVotre annonce a ete vendue ! &a+{prix} &7(achete par &e{acheteur}&7)"
+  annonce-introuvable: "&cCette annonce n'existe pas ou ne vous appartient pas."
+  annonce-annulee: "&aAnnonce annulee, l'item vous a ete rendu."
+  gui-vendeur: "&7Vendeur : &e{vendeur}"
+  gui-prix: "&7Prix : &e{prix}"
+  gui-cliquer-acheter: "&eCliquez pour acheter"
+  gui-cliquer-annuler: "&cCliquez pour annuler et recuperer"
+
 classes:
   usage: "&cUsage : /classe [choisir <id>]"
   reload: "&aLa configuration des Classes/Metiers a ete rechargee."

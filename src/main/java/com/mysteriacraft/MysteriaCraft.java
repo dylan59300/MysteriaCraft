@@ -74,6 +74,9 @@ import com.mysteriacraft.classes.ClasseManager;
 import com.mysteriacraft.classes.ClasseService;
 import com.mysteriacraft.classes.commands.ClasseCommand;
 import com.mysteriacraft.classes.listeners.ClasseListener;
+import com.mysteriacraft.encheres.EnchereManager;
+import com.mysteriacraft.encheres.EnchereService;
+import com.mysteriacraft.encheres.commands.EnchereCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -144,6 +147,9 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager classesConfig;
     private ClasseManager classeManager;
     private ClasseService classeService;
+    private ConfigManager encheresConfig;
+    private EnchereManager enchereManager;
+    private EnchereService enchereService;
 
     @Override
     public void onEnable() {
@@ -199,6 +205,9 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Module Classes/Metiers (depend d'economyManager) ----
         setupClasses();
+
+        // ---- Module Hotel des Ventes (depend d'economyManager) ----
+        setupEncheres();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -414,6 +423,14 @@ public final class MysteriaCraft extends JavaPlugin {
         // Reapplique l'effet de classe de chaque joueur en ligne avant l'expiration naturelle
         // de la duree de potion (voir ClasseService#EFFECT_DURATION_TICKS), toutes les 70 minutes.
         Bukkit.getScheduler().runTaskTimer(this, classeService::reapplyAllOnline, 20L * 60 * 70, 20L * 60 * 70);
+    }
+
+    private void setupEncheres() {
+        this.encheresConfig = new ConfigManager(this, "encheres.yml");
+        this.enchereManager = new EnchereManager(this, database, encheresConfig);
+        this.enchereService = new EnchereService(this, enchereManager, economyManager, messages);
+        getCommand("hoteldesventes").setExecutor(
+                new EnchereCommand(this, encheresConfig, enchereManager, enchereService, messages));
     }
 
     @Override
