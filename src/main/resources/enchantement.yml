@@ -1,0 +1,45 @@
+# =========================================
+#   MysteriaCraft - Configuration de la Table d'Enchantement Custom
+# =========================================
+# Une table crafting (materiau ci-dessous, place normalement dans le monde) sur laquelle un
+# clic-droit avec l'item custom "catalyseur-id" en main secondaire et l'item a enchanter en main
+# principale tire UN enchantement au hasard (poids) dans le pool ci-dessous et l'applique
+# directement (sans limite de niveau vanilla, comme les items custom). Consomme le catalyseur et
+# des niveaux d'XP du joueur.
+
+materiau-table: SMITHING_TABLE
+catalyseur-id: essence_enchantement
+cout-xp-niveaux: 10
+
+# enchantement : nom legacy Bukkit (voir custom_items.yml pour la liste des noms courants).
+# niveau-min/niveau-max : le niveau applique est tire uniformement dans cet intervalle.
+# poids : plus il est eleve, plus cet enchantement a de chances d'etre tire.
+pool:
+  - enchantement: DAMAGE_ALL
+    niveau-min: 1
+    niveau-max: 3
+    poids: 20
+  - enchantement: DIG_SPEED
+    niveau-min: 1
+    niveau-max: 3
+    poids: 20
+  - enchantement: DURABILITY
+    niveau-min: 1
+    niveau-max: 3
+    poids: 15
+  - enchantement: LOOT_BONUS_MOBS
+    niveau-min: 1
+    niveau-max: 2
+    poids: 10
+  - enchantement: PROTECTION_ENVIRONMENTAL
+    niveau-min: 1
+    niveau-max: 3
+    poids: 15
+  - enchantement: FIRE_ASPECT
+    niveau-min: 1
+    niveau-max: 2
+    poids: 10
+  - enchantement: LOOT_BONUS_BLOCKS
+    niveau-min: 1
+    niveau-max: 3
+    poids: 10

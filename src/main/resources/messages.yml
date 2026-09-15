@@ -212,6 +212,14 @@ customitem:
   reparation-inutile: "&eCet item est deja a durabilite maximale."
   reparation-reussie: "&a&lReparation reussie ! &a{item} &arestaure a 100% de durabilite."
 
+enchantement:
+  usage: "&cUsage : /enchantementadmin reload"
+  reload: "&aLa configuration de la Table d'Enchantement Custom a ete rechargee."
+  aucun-item: "&cVous devez tenir un item a enchanter en main principale."
+  xp-insuffisant: "&cIl vous manque des niveaux d'experience."
+  pool-vide: "&cAucun enchantement configure (verifiez enchantement.yml)."
+  reussi: "&d&l*** Enchantement reussi ! *** &7{enchantement} &7niveau &e{niveau}"
+
 banque:
   usage: "&cUsage : /banque <solde|deposer <montant>|retirer <montant>>"
   reload: "&aLa configuration de la Banque a ete rechargee."

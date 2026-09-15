@@ -65,6 +65,10 @@ import com.mysteriacraft.marchand.listeners.MarchandListener;
 import com.mysteriacraft.banque.BanqueManager;
 import com.mysteriacraft.banque.BanqueService;
 import com.mysteriacraft.banque.commands.BanqueCommand;
+import com.mysteriacraft.enchantement.EnchantementManager;
+import com.mysteriacraft.enchantement.EnchantementService;
+import com.mysteriacraft.enchantement.commands.EnchantementAdminCommand;
+import com.mysteriacraft.enchantement.listeners.EnchantementListener;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -129,6 +133,9 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager banqueConfig;
     private BanqueManager banqueManager;
     private BanqueService banqueService;
+    private ConfigManager enchantementConfig;
+    private EnchantementManager enchantementManager;
+    private EnchantementService enchantementService;
 
     @Override
     public void onEnable() {
@@ -178,6 +185,9 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Module PNJ Marchand ----
         setupMarchand();
+
+        // ---- Module Table d'Enchantement Custom (depend de customItemManager) ----
+        setupEnchantement();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -369,6 +379,16 @@ public final class MysteriaCraft extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(
                 new MarchandListener(marchandManager, marchandService, customItemManager, messages), this);
         getCommand("pnjmarchand").setExecutor(new MarchandAdminCommand(marchandConfig, marchandManager, messages));
+    }
+
+    private void setupEnchantement() {
+        this.enchantementConfig = new ConfigManager(this, "enchantement.yml");
+        this.enchantementManager = new EnchantementManager(this, enchantementConfig);
+        this.enchantementService = new EnchantementService(enchantementManager, messages);
+        Bukkit.getPluginManager().registerEvents(
+                new EnchantementListener(enchantementManager, enchantementService, customItemManager, messages), this);
+        getCommand("enchantementadmin").setExecutor(
+                new EnchantementAdminCommand(enchantementConfig, enchantementManager, messages));
     }
 
     @Override

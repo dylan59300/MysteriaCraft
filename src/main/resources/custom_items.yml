@@ -1021,6 +1021,27 @@ items:
         D: DIAMOND_BLOCK
         N: NETHER_STAR
 
+  essence_enchantement:
+    nom: "&d&lEssence d'Enchantement"
+    lore:
+      - "&7Catalyseur pour la Table"
+      - "&7d'Enchantement Custom (clic-droit"
+      - "&7en main secondaire, item a enchanter"
+      - "&7en main principale)."
+    item-de-base: LAPIS_LAZULI
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    recette:
+      forme:
+        - "LEL"
+        - "EXE"
+        - "LEL"
+      ingredients:
+        L: LAPIS_LAZULI
+        E: EXPERIENCE_BOTTLE
+        X: NETHER_STAR
+
   oeuf_pnj_forgeron:
     nom: "&7&lOeuf du PNJ Forgeron"
     lore:

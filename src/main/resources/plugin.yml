@@ -94,6 +94,10 @@ commands:
     usage: /<command> [solde|deposer <montant>|retirer <montant>|reload]
     # Pas de "permission:" ici : solde/deposer/retirer doivent rester accessibles a tout joueur.
     # reload est verifie manuellement dans le code (mysteriacraft.banque.admin).
+  enchantementadmin:
+    description: Recharge la configuration de la Table d'Enchantement Custom
+    usage: /<command> reload
+    permission: mysteriacraft.enchantement.admin
 
 permissions:
   mysteriacraft.eco.admin:
@@ -137,4 +141,7 @@ permissions:
     default: op
   mysteriacraft.banque.admin:
     description: Autorise la gestion admin de la Banque (reload)
+    default: op
+  mysteriacraft.enchantement.admin:
+    description: Autorise la gestion admin de la Table d'Enchantement Custom (reload)
     default: op
