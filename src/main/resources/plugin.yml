@@ -80,6 +80,11 @@ commands:
     usage: /<command> [reload]
     # Pas de "permission:" ici : /guide doit rester accessible a tout joueur.
     # reload est verifie manuellement dans le code (mysteriacraft.guide.admin).
+  ile:
+    description: Gere votre ile privee (skyblock) - creation, invitations, agrandissement
+    usage: /<command> <create|home|spawn|delete confirm|invite <joueur>|accept <joueur>|kick <joueur>|upgrade|niveau|top [page]>
+    # Pas de "permission:" ici : la plupart des sous-commandes doivent rester accessibles a tout
+    # joueur. reload/tp sont verifies manuellement dans le code (mysteriacraft.island.admin).
 
 permissions:
   mysteriacraft.eco.admin:
@@ -114,4 +119,7 @@ permissions:
     default: op
   mysteriacraft.guide.admin:
     description: Autorise la gestion admin du guide (reload)
+    default: op
+  mysteriacraft.island.admin:
+    description: Autorise la gestion admin des Iles (reload, tp sur l'ile d'un joueur, bypass protection)
     default: op

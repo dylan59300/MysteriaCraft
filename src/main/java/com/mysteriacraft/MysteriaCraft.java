@@ -53,6 +53,10 @@ import com.mysteriacraft.customitems.generator.listeners.GeneratorListener;
 import com.mysteriacraft.guide.GuideManager;
 import com.mysteriacraft.guide.commands.GuideCommand;
 import com.mysteriacraft.guide.listeners.GuideJoinListener;
+import com.mysteriacraft.island.IslandManager;
+import com.mysteriacraft.island.IslandService;
+import com.mysteriacraft.island.commands.IslandCommand;
+import com.mysteriacraft.island.listeners.IslandProtectionListener;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -108,6 +112,10 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager guideConfig;
     private GuideManager guideManager;
 
+    private ConfigManager islandsConfig;
+    private IslandManager islandManager;
+    private IslandService islandService;
+
     @Override
     public void onEnable() {
         long start = System.currentTimeMillis();
@@ -150,6 +158,9 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Module Guide ----
         setupGuide();
+
+        // ---- Module Iles (skyblock) ----
+        setupIslands();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -302,6 +313,15 @@ public final class MysteriaCraft extends JavaPlugin {
 
         getCommand("guide").setExecutor(new GuideCommand(guideConfig, guideManager, messages));
         Bukkit.getPluginManager().registerEvents(new GuideJoinListener(this, guideManager, messages), this);
+    }
+
+    private void setupIslands() {
+        this.islandsConfig = new ConfigManager(this, "islands.yml");
+        this.islandManager = new IslandManager(this, database, islandsConfig);
+        this.islandService = new IslandService(islandManager, economyManager, rewardGiver, messages);
+
+        Bukkit.getPluginManager().registerEvents(new IslandProtectionListener(islandManager, islandService, messages), this);
+        getCommand("ile").setExecutor(new IslandCommand(islandsConfig, islandManager, islandService, messages));
     }
 
     @Override

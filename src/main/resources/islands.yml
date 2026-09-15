@@ -1,0 +1,94 @@
+# =========================================
+#   MysteriaCraft - Configuration du module Iles (Skyblock)
+# =========================================
+# Chaque joueur peut creer UNE ile privee (voir /ile create) dans un monde dedie, entierement
+# vide (void), genere automatiquement au demarrage du plugin si absent. Les iles sont alignees le
+# long de l'axe X, espacees de "espacement-blocs" pour ne jamais se toucher meme au niveau
+# d'agrandissement maximum. Chaque ile est protegee (casse/pose/coffres/PVP) : seuls le
+# proprietaire et ses membres de confiance peuvent y interagir.
+#
+# monde : nom du monde dedie aux iles (cree automatiquement, vide/void).
+# espacement-blocs : distance entre le centre de deux iles consecutives. DOIT rester superieur a
+#                     2x taille-max (+ marge) pour qu'aucune ile agrandie au maximum ne puisse en
+#                     toucher une autre.
+# taille-depart / taille-max : rayon (en blocs, carre) de la zone protegee autour du centre.
+# prix-agrandissement / blocs-par-agrandissement : cout en argent (economie interne) pour agrandir
+#                                                   le rayon protege de "blocs-par-agrandissement"
+#                                                   blocs, jusqu'a taille-max.
+# pvp-autorise : si false (par defaut), les degats entre joueurs sont bloques sur toute ile.
+# explosions-autorisees : si false (par defaut), TNT/creepers ne detruisent aucun bloc sur les
+#                          iles (les fermes a TNT ne fonctionnent pas tant que desactive).
+# kit-depart : items donnes au joueur a la creation de son ile (materiel vanilla + quantite).
+# valeurs-blocs : points de "valeur d'ile" attribues par bloc POSE (retires si casse) : determine
+#                 le niveau de l'ile (somme totale). Materiaux absents = 0 point.
+# paliers : recompenses AUTOMATIQUES donnees au proprietaire des que la valeur totale de son ile
+#           atteint "niveau" (une seule fois par palier). Meme format de recompense que
+#           battlepass.yml/quests.yml/luckyblocks.yml (ITEM, ECONOMIE, OBJET_CUSTOM, GENERATEUR,
+#           MACHINE, LUCKYBLOCK, PET, BOOST_XP).
+monde: "iles"
+espacement-blocs: 300
+spawn-monde:
+  x: 0
+  y: 100
+  z: 0
+taille-depart: 10
+taille-max: 50
+prix-agrandissement: 5000
+blocs-par-agrandissement: 5
+pvp-autorise: false
+explosions-autorisees: false
+
+kit-depart:
+  - materiel: OAK_SAPLING
+    quantite: 2
+  - materiel: WATER_BUCKET
+    quantite: 1
+  - materiel: LAVA_BUCKET
+    quantite: 1
+  - materiel: BREAD
+    quantite: 8
+  - materiel: OAK_LOG
+    quantite: 2
+  - materiel: STONE_PICKAXE
+    quantite: 1
+  - materiel: STONE_AXE
+    quantite: 1
+
+valeurs-blocs:
+  DIAMOND_BLOCK: 50
+  EMERALD_BLOCK: 40
+  NETHERITE_BLOCK: 100
+  GOLD_BLOCK: 20
+  IRON_BLOCK: 10
+  OBSIDIAN: 5
+  COBBLESTONE: 1
+  STONE: 1
+  DIRT: 0
+  GRASS_BLOCK: 0
+  OAK_LOG: 1
+  OAK_LEAVES: 0
+
+paliers:
+  - niveau: 50
+    recompense:
+      type: ECONOMIE
+      montant: 5000
+  - niveau: 150
+    recompense:
+      type: OBJET_CUSTOM
+      item-id: carburant_ameliore
+      quantite: 5
+  - niveau: 400
+    recompense:
+      type: GENERATEUR
+      type-id: fer
+      quantite: 1
+  - niveau: 800
+    recompense:
+      type: ECONOMIE
+      montant: 50000
+  - niveau: 1500
+    recompense:
+      type: MACHINE
+      machine-id: transformation
+      quantite: 1
