@@ -142,7 +142,7 @@ public class LuckyBlockGui extends Menu {
         }
 
         if (event.getClick() == ClickType.RIGHT) {
-            new LuckyBlockOddsGui(player, family, this, messages).open();
+            new LuckyBlockOddsGui(player, family, manager, this, messages).open();
             return;
         }
 

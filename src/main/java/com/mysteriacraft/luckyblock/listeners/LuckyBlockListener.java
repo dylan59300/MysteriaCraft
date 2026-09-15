@@ -99,7 +99,7 @@ public class LuckyBlockListener implements Listener {
             return;
         }
         event.setCancelled(true);
-        new LuckyBlockOddsGui(event.getPlayer(), family, null, messages).open();
+        new LuckyBlockOddsGui(event.getPlayer(), family, manager, null, messages).open();
     }
 
     @EventHandler(ignoreCancelled = true)

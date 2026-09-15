@@ -93,6 +93,10 @@ machine-transformation:
   streak:
     bonus-par-succes: 2
     bonus-max: 20
+  # Systeme de pity : nombre d'echanges CONSECUTIFS d'un joueur (toutes ses machines confondues,
+  # clic-droit uniquement, pas l'auto-alimentation) sans obtenir de Lucky Block avant que le
+  # PROCHAIN echange ne soit garanti Lucky Block. Visible via /machine stats. 0 = desactive.
+  pity-seuil: 25
   carburants:
     carburant:
       charges: 5

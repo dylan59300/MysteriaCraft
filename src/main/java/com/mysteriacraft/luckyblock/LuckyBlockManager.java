@@ -29,6 +29,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -71,6 +72,14 @@ public class LuckyBlockManager {
 
     /** Lucky Blocks actuellement poses dans le monde, indexes par position (charge au demarrage). */
     private final Map<Location, PlacedBlockState> placedBlocks = new ConcurrentHashMap<>();
+
+    /** Systeme de pity : nombre de casses CONSECUTIVES sans effet "pity" (gros lot), par joueur et
+     * par famille (remis a 0 des qu'un effet pity est obtenu, force ou naturel). En memoire
+     * uniquement : repart a 0 au redemarrage du serveur (meme limitation connue que les autres
+     * compteurs "depuis le dernier demarrage" de MysteriaCraft). */
+    private final Map<UUID, Map<String, Integer>> pityCounters = new ConcurrentHashMap<>();
+    /** Nombre de casses sans "gros lot" avant garantie (0 = systeme de pity desactive). */
+    private int pityThreshold = 0;
 
     public LuckyBlockManager(Plugin plugin, Database database, ConfigManager luckyBlocksConfig) {
         this.plugin = plugin;
@@ -205,6 +214,7 @@ public class LuckyBlockManager {
     private void loadOreBonuses() {
         oreBonuses.clear();
         bonusMax = luckyBlocksConfig.get().getDouble("bonus-minerais-max", 45.0);
+        pityThreshold = Math.max(0, luckyBlocksConfig.get().getInt("pity-seuil", 0));
 
         ConfigurationSection section = luckyBlocksConfig.get().getConfigurationSection("bonus-minerais");
         if (section == null) {
@@ -278,28 +288,31 @@ public class LuckyBlockManager {
             if (reward == null) {
                 return null;
             }
-            return new LuckyBlockEffect(EffectKind.BON, chance, reward.displayName(), reward, null, null, 0, 0);
+            boolean pity = raw.containsKey("pity") && Boolean.parseBoolean(String.valueOf(raw.get("pity")));
+            return new LuckyBlockEffect(EffectKind.BON, chance, reward.displayName(), reward, null, null, 0, 0, pity);
         }
 
+        // Un effet MAUVAIS ne peut jamais compter pour le pity (le pity garantit un GROS lot, pas
+        // un malus).
         BadEffectType badType = BadEffectType.fromString(getOrDefault(raw, "action", "TNT"));
         return switch (badType) {
             case TNT -> {
                 int amount = raw.containsKey("quantite") ? Integer.parseInt(String.valueOf(raw.get("quantite"))) : 1;
-                yield new LuckyBlockEffect(EffectKind.MAUVAIS, chance, "TNT x" + amount, null, badType, null, amount, 0);
+                yield new LuckyBlockEffect(EffectKind.MAUVAIS, chance, "TNT x" + amount, null, badType, null, amount, 0, false);
             }
             case MOBS -> {
                 String mob = getOrDefault(raw, "mob", "ZOMBIE");
                 int amount = raw.containsKey("quantite") ? Integer.parseInt(String.valueOf(raw.get("quantite"))) : 1;
-                yield new LuckyBlockEffect(EffectKind.MAUVAIS, chance, amount + "x " + mob, null, badType, mob, amount, 0);
+                yield new LuckyBlockEffect(EffectKind.MAUVAIS, chance, amount + "x " + mob, null, badType, mob, amount, 0, false);
             }
             case POTION -> {
                 String potionType = getOrDefault(raw, "effet-potion", "POISON");
                 long durationSeconds = raw.containsKey("duree-secondes") ? Long.parseLong(String.valueOf(raw.get("duree-secondes"))) : 5L;
                 int amplifier = raw.containsKey("amplificateur") ? Integer.parseInt(String.valueOf(raw.get("amplificateur"))) : 0;
                 yield new LuckyBlockEffect(EffectKind.MAUVAIS, chance, potionType, null, badType, potionType,
-                        (int) (durationSeconds * 20), amplifier);
+                        (int) (durationSeconds * 20), amplifier, false);
             }
-            case FOUDRE -> new LuckyBlockEffect(EffectKind.MAUVAIS, chance, "Foudre", null, badType, null, 0, 0);
+            case FOUDRE -> new LuckyBlockEffect(EffectKind.MAUVAIS, chance, "Foudre", null, badType, null, 0, 0, false);
         };
     }
 
@@ -339,11 +352,25 @@ public class LuckyBlockManager {
      * Tirage en 2 etapes : d'abord BON ou MAUVAIS selon la chance de base de la famille
      * (+ bonus de minerais places a cote du bloc, plafonne), puis tirage pondere d'un effet
      * precis au sein du pool correspondant (BON ou MAUVAIS).
+     *
+     * Systeme de pity (voir pity-seuil dans luckyblocks.yml) : si ce joueur a casse cette famille
+     * pity-seuil fois de suite sans obtenir d'effet "pity" (gros lot, voir LuckyBlockEffect#pity),
+     * le tirage est force sur le pool des effets pity de cette famille (garanti). Des qu'un effet
+     * pity est obtenu (force ou naturellement), le compteur repart a 0.
      */
-    public LuckyBlockEffect pickEffect(LuckyBlockFamily family, double bonusPercent) {
+    public LuckyBlockEffect pickEffect(UUID playerId, LuckyBlockFamily family, double bonusPercent) {
         if (family.effects().isEmpty()) {
             return null;
         }
+
+        if (pityThreshold > 0 && getPityProgress(playerId, family.id()) >= pityThreshold) {
+            List<LuckyBlockEffect> pityPool = family.effects().stream().filter(LuckyBlockEffect::pity).toList();
+            if (!pityPool.isEmpty()) {
+                resetPity(playerId, family.id());
+                return pickWeighted(pityPool);
+            }
+        }
+
         double goodChance = Math.min(95.0, Math.max(0.0, family.baseGoodChance() + bonusPercent));
         boolean rollGood = ThreadLocalRandom.current().nextDouble(100.0) < goodChance;
 
@@ -355,7 +382,39 @@ public class LuckyBlockManager {
         if (pool.isEmpty()) {
             return null;
         }
-        return pickWeighted(pool);
+        LuckyBlockEffect effect = pickWeighted(pool);
+        if (pityThreshold > 0) {
+            if (effect.pity()) {
+                resetPity(playerId, family.id());
+            } else {
+                incrementPity(playerId, family.id());
+            }
+        }
+        return effect;
+    }
+
+    // ---- Pity (voir pickEffect) ----
+
+    public int getPityThreshold() {
+        return pityThreshold;
+    }
+
+    /** Casses consecutives de ce joueur sur cette famille sans effet "pity" (0 si aucune ou systeme desactive). */
+    public int getPityProgress(UUID playerId, String familyId) {
+        Map<String, Integer> perFamily = pityCounters.get(playerId);
+        return perFamily == null ? 0 : perFamily.getOrDefault(familyId, 0);
+    }
+
+    private void incrementPity(UUID playerId, String familyId) {
+        pityCounters.computeIfAbsent(playerId, k -> new ConcurrentHashMap<>())
+                .merge(familyId, 1, Integer::sum);
+    }
+
+    private void resetPity(UUID playerId, String familyId) {
+        Map<String, Integer> perFamily = pityCounters.get(playerId);
+        if (perFamily != null) {
+            perFamily.put(familyId, 0);
+        }
     }
 
     private LuckyBlockEffect pickWeighted(List<LuckyBlockEffect> pool) {

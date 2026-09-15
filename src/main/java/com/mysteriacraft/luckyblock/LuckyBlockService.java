@@ -52,7 +52,7 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
         Player player = event.getPlayer();
         double bonusPercent = manager.getBonus(event.getBlock());
 
-        LuckyBlockEffect effect = manager.pickEffect(family, bonusPercent);
+        LuckyBlockEffect effect = manager.pickEffect(player.getUniqueId(), family, bonusPercent);
 
         event.setDropItems(false);
         manager.untagBlock(event.getBlock());

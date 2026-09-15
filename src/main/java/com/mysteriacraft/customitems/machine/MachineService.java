@@ -267,8 +267,11 @@ public class MachineService {
 
         Location effectLocation = machineBlock.getLocation().add(0.5, 1.0, 0.5);
         double chance = manager.getEffectiveChance(machineBlock);
-        boolean gotLuckyBlock = ThreadLocalRandom.current().nextDouble(100.0) < chance;
+        int pityThreshold = manager.getPityThreshold();
+        boolean pityGuaranteed = pityThreshold > 0 && manager.getPityProgress(player.getUniqueId()) >= pityThreshold;
+        boolean gotLuckyBlock = pityGuaranteed || ThreadLocalRandom.current().nextDouble(100.0) < chance;
         manager.recordAttempt(player.getUniqueId(), ore, gotLuckyBlock);
+        manager.recordPityResult(player.getUniqueId(), gotLuckyBlock);
 
         boolean doubleLoot = manager.isDoubleLootActive();
         if (gotLuckyBlock) {

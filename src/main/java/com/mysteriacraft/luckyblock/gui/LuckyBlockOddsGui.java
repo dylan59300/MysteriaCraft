@@ -6,6 +6,7 @@ import com.mysteriacraft.core.gui.Menu;
 import com.mysteriacraft.core.gui.MenuHolder;
 import com.mysteriacraft.luckyblock.LuckyBlockEffect;
 import com.mysteriacraft.luckyblock.LuckyBlockFamily;
+import com.mysteriacraft.luckyblock.LuckyBlockManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -19,24 +20,29 @@ import java.util.List;
 
 /**
  * Menu en lecture seule montrant, pour une famille de Lucky Block, sa chance de base de BON,
- * puis le detail des effets BON (haut) et MAUVAIS (bas) avec leur % au sein de leur pool.
+ * le detail des effets BON (haut) et MAUVAIS (bas) avec leur % au sein de leur pool, et sa
+ * progression de pity (voir LuckyBlockManager#pickEffect) si le systeme est active.
  */
 public class LuckyBlockOddsGui extends Menu {
 
     private static final int SIZE = 27;
     private static final int INFO_SLOT = 4;
+    private static final int PITY_SLOT = 8;
     private static final int BACK_SLOT = 22;
     private static final int[] GOOD_SLOTS = {10, 11, 12, 13, 14, 15, 16};
     private static final int[] BAD_SLOTS = {19, 20, 21, 23, 24, 25};
     private static final DecimalFormat PERCENT_FORMAT = new DecimalFormat("#0.0");
 
     private final LuckyBlockFamily family;
+    private final LuckyBlockManager manager;
     private final LuckyBlockGui parent;
     private final MessageManager messages;
 
-    public LuckyBlockOddsGui(Player viewer, LuckyBlockFamily family, LuckyBlockGui parent, MessageManager messages) {
+    public LuckyBlockOddsGui(Player viewer, LuckyBlockFamily family, LuckyBlockManager manager,
+                              LuckyBlockGui parent, MessageManager messages) {
         super(viewer);
         this.family = family;
+        this.manager = manager;
         this.parent = parent;
         this.messages = messages;
     }
@@ -60,6 +66,17 @@ public class LuckyBlockOddsGui extends Menu {
         inventory.setItem(INFO_SLOT, new ItemBuilder(Material.NETHER_STAR)
                 .name(messages.raw("luckyblock.gui-odds-info-titre")).lore(infoLore).build());
 
+        int pityThreshold = manager.getPityThreshold();
+        boolean familyHasPity = family.effects().stream().anyMatch(LuckyBlockEffect::pity);
+        if (pityThreshold > 0 && familyHasPity) {
+            int progress = manager.getPityProgress(viewer.getUniqueId(), family.id());
+            List<String> pityLore = List.of(messages.raw("luckyblock.gui-odds-pity-ligne")
+                    .replace("{progres}", String.valueOf(progress))
+                    .replace("{seuil}", String.valueOf(pityThreshold)));
+            inventory.setItem(PITY_SLOT, new ItemBuilder(Material.CLOCK)
+                    .name(messages.raw("luckyblock.gui-odds-pity-titre")).lore(pityLore).build());
+        }
+
         placePool(inventory, family.goodEffects(), GOOD_SLOTS, true);
         placePool(inventory, family.badEffects(), BAD_SLOTS, false);
 
@@ -81,6 +98,9 @@ public class LuckyBlockOddsGui extends Menu {
             List<String> lore = new ArrayList<>();
             lore.add(messages.raw(good ? "luckyblock.gui-odds-tag-bon" : "luckyblock.gui-odds-tag-mauvais"));
             lore.add(messages.raw("luckyblock.gui-odds-pourcentage").replace("{pourcentage}", PERCENT_FORMAT.format(percent)));
+            if (effect.pity()) {
+                lore.add(messages.raw("luckyblock.gui-odds-tag-pity"));
+            }
 
             Material icon = good ? Material.LIME_DYE : Material.RED_DYE;
             inventory.setItem(slots[i], new ItemBuilder(icon).name(effect.displayName()).lore(lore).build());

@@ -123,6 +123,13 @@ public class MachineManager {
      * l'un ou l'autre. En memoire uniquement (evenement ponctuel, pas persiste entre redemarrages). */
     private volatile long doubleLootUntilMillis = 0L;
 
+    /** Systeme de pity : nombre d'echanges CONSECUTIFS de ce joueur (toutes machines confondues)
+     * sans obtenir de Lucky Block (remis a 0 des qu'il en obtient un, force ou naturel). En
+     * memoire uniquement, comme les autres compteurs "depuis le dernier demarrage" du plugin. */
+    private final Map<UUID, Integer> pityCounters = new ConcurrentHashMap<>();
+    /** Nombre d'echanges sans Lucky Block avant garantie (0 = systeme de pity desactive). */
+    private int pityThreshold = 0;
+
     private static final BlockFace[] ADJACENT_FACES = {
             BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN
     };
@@ -377,6 +384,27 @@ public class MachineManager {
         return Math.max(0L, doubleLootUntilMillis - System.currentTimeMillis());
     }
 
+    // ---- Pity (voir MachineService#attemptTransformation) ----
+
+    public int getPityThreshold() {
+        return pityThreshold;
+    }
+
+    /** Echanges consecutifs de ce joueur, toutes machines confondues, sans Lucky Block obtenu. */
+    public int getPityProgress(UUID playerId) {
+        return pityCounters.getOrDefault(playerId, 0);
+    }
+
+    /** A appeler apres chaque echange manuel (clic-droit) : incremente si aucun Lucky Block
+     * obtenu, remet a 0 sinon. */
+    public void recordPityResult(UUID playerId, boolean gotLuckyBlock) {
+        if (gotLuckyBlock) {
+            pityCounters.remove(playerId);
+        } else {
+            pityCounters.merge(playerId, 1, Integer::sum);
+        }
+    }
+
     // ---- Statistiques joueur (essais/reussites par minerai, pour le menu /machine stats) ----
 
     /**
@@ -510,6 +538,7 @@ public class MachineManager {
             bonusMax = amelioration.getDouble("bonus-max", 30.0);
         }
 
+        pityThreshold = Math.max(0, section.getInt("pity-seuil", 0));
         autoAlimentation = section.getBoolean("auto-alimentation", true);
         hologramSegments = Math.max(1, section.getInt("hologramme-segments", 10));
         hologramCompact = section.getBoolean("hologramme-compact", false);

@@ -50,6 +50,9 @@ import com.mysteriacraft.customitems.generator.GeneratorManager;
 import com.mysteriacraft.customitems.generator.GeneratorService;
 import com.mysteriacraft.customitems.generator.commands.GeneratorCommand;
 import com.mysteriacraft.customitems.generator.listeners.GeneratorListener;
+import com.mysteriacraft.guide.GuideManager;
+import com.mysteriacraft.guide.commands.GuideCommand;
+import com.mysteriacraft.guide.listeners.GuideJoinListener;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -102,6 +105,9 @@ public final class MysteriaCraft extends JavaPlugin {
     private GeneratorManager generatorManager;
     private GeneratorService generatorService;
 
+    private ConfigManager guideConfig;
+    private GuideManager guideManager;
+
     @Override
     public void onEnable() {
         long start = System.currentTimeMillis();
@@ -141,6 +147,9 @@ public final class MysteriaCraft extends JavaPlugin {
         // Generateurs d'Argent) ----
         setupCustomItems();
         setupGenerators();
+
+        // ---- Module Guide ----
+        setupGuide();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -285,6 +294,14 @@ public final class MysteriaCraft extends JavaPlugin {
         // (frequence configurable, generateurs.yml: tick-secondes).
         long periodTicks = generatorManager.getTickSeconds() * 20L;
         Bukkit.getScheduler().runTaskTimer(this, generatorService::tickGenerators, periodTicks, periodTicks);
+    }
+
+    private void setupGuide() {
+        this.guideConfig = new ConfigManager(this, "guide.yml");
+        this.guideManager = new GuideManager(this, database, guideConfig);
+
+        getCommand("guide").setExecutor(new GuideCommand(guideConfig, guideManager, messages));
+        Bukkit.getPluginManager().registerEvents(new GuideJoinListener(this, guideManager, messages), this);
     }
 
     @Override

@@ -1,0 +1,105 @@
+# =========================================
+#   MysteriaCraft - Guide du serveur
+# =========================================
+# /guide ouvre ce menu (ouvert a tous les joueurs). S'ouvre AUSSI automatiquement, une seule fois,
+# a la toute premiere connexion de chaque joueur (suivi en base : "guide_vus"), pour presenter les
+# mecaniques du serveur des le debut sans obliger un admin a tout expliquer a chaque nouveau joueur.
+# /guideadmin reload recharge ce fichier.
+#
+# Chaque entree de "sujets" est une case du menu : icone (materiau vanilla), nom, et lore (le
+# texte affiche). L'ORDRE de declaration ici fixe l'ordre d'affichage dans le menu.
+sujets:
+  bienvenue:
+    nom: "&6&lBienvenue sur MysteriaCraft !"
+    icone: NETHER_STAR
+    lore:
+      - "&7Ce menu presente les principales"
+      - "&7mecaniques du serveur. Tapez &e/guide"
+      - "&7a tout moment pour le rouvrir."
+
+  economie:
+    nom: "&a&lEconomie"
+    icone: GOLD_INGOT
+    lore:
+      - "&7/balance &7- voir votre solde"
+      - "&7/pay <joueur> <montant> &7- envoyer de l'argent"
+      - "&7/baltop &7- classement des plus riches"
+
+  battlepass:
+    nom: "&6&lBattlePass"
+    icone: EXPERIENCE_BOTTLE
+    lore:
+      - "&7/battlepass &7- ouvrir le menu"
+      - "&7Gagnez de l'XP en jouant (passif)"
+      - "&7et via les quetes pour debloquer"
+      - "&7des paliers de recompenses gratuits"
+      - "&7et premium."
+
+  quetes:
+    nom: "&bQuetes"
+    icone: PAPER
+    lore:
+      - "&7/quests &7- ouvrir le menu"
+      - "&7Quetes quotidiennes et hebdomadaires,"
+      - "&7certaines saisonnieres (evenements)."
+      - "&7Donnent de l'XP BattlePass + parfois"
+      - "&7une recompense directe."
+
+  luckyblock:
+    nom: "&d&lLucky Block"
+    icone: GOLD_BLOCK
+    lore:
+      - "&7/luckyblock &7- acheter/voir les familles"
+      - "&7Posez-en un et cassez-le : recompense"
+      - "&7garantie a chaque fois (aucun cooldown)."
+      - "&7Clic droit en main = voir les chances."
+      - "&7Certaines familles sont SAISONNIERES"
+      - "&7(disponibles seulement a certaines dates)."
+
+  machine:
+    nom: "&b&lMachine a Transformation"
+    icone: IRON_BLOCK
+    lore:
+      - "&7/machine info &7- minerais acceptes"
+      - "&7/machine stats &7- vos statistiques"
+      - "&7Clic droit avec un minerai accepte :"
+      - "&71 minerai = 1 loot, toujours une"
+      - "&7recompense (Lucky Block ou item custom)."
+      - "&7Necessite du carburant pour fonctionner."
+
+  machine-miniere:
+    nom: "&b&lMachine a Miner"
+    icone: NETHERITE_PICKAXE
+    lore:
+      - "&7/machineminiere &7- infos"
+      - "&7Mine automatiquement tout un chunk"
+      - "&7au fil du temps. Necessite du carburant."
+      - "&7Collez un coffre a cote pour recuperer"
+      - "&7les blocs mines automatiquement."
+
+  generateur:
+    nom: "&2&lGenerateur d'Argent"
+    icone: DIAMOND_ORE
+    lore:
+      - "&7/generateur liste &7- vos generateurs"
+      - "&7Genere de l'argent en continu, meme"
+      - "&7hors-ligne. Clic droit pour recuperer."
+      - "&7Craftable en plusieurs paliers :"
+      - "&7fer -> or -> diamant -> legendaire."
+
+  customitem:
+    nom: "&e&lItems Custom"
+    icone: DIAMOND_SWORD
+    lore:
+      - "&7/customitem gui &7- catalogue complet"
+      - "&7Minerais, armes, outils et armures"
+      - "&7uniques au serveur (enchantements sans"
+      - "&7limite, bonus de degats/armure)."
+
+  pets:
+    nom: "&5&lPets"
+    icone: BONE
+    lore:
+      - "&7/pets &7- ouvrir le menu"
+      - "&7Achetez ou debloquez des compagnons"
+      - "&7qui vous suivent en jeu."

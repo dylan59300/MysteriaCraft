@@ -45,11 +45,26 @@ public class MachineStatsGui extends Menu {
         }
 
         MachineManager.PlayerStats stats = manager.getPlayerStats(viewer.getUniqueId());
-        inventory.setItem(11, buildEssaisIcon(stats));
-        inventory.setItem(13, buildTauxIcon(stats));
-        inventory.setItem(15, buildFavoriIcon(stats));
+        inventory.setItem(10, buildEssaisIcon(stats));
+        inventory.setItem(12, buildTauxIcon(stats));
+        inventory.setItem(14, buildFavoriIcon(stats));
+
+        int pityThreshold = manager.getPityThreshold();
+        if (pityThreshold > 0) {
+            inventory.setItem(16, buildPityIcon(pityThreshold));
+        }
 
         return inventory;
+    }
+
+    private ItemStack buildPityIcon(int pityThreshold) {
+        int progress = manager.getPityProgress(viewer.getUniqueId());
+        List<String> lore = List.of(replace(replace(messages.raw("machine.stats-pity-ligne"),
+                "progres", String.valueOf(progress)), "seuil", String.valueOf(pityThreshold)));
+        return new ItemBuilder(Material.CLOCK)
+                .name(messages.raw("machine.stats-pity-nom"))
+                .lore(lore)
+                .build();
     }
 
     private ItemStack buildEssaisIcon(MachineManager.PlayerStats stats) {

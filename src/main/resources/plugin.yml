@@ -75,6 +75,11 @@ commands:
     usage: /<command> <liste|give <joueur> <fer|or|diamant> [quantite]|reload>
     # Pas de "permission:" ici : /generateur liste doit rester accessible a tout joueur.
     # give/reload sont verifies manuellement dans le code (mysteriacraft.generateur.admin).
+  guide:
+    description: Ouvre le guide du serveur (s'ouvre aussi automatiquement a la 1ere connexion)
+    usage: /<command> [reload]
+    # Pas de "permission:" ici : /guide doit rester accessible a tout joueur.
+    # reload est verifie manuellement dans le code (mysteriacraft.guide.admin).
 
 permissions:
   mysteriacraft.eco.admin:
@@ -106,4 +111,7 @@ permissions:
     default: op
   mysteriacraft.generateur.admin:
     description: Autorise la gestion admin des Generateurs d'Argent (give, reload)
+    default: op
+  mysteriacraft.guide.admin:
+    description: Autorise la gestion admin du guide (reload)
     default: op

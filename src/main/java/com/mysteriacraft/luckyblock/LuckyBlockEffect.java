@@ -12,6 +12,10 @@ import com.mysteriacraft.core.reward.Reward;
  * - MAUVAIS (badType == MOBS) : stringValue = type d'entite, intValue = nombre de mobs
  * - MAUVAIS (badType == POTION) : stringValue = type d'effet, intValue = duree (ticks), amplifier
  * - MAUVAIS (badType == FOUDRE) : aucun champ supplementaire
+ *
+ * @param pity si true, cet effet fait partie du pool "gros lot" garanti par le systeme de pity
+ *             (voir LuckyBlockManager#pickEffect) apres pity-seuil casses consecutives sans en
+ *             obtenir un. false par defaut : la plupart des effets ne comptent pas comme "gros lot".
  */
 public record LuckyBlockEffect(
         EffectKind kind,
@@ -21,6 +25,7 @@ public record LuckyBlockEffect(
         BadEffectType badType,
         String stringValue,
         int intValue,
-        int amplifier
+        int amplifier,
+        boolean pity
 ) {
 }
