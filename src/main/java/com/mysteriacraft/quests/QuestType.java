@@ -4,6 +4,7 @@ package com.mysteriacraft.quests;
  * Type d'action Bukkit suivi par une quete. "cible" dans quests.yml precise le materiau
  * (BREAK_BLOCK/PLACE_BLOCK) ou le type d'entite (KILL_MOB) ; ignore pour FISH.
  * Pour MACHINE_TRANSFORM, "cible" est l'id de la famille de Lucky Block obtenue (absent = toute transformation reussie compte).
+ * Pour ISLAND_BLOCK_PLACED, "cible" est ignore (compte tout bloc pose sur SA PROPRE ile, module Iles).
  */
 public enum QuestType {
     BREAK_BLOCK,
@@ -12,7 +13,8 @@ public enum QuestType {
     FISH,
     CRAFT_ITEM,
     CONSUME_ITEM,
-    MACHINE_TRANSFORM;
+    MACHINE_TRANSFORM,
+    ISLAND_BLOCK_PLACED;
 
     public static QuestType fromString(String value) {
         try {

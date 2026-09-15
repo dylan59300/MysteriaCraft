@@ -9,6 +9,8 @@ import com.mysteriacraft.customitems.CustomItemManager;
 import com.mysteriacraft.customitems.generator.GeneratorManager;
 import com.mysteriacraft.customitems.machine.MachineManager;
 import com.mysteriacraft.economy.EconomyManager;
+import com.mysteriacraft.quests.QuestService;
+import com.mysteriacraft.quests.QuestType;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -40,6 +42,7 @@ public class IslandService {
     private final CustomItemManager customItemManager;
     private final MachineManager machineManager;
     private final GeneratorManager generatorManager;
+    private final QuestService questService;
     private final MessageManager messages;
 
     /** Invitations en attente : proprietaire -> ensemble des UUID invites (en memoire uniquement,
@@ -48,13 +51,15 @@ public class IslandService {
 
     public IslandService(IslandManager manager, EconomyManager economyManager, RewardGiver rewardGiver,
                           BattlePassService battlePassService, CustomItemManager customItemManager,
-                          MachineManager machineManager, GeneratorManager generatorManager, MessageManager messages) {
+                          MachineManager machineManager, GeneratorManager generatorManager,
+                          QuestService questService, MessageManager messages) {
         this.manager = manager;
         this.economyManager = economyManager;
         this.rewardGiver = rewardGiver;
         this.battlePassService = battlePassService;
         this.customItemManager = customItemManager;
         this.machineManager = machineManager;
+        this.questService = questService;
         this.generatorManager = generatorManager;
         this.messages = messages;
     }
@@ -355,13 +360,16 @@ public class IslandService {
 
     // ---- Valeur / paliers (appele par IslandProtectionListener a chaque pose/casse) ----
 
-    public void onBlockPlaced(IslandManager.Island island, Material material) {
+    public void onBlockPlaced(Player player, IslandManager.Island island, Material material) {
         manager.incrementBlocksPlaced(island);
         applyValueChange(island, manager.getBlockValue(material));
         Player owner = Bukkit.getPlayer(island.owner());
         if (owner != null) {
             giveChallengeRewards(owner, manager.checkChallenges(island, IslandManager.ChallengeType.BLOCS_POSES, island.blocksPlaced()));
         }
+        // Pont avec le module Quetes (voir QuestType.ISLAND_BLOCK_PLACED) : la progression est
+        // creditee a celui qui a REELLEMENT pose le bloc (proprietaire ou membre de confiance).
+        questService.registerProgress(player, QuestType.ISLAND_BLOCK_PLACED, null, 1);
     }
 
     public void onBlockBroken(IslandManager.Island island, Material material) {

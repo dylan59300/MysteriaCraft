@@ -319,7 +319,7 @@ public final class MysteriaCraft extends JavaPlugin {
         this.islandsConfig = new ConfigManager(this, "islands.yml");
         this.islandManager = new IslandManager(this, database, islandsConfig);
         this.islandService = new IslandService(islandManager, economyManager, rewardGiver, battlePassService,
-                customItemManager, machineManager, generatorManager, messages);
+                customItemManager, machineManager, generatorManager, questService, messages);
 
         Bukkit.getPluginManager().registerEvents(new IslandProtectionListener(islandManager, islandService, messages), this);
         getCommand("ile").setExecutor(new IslandCommand(islandsConfig, islandManager, islandService, messages));

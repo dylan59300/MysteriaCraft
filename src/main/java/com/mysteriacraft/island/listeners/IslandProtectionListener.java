@@ -75,7 +75,7 @@ public class IslandProtectionListener implements Listener {
             return;
         }
         if (islandOut[0] != null) {
-            service.onBlockPlaced(islandOut[0], event.getBlock().getType());
+            service.onBlockPlaced(event.getPlayer(), islandOut[0], event.getBlock().getType());
         }
     }
 

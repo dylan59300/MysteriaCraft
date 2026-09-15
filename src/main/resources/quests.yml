@@ -3,9 +3,11 @@
 # =========================================
 # Reset automatique : la progression est suivie par periode (jour ou semaine ISO courante).
 # Des qu'un nouveau jour/semaine commence, la progression repart de zero, sans tache a programmer.
-# type : BREAK_BLOCK | PLACE_BLOCK | KILL_MOB | FISH | CRAFT_ITEM | CONSUME_ITEM | MACHINE_TRANSFORM
+# type : BREAK_BLOCK | PLACE_BLOCK | KILL_MOB | FISH | CRAFT_ITEM | CONSUME_ITEM | MACHINE_TRANSFORM |
+#        ISLAND_BLOCK_PLACED (module Iles : tout bloc pose sur SA PROPRE ile, proprietaire ou membre)
 # cible : materiau (BREAK_BLOCK/PLACE_BLOCK/CRAFT_ITEM/CONSUME_ITEM), type d'entite (KILL_MOB) ou
-#         id de famille Lucky Block (MACHINE_TRANSFORM). Absent = tout compte (FISH, MACHINE_TRANSFORM).
+#         id de famille Lucky Block (MACHINE_TRANSFORM). Absent = tout compte (FISH, MACHINE_TRANSFORM,
+#         ISLAND_BLOCK_PLACED).
 # xp : ajoutee automatiquement au BattlePass a la completion.
 # recompense : ITEM, ECONOMIE, BOOST_XP (duree-secondes + multiplicateur), PET, LUCKYBLOCK,
 #              OBJET_CUSTOM, GENERATEUR (type-id + quantite) ou MACHINE (machine-id:
@@ -137,3 +139,15 @@ hebdomadaires:
       type: LUCKYBLOCK
       famille: halloween
       quantite: 1
+
+  # Pont avec le module Iles (voir islands.yml) : compte tout bloc pose sur SA PROPRE ile,
+  # proprietaire ou membre de confiance (pas de "cible", tous les materiaux comptent).
+  batir_ile:
+    nom: "&aBatir sur son ile"
+    icone: GRASS_BLOCK
+    type: ISLAND_BLOCK_PLACED
+    objectif: 500
+    xp: 500
+    recompense:
+      type: ECONOMIE
+      montant: 2000
