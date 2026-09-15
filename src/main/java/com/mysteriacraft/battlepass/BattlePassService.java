@@ -212,8 +212,9 @@ public class BattlePassService implements RewardGiver.XpBoosterHandler, RewardGi
             }
 
             manager.markClaimed(player.getUniqueId(), level, track);
+            BattlePassReward finalReward = reward;
             Bukkit.getScheduler().runTask(plugin, () -> {
-                giveReward(player, reward);
+                giveReward(player, finalReward);
                 if (onFinished != null) {
                     onFinished.run();
                 }
