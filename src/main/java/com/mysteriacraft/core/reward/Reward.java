@@ -14,6 +14,7 @@ import org.bukkit.inventory.ItemStack;
  * - OBJET_CUSTOM : customItemId + amount
  * - GENERATEUR : customItemId reutilise comme id de type de generateur + amount
  * - MACHINE : customItemId reutilise comme id de machine ("transformation" ou "miniere") + amount
+ * - AGRANDISSEMENT_ILE : amount reutilise comme nombre de blocs de rayon offerts
  */
 public record Reward(
         RewardType type,
@@ -59,5 +60,9 @@ public record Reward(
 
     public static Reward ofMachine(String machineId, int amount, String displayName, ItemStack displayIcon) {
         return new Reward(RewardType.MACHINE, null, 0, amount, 0, 0, null, null, machineId, displayName, displayIcon);
+    }
+
+    public static Reward ofIslandUpgrade(int blocks, String displayName, ItemStack displayIcon) {
+        return new Reward(RewardType.AGRANDISSEMENT_ILE, null, 0, blocks, 0, 0, null, null, null, displayName, displayIcon);
     }
 }

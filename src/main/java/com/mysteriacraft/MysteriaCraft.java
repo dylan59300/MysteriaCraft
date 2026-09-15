@@ -320,9 +320,10 @@ public final class MysteriaCraft extends JavaPlugin {
         this.islandManager = new IslandManager(this, database, islandsConfig);
         this.islandService = new IslandService(islandManager, economyManager, rewardGiver, battlePassService,
                 customItemManager, machineManager, generatorManager, questService, messages);
+        rewardGiver.setIslandUpgradeGiveHandler(islandService);
 
         Bukkit.getPluginManager().registerEvents(new IslandProtectionListener(islandManager, islandService, messages), this);
-        getCommand("ile").setExecutor(new IslandCommand(islandsConfig, islandManager, islandService, messages));
+        getCommand("ile").setExecutor(new IslandCommand(islandsConfig, islandManager, islandService, questManager, messages));
 
         // Jauge de particules le long du perimetre de l'ile de chaque joueur present, toutes les 3 secondes.
         Bukkit.getScheduler().runTaskTimer(this, islandService::tickBorders, 60L, 60L);

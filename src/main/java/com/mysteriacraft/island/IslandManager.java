@@ -116,6 +116,10 @@ public class IslandManager {
     private int spawnY = 100;
     private int spawnZ = 0;
 
+    private int dailyBonusThreshold = 3;
+    private long dailyBonusDurationSeconds = 1800;
+    private double dailyBonusMultiplier = 2.0;
+
     private final Map<Material, Integer> blockValues = new HashMap<>();
     private final List<Tier> tiers = new ArrayList<>();
     private final List<Challenge> challenges = new ArrayList<>();
@@ -205,6 +209,13 @@ public class IslandManager {
         pvpAllowed = islandsConfig.get().getBoolean("pvp-autorise", false);
         explosionsAllowed = islandsConfig.get().getBoolean("explosions-autorisees", false);
         startingMoney = Math.max(0, islandsConfig.get().getDouble("argent-depart", 0));
+
+        ConfigurationSection dailyBonusSection = islandsConfig.get().getConfigurationSection("defis-bonus-quotidien");
+        if (dailyBonusSection != null) {
+            dailyBonusThreshold = Math.max(1, dailyBonusSection.getInt("seuil", 3));
+            dailyBonusDurationSeconds = Math.max(1, dailyBonusSection.getLong("duree-secondes", 1800));
+            dailyBonusMultiplier = Math.max(1.0, dailyBonusSection.getDouble("multiplicateur", 2.0));
+        }
 
         ConfigurationSection spawnSection = islandsConfig.get().getConfigurationSection("spawn-monde");
         if (spawnSection != null) {
@@ -603,6 +614,15 @@ public class IslandManager {
         return island.size;
     }
 
+    /** Agrandit le rayon protege d'un nombre de blocs ARBITRAIRE (plafonne a taille-max), sans
+     * cout : utilise par la recompense AGRANDISSEMENT_ILE (voir Reward), contrairement a
+     * upgrade() qui applique toujours blocs-par-agrandissement. Renvoie le nouveau rayon. */
+    public int addSize(Island island, int blocks) {
+        island.size = Math.min(maxSize, island.size + Math.max(0, blocks));
+        persistIslandAsync(island);
+        return island.size;
+    }
+
     // ---- Valeur / niveau / paliers ----
 
     public int getBlockValue(Material material) {
@@ -619,6 +639,18 @@ public class IslandManager {
 
     public double getStartingMoney() {
         return startingMoney;
+    }
+
+    public int getDailyBonusThreshold() {
+        return dailyBonusThreshold;
+    }
+
+    public long getDailyBonusDurationSeconds() {
+        return dailyBonusDurationSeconds;
+    }
+
+    public double getDailyBonusMultiplier() {
+        return dailyBonusMultiplier;
     }
 
     /** Incremente le compteur total de blocs poses sur cette ile (jamais decremente, meme si le

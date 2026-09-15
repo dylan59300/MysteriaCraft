@@ -5,6 +5,8 @@ import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.island.IslandManager;
 import com.mysteriacraft.island.IslandService;
 import com.mysteriacraft.island.gui.IslandMembersGui;
+import com.mysteriacraft.quests.QuestDefinition;
+import com.mysteriacraft.quests.QuestManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -27,13 +29,15 @@ public class IslandCommand implements CommandExecutor {
     private final ConfigManager islandsConfig;
     private final IslandManager manager;
     private final IslandService service;
+    private final QuestManager questManager;
     private final MessageManager messages;
 
     public IslandCommand(ConfigManager islandsConfig, IslandManager manager, IslandService service,
-                          MessageManager messages) {
+                          QuestManager questManager, MessageManager messages) {
         this.islandsConfig = islandsConfig;
         this.manager = manager;
         this.service = service;
+        this.questManager = questManager;
         this.messages = messages;
     }
 
@@ -184,6 +188,19 @@ public class IslandCommand implements CommandExecutor {
         placeholders.put("niveau", String.valueOf(island.value()));
         placeholders.put("taille", String.valueOf(island.size()));
         messages.send(player, "ile.niveau-info", placeholders);
+
+        // Progression des quetes liees au module Iles (evite d'avoir a ouvrir /quests separement).
+        for (QuestDefinition quest : questManager.getAllQuests()) {
+            if (!quest.type().name().startsWith("ISLAND_") || !quest.isActiveNow()) {
+                continue;
+            }
+            QuestManager.ProgressSnapshot progress = questManager.getProgress(player.getUniqueId(), quest);
+            Map<String, String> questPlaceholders = new HashMap<>();
+            questPlaceholders.put("quete", quest.displayName());
+            questPlaceholders.put("progression", String.valueOf(progress.progression()));
+            questPlaceholders.put("objectif", String.valueOf(quest.objective()));
+            messages.send(player, progress.complete() ? "ile.niveau-quete-complete" : "ile.niveau-quete-progression", questPlaceholders);
+        }
     }
 
     private void sendTop(CommandSender sender, String[] args) {

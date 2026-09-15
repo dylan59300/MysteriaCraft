@@ -19,5 +19,8 @@ public enum RewardType {
     /** Donne un Generateur d'Argent d'un type precis (module Generateurs). */
     GENERATEUR,
     /** Donne une Machine ("transformation" ou "miniere") a son tier de base (module Custom Items). */
-    MACHINE
+    MACHINE,
+    /** Agrandit gratuitement le rayon protege de l'ile du joueur, d'un nombre de blocs fixe
+     * (module Iles), plafonne a taille-max comme /ile upgrade. */
+    AGRANDISSEMENT_ILE
 }

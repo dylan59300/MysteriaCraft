@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * agrandissement (paye via l'economie), et distribution des recompenses de palier ET de defis
  * (via RewardGiver + BattlePassService, comme les autres modules).
  */
-public class IslandService {
+public class IslandService implements RewardGiver.IslandUpgradeGiveHandler {
 
     private final IslandManager manager;
     private final EconomyManager economyManager;
@@ -48,6 +48,14 @@ public class IslandService {
     /** Invitations en attente : proprietaire -> ensemble des UUID invites (en memoire uniquement,
      * une invitation ne survit pas a un redemarrage, ce qui est acceptable pour une action ponctuelle). */
     private final Map<UUID, Set<UUID>> pendingInvites = new ConcurrentHashMap<>();
+
+    /** Dernier proprietaire d'ile visite par joueur (en memoire), pour ne crediter la quete
+     * ISLAND_VISITED que lors de la visite d'une ile DIFFERENTE de la precedente. */
+    private final Map<UUID, UUID> lastVisitedIslandOwner = new ConcurrentHashMap<>();
+
+    /** Compteur de defis d'ile completes AUJOURD'HUI par joueur (jour epoch + compte), pour
+     * declencher le multiplicateur d'xp BattlePass temporaire (suggestion "bonus quotidien"). */
+    private final Map<UUID, long[]> dailyChallengeCount = new ConcurrentHashMap<>();
 
     public IslandService(IslandManager manager, EconomyManager economyManager, RewardGiver rewardGiver,
                           BattlePassService battlePassService, CustomItemManager customItemManager,
@@ -259,6 +267,13 @@ public class IslandService {
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("joueur", target.getName());
         messages.send(visitor, "ile.visite", placeholders);
+
+        // Pont avec le module Quetes (voir QuestType.ISLAND_VISITED) : ne compte que la visite
+        // d'une ile DIFFERENTE de la derniere visitee, pour eviter de spammer /ile visit sur la meme.
+        UUID lastOwner = lastVisitedIslandOwner.put(visitor.getUniqueId(), island.owner());
+        if (!island.owner().equals(lastOwner)) {
+            questService.registerProgress(visitor, QuestType.ISLAND_VISITED, null, 1);
+        }
     }
 
     /** Supprime l'ile du joueur (sans confirmation supplementaire : geree en amont par la commande). */
@@ -320,6 +335,10 @@ public class IslandService {
         ownerPlaceholders.put("joueur", target.getName());
         messages.send(owner, "ile.membre-rejoint", ownerPlaceholders);
 
+        // Pont avec le module Quetes (voir QuestType.ISLAND_MEMBER_JOINED) : credite au
+        // PROPRIETAIRE, chaque nouveau membre invite rejoignant SA PROPRE ile.
+        questService.registerProgress(owner, QuestType.ISLAND_MEMBER_JOINED, null, 1);
+
         giveChallengeRewards(owner, manager.checkChallenges(island, IslandManager.ChallengeType.MEMBRES, island.members().size()));
     }
 
@@ -358,6 +377,24 @@ public class IslandService {
         giveChallengeRewards(player, manager.checkChallenges(island, IslandManager.ChallengeType.TAILLE, newSize));
     }
 
+    /** Recompense AGRANDISSEMENT_ILE (voir Reward/RewardGiver) : agrandit gratuitement l'ile du
+     * joueur d'un nombre de blocs fixe, sans passer par l'economie (contrairement a upgrade()). */
+    @Override
+    public void giveFreeIslandUpgrade(Player player, int blocks) {
+        IslandManager.Island island = manager.getIsland(player.getUniqueId());
+        if (island == null) {
+            return;
+        }
+        int newSize = manager.addSize(island, blocks);
+
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("taille", String.valueOf(newSize));
+        placeholders.put("blocs", String.valueOf(blocks));
+        messages.send(player, "ile.agrandissement-offert", placeholders);
+
+        giveChallengeRewards(player, manager.checkChallenges(island, IslandManager.ChallengeType.TAILLE, newSize));
+    }
+
     // ---- Valeur / paliers (appele par IslandProtectionListener a chaque pose/casse) ----
 
     public void onBlockPlaced(Player player, IslandManager.Island island, Material material) {
@@ -369,7 +406,9 @@ public class IslandService {
         }
         // Pont avec le module Quetes (voir QuestType.ISLAND_BLOCK_PLACED) : la progression est
         // creditee a celui qui a REELLEMENT pose le bloc (proprietaire ou membre de confiance).
-        questService.registerProgress(player, QuestType.ISLAND_BLOCK_PLACED, null, 1);
+        // La cible materiau exacte est transmise en plus du "sans cible" (une quete ISLAND_BLOCK_PLACED
+        // sans cible dans quests.yml compte deja tout materiau via QuestService).
+        questService.registerProgress(player, QuestType.ISLAND_BLOCK_PLACED, material.name(), 1);
     }
 
     public void onBlockBroken(IslandManager.Island island, Material material) {
@@ -440,7 +479,8 @@ public class IslandService {
     }
 
     /** Donne l'xp BattlePass + la recompense optionnelle de chaque defi nouvellement complete, et
-     * envoie un message par defi. */
+     * envoie un message par defi. Compte aussi les defis completes AUJOURD'HUI pour declencher un
+     * multiplicateur d'xp BattlePass temporaire une fois le seuil quotidien atteint. */
     private void giveChallengeRewards(Player player, List<IslandManager.Challenge> completed) {
         for (IslandManager.Challenge challenge : completed) {
             if (challenge.xp() > 0) {
@@ -453,6 +493,27 @@ public class IslandService {
             placeholders.put("defi", challenge.id());
             placeholders.put("xp", String.valueOf(challenge.xp()));
             messages.send(player, "ile.defi-complete", placeholders);
+
+            registerDailyChallengeAndMaybeBoost(player);
+        }
+    }
+
+    private void registerDailyChallengeAndMaybeBoost(Player player) {
+        long today = System.currentTimeMillis() / 86_400_000L;
+        long[] state = dailyChallengeCount.computeIfAbsent(player.getUniqueId(), k -> new long[] {today, 0});
+        if (state[0] != today) {
+            state[0] = today;
+            state[1] = 0;
+        }
+        state[1]++;
+
+        int threshold = manager.getDailyBonusThreshold();
+        if (state[1] == threshold) {
+            battlePassService.activateBooster(player, manager.getDailyBonusDurationSeconds(), manager.getDailyBonusMultiplier());
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("multiplicateur", String.valueOf(manager.getDailyBonusMultiplier()));
+            placeholders.put("duree", String.valueOf(manager.getDailyBonusDurationSeconds()));
+            messages.send(player, "ile.bonus-quotidien-active", placeholders);
         }
     }
 }

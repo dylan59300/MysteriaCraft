@@ -144,3 +144,10 @@ defis:
     recompense:
       type: ECONOMIE
       montant: 15000
+
+# Multiplicateur d'xp BattlePass temporaire obtenu en completant plusieurs defis d'ile le meme
+# jour (toutes iles/joueurs confondus) : atteindre "seuil" defis completes declenche le boost.
+defis-bonus-quotidien:
+  seuil: 3
+  duree-secondes: 1800
+  multiplicateur: 2.0

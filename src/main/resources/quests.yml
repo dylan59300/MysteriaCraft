@@ -4,14 +4,18 @@
 # Reset automatique : la progression est suivie par periode (jour ou semaine ISO courante).
 # Des qu'un nouveau jour/semaine commence, la progression repart de zero, sans tache a programmer.
 # type : BREAK_BLOCK | PLACE_BLOCK | KILL_MOB | FISH | CRAFT_ITEM | CONSUME_ITEM | MACHINE_TRANSFORM |
-#        ISLAND_BLOCK_PLACED (module Iles : tout bloc pose sur SA PROPRE ile, proprietaire ou membre)
+#        ISLAND_BLOCK_PLACED (module Iles : bloc pose sur SA PROPRE ile, proprietaire ou membre) |
+#        ISLAND_MEMBER_JOINED (module Iles : nouveau membre invite rejoignant SA PROPRE ile) |
+#        ISLAND_VISITED (module Iles : visite d'une ile DIFFERENTE de la derniere via /ile visit)
 # cible : materiau (BREAK_BLOCK/PLACE_BLOCK/CRAFT_ITEM/CONSUME_ITEM), type d'entite (KILL_MOB) ou
 #         id de famille Lucky Block (MACHINE_TRANSFORM). Absent = tout compte (FISH, MACHINE_TRANSFORM,
-#         ISLAND_BLOCK_PLACED).
+#         ISLAND_BLOCK_PLACED sans cible precise, ISLAND_MEMBER_JOINED, ISLAND_VISITED).
+#         ISLAND_BLOCK_PLACED accepte aussi un materiau precis pour ne compter que celui-ci.
 # xp : ajoutee automatiquement au BattlePass a la completion.
 # recompense : ITEM, ECONOMIE, BOOST_XP (duree-secondes + multiplicateur), PET, LUCKYBLOCK,
-#              OBJET_CUSTOM, GENERATEUR (type-id + quantite) ou MACHINE (machine-id:
-#              "transformation" ou "miniere" + quantite).
+#              OBJET_CUSTOM, GENERATEUR (type-id + quantite), MACHINE (machine-id:
+#              "transformation" ou "miniere" + quantite) ou AGRANDISSEMENT_ILE (blocs : agrandit
+#              gratuitement le rayon protege de l'ile, module Iles).
 #              Donnee automatiquement a la completion (optionnel).
 # actif-du / actif-au : DEUX cles optionnelles (format "MM-jj") qui rendent une quete SAISONNIERE
 #                       (Halloween, Noel...) : n'apparait dans /quests et ne progresse QUE durant
@@ -64,6 +68,31 @@ quotidiennes:
     recompense:
       type: ECONOMIE
       montant: 50
+
+  # Miroir quotidien plus court de la quete hebdomadaire batir_ile (voir plus bas), pour
+  # progresser sur son ile meme les jours sans grosse session.
+  batir_ile_quotidien:
+    nom: "&aPoser des blocs sur son ile"
+    icone: DIRT
+    type: ISLAND_BLOCK_PLACED
+    objectif: 50
+    xp: 60
+    recompense:
+      type: ECONOMIE
+      montant: 100
+
+  # ISLAND_BLOCK_PLACED avec cible sur un materiau precis : ne compte QUE la pierre posee
+  # sur son ile (contrairement a batir_ile/batir_ile_quotidien qui comptent tout materiau).
+  paver_pierre_ile:
+    nom: "&7Poser de la pierre sur son ile"
+    icone: STONE
+    type: ISLAND_BLOCK_PLACED
+    cible: STONE
+    objectif: 100
+    xp: 80
+    recompense:
+      type: ECONOMIE
+      montant: 150
 
 hebdomadaires:
   miner_diamants:
@@ -151,3 +180,26 @@ hebdomadaires:
     recompense:
       type: ECONOMIE
       montant: 2000
+
+  # Membres invites : compte chaque NOUVEAU membre invite rejoignant SA PROPRE ile cette semaine.
+  ile_communaute:
+    nom: "&dAvoir des membres actifs sur son ile"
+    icone: PLAYER_HEAD
+    type: ISLAND_MEMBER_JOINED
+    objectif: 2
+    xp: 250
+    recompense:
+      type: AGRANDISSEMENT_ILE
+      blocs: 5
+
+  # Visite d'iles : encourage l'exploration sociale via /ile visit (une meme ile revisitee
+  # plusieurs fois de suite ne compte qu'une fois, voir IslandService.visit).
+  explorer_iles:
+    nom: "&bVisiter des iles differentes"
+    icone: COMPASS
+    type: ISLAND_VISITED
+    objectif: 3
+    xp: 150
+    recompense:
+      type: ECONOMIE
+      montant: 300

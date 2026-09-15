@@ -28,6 +28,7 @@ public class RewardGiver {
     private CustomItemGiveHandler customItemGiveHandler;
     private GeneratorGiveHandler generatorGiveHandler;
     private MachineGiveHandler machineGiveHandler;
+    private IslandUpgradeGiveHandler islandUpgradeGiveHandler;
 
     public RewardGiver(EconomyManager economyManager, MessageManager messages) {
         this.economyManager = economyManager;
@@ -66,6 +67,11 @@ public class RewardGiver {
         void giveMachine(Player player, String machineId, int amount);
     }
 
+    /** Petit contrat minimal pour agrandir gratuitement l'ile du joueur, implemente par IslandService. */
+    public interface IslandUpgradeGiveHandler {
+        void giveFreeIslandUpgrade(Player player, int blocks);
+    }
+
     public void setBoosterHandler(XpBoosterHandler boosterHandler) {
         this.boosterHandler = boosterHandler;
     }
@@ -88,6 +94,10 @@ public class RewardGiver {
 
     public void setMachineGiveHandler(MachineGiveHandler machineGiveHandler) {
         this.machineGiveHandler = machineGiveHandler;
+    }
+
+    public void setIslandUpgradeGiveHandler(IslandUpgradeGiveHandler islandUpgradeGiveHandler) {
+        this.islandUpgradeGiveHandler = islandUpgradeGiveHandler;
     }
 
     public void give(Player player, Reward reward) {
@@ -121,6 +131,11 @@ public class RewardGiver {
             case MACHINE -> {
                 if (machineGiveHandler != null) {
                     machineGiveHandler.giveMachine(player, reward.customItemId(), Math.max(1, reward.amount()));
+                }
+            }
+            case AGRANDISSEMENT_ILE -> {
+                if (islandUpgradeGiveHandler != null) {
+                    islandUpgradeGiveHandler.giveFreeIslandUpgrade(player, Math.max(1, reward.amount()));
                 }
             }
             case ITEM -> giveItem(player, reward);

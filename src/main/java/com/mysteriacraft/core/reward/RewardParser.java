@@ -28,8 +28,20 @@ public final class RewardParser {
             case "OBJET_CUSTOM" -> parseCustomItem(section);
             case "GENERATEUR" -> parseGenerator(section);
             case "MACHINE" -> parseMachine(section);
+            case "AGRANDISSEMENT_ILE" -> parseIslandUpgrade(section);
             default -> parseItem(section);
         };
+    }
+
+    private static Reward parseIslandUpgrade(ConfigurationSection section) {
+        int blocks = Math.max(1, section.getInt("blocs", 5));
+        String displayName = section.getString("nom", "+" + blocks + " blocs sur son ile");
+        Material iconMaterial = Material.matchMaterial(section.getString("icone", "GRASS_BLOCK"));
+        if (iconMaterial == null) {
+            iconMaterial = Material.GRASS_BLOCK;
+        }
+        ItemStack icon = new ItemBuilder(iconMaterial).name("&e" + displayName).build();
+        return Reward.ofIslandUpgrade(blocks, displayName, icon);
     }
 
     private static Reward parseMachine(ConfigurationSection section) {
