@@ -7,5 +7,7 @@ package com.mysteriacraft.quests;
  */
 public enum QuestPeriod {
     DAILY,
-    WEEKLY
+    WEEKLY,
+    /** Haut fait permanent : cle de periode fixe ("PERMANENT"), ne se reinitialise jamais. */
+    PERMANENT
 }

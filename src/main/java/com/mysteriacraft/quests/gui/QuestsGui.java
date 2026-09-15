@@ -53,11 +53,25 @@ public class QuestsGui extends Menu {
         this.inventory = Bukkit.createInventory(holder, SIZE, MessageManager.color(messages.raw("quests.titre-gui")));
         holder.setInventory(inventory);
 
-        this.quests = new ArrayList<>(questManager.getDailyQuests());
-        quests.addAll(questManager.getWeeklyQuests());
+        this.quests = new ArrayList<>();
+        for (QuestDefinition quest : questManager.getActiveQuestsForPlayer(viewer.getUniqueId())) {
+            if (isRevealed(quest)) {
+                quests.add(quest);
+            }
+        }
 
         render();
         return inventory;
+    }
+
+    /** Une quete "secrete" (revelee-apres) n'apparait dans /quests qu'une fois la quete
+     * prealable terminee CETTE MEME periode (elle continue de progresser silencieusement avant). */
+    private boolean isRevealed(QuestDefinition quest) {
+        if (quest.reveleeApres() == null) {
+            return true;
+        }
+        QuestManager.ProgressSnapshot prereq = progress.get(quest.reveleeApres());
+        return prereq != null && prereq.complete();
     }
 
     private int maxPage() {
@@ -94,12 +108,25 @@ public class QuestsGui extends Menu {
         QuestManager.ProgressSnapshot snapshot = progress.getOrDefault(quest.id(), new QuestManager.ProgressSnapshot(0, false));
 
         List<String> lore = new ArrayList<>();
-        lore.add(quest.period() == QuestPeriod.DAILY ? messages.raw("quests.tag-quotidienne") : messages.raw("quests.tag-hebdomadaire"));
+        lore.add(switch (quest.period()) {
+            case DAILY -> messages.raw("quests.tag-quotidienne");
+            case WEEKLY -> messages.raw("quests.tag-hebdomadaire");
+            case PERMANENT -> messages.raw("quests.tag-permanente");
+        });
+        if (quest.lore() != null) {
+            lore.add(quest.lore());
+        }
         lore.add("");
         lore.add(replace(messages.raw("quests.gui-progression"), "progression", String.valueOf(snapshot.progression()), "objectif", String.valueOf(quest.objective())));
         lore.add(replace(messages.raw("quests.gui-xp"), "xp", String.valueOf(quest.xpReward())));
         if (quest.reward() != null) {
             lore.add(replace(messages.raw("quests.gui-recompense"), "recompense", quest.reward().displayName()));
+        }
+        if (quest.contrat() && !questManager.isContractAccepted(viewer.getUniqueId(), quest)) {
+            lore.add(messages.raw("quests.gui-contrat-non-accepte"));
+        }
+        if (questManager.isBoosted(viewer.getUniqueId(), quest)) {
+            lore.add(messages.raw("quests.gui-boostee"));
         }
         lore.add("");
         lore.add(snapshot.complete() ? messages.raw("quests.gui-terminee") : messages.raw("quests.gui-en-cours"));

@@ -65,4 +65,25 @@ public record Reward(
     public static Reward ofIslandUpgrade(int blocks, String displayName, ItemStack displayIcon) {
         return new Reward(RewardType.AGRANDISSEMENT_ILE, null, 0, blocks, 0, 0, null, null, null, displayName, displayIcon);
     }
+
+    /** Copie cette recompense avec sa "valeur" doublee (montant/quantite selon le type), utilisee
+     * par le boost de quete achetable (voir QuestService). Les types sans notion de quantite
+     * (PET, LUCKYBLOCK) sont renvoyes inchanges. */
+    public Reward doubled() {
+        return switch (type) {
+            case ECONOMIE -> new Reward(type, item, economyAmount * 2, amount, boosterDurationSeconds, boosterMultiplier,
+                    petId, luckyBlockFamilyId, customItemId, displayName, displayIcon);
+            case ITEM -> {
+                ItemStack doubledItem = item.clone();
+                doubledItem.setAmount(doubledItem.getAmount() * 2);
+                yield new Reward(type, doubledItem, economyAmount, amount, boosterDurationSeconds, boosterMultiplier,
+                        petId, luckyBlockFamilyId, customItemId, displayName, displayIcon);
+            }
+            case OBJET_CUSTOM, GENERATEUR, MACHINE, AGRANDISSEMENT_ILE -> new Reward(type, item, economyAmount, amount * 2,
+                    boosterDurationSeconds, boosterMultiplier, petId, luckyBlockFamilyId, customItemId, displayName, displayIcon);
+            case BOOST_XP -> new Reward(type, item, economyAmount, amount, boosterDurationSeconds * 2, boosterMultiplier,
+                    petId, luckyBlockFamilyId, customItemId, displayName, displayIcon);
+            default -> this;
+        };
+    }
 }

@@ -10,6 +10,10 @@ package com.mysteriacraft.quests;
  * SA PROPRE ile, module Iles).
  * Pour ISLAND_VISITED, "cible" est ignore (compte chaque ile DIFFERENTE de la derniere visitee
  * via /ile visit, module Iles).
+ * Pour EXPLORE_BIOME, "cible" est optionnel : absent = tout NOUVEAU biome visite cette semaine
+ * compte, present = seul ce biome precis compte (verifie periodiquement, voir QuestService).
+ * Pour COLLECT_DISTINCT_CUSTOM_ITEMS, "cible" est ignore : la progression est le nombre
+ * d'objets custom DIFFERENTS possedes SIMULTANEMENT dans l'inventaire (verifie periodiquement).
  */
 public enum QuestType {
     BREAK_BLOCK,
@@ -21,7 +25,9 @@ public enum QuestType {
     MACHINE_TRANSFORM,
     ISLAND_BLOCK_PLACED,
     ISLAND_MEMBER_JOINED,
-    ISLAND_VISITED;
+    ISLAND_VISITED,
+    EXPLORE_BIOME,
+    COLLECT_DISTINCT_CUSTOM_ITEMS;
 
     public static QuestType fromString(String value) {
         try {

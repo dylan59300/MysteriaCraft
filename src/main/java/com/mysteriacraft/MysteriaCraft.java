@@ -210,11 +210,16 @@ public final class MysteriaCraft extends JavaPlugin {
     private void setupQuests() {
         this.questsConfig = new ConfigManager(this, "quests.yml");
         this.questManager = new QuestManager(this, database, questsConfig);
-        this.questService = new QuestService(this, questManager, battlePassService, rewardGiver, messages);
+        this.questService = new QuestService(this, questManager, battlePassService, rewardGiver, economyManager, messages);
+
+        // Verifications periodiques (biomes visites, objets custom differents possedes) : voir
+        // QuestType.EXPLORE_BIOME et COLLECT_DISTINCT_CUSTOM_ITEMS.
+        Bukkit.getScheduler().runTaskTimer(this, questService::tickExploration, 100L, 100L);
+        Bukkit.getScheduler().runTaskTimer(this, questService::tickCollection, 100L, 100L);
 
         Bukkit.getPluginManager().registerEvents(new QuestListener(questService), this);
 
-        getCommand("quests").setExecutor(new QuestsCommand(this, questManager, messages));
+        getCommand("quests").setExecutor(new QuestsCommand(this, questManager, questService, questsConfig, messages));
         getCommand("questsadmin").setExecutor(new QuestsAdminCommand(this, questsConfig, questManager, messages));
     }
 
@@ -248,6 +253,7 @@ public final class MysteriaCraft extends JavaPlugin {
     private void setupCustomItems() {
         this.customItemsConfig = new ConfigManager(this, "custom_items.yml");
         this.customItemManager = new CustomItemManager(this, customItemsConfig);
+        questService.setCustomItemManager(customItemManager);
         this.customItemService = new CustomItemService(customItemManager, economyManager, messages);
         rewardGiver.setCustomItemGiveHandler(customItemService);
 
