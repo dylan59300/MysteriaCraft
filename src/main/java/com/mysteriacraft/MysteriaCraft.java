@@ -69,6 +69,10 @@ import com.mysteriacraft.enchantement.EnchantementManager;
 import com.mysteriacraft.enchantement.EnchantementService;
 import com.mysteriacraft.enchantement.commands.EnchantementAdminCommand;
 import com.mysteriacraft.enchantement.listeners.EnchantementListener;
+import com.mysteriacraft.classes.ClasseManager;
+import com.mysteriacraft.classes.ClasseService;
+import com.mysteriacraft.classes.commands.ClasseCommand;
+import com.mysteriacraft.classes.listeners.ClasseListener;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -136,6 +140,9 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager enchantementConfig;
     private EnchantementManager enchantementManager;
     private EnchantementService enchantementService;
+    private ConfigManager classesConfig;
+    private ClasseManager classeManager;
+    private ClasseService classeService;
 
     @Override
     public void onEnable() {
@@ -188,6 +195,9 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Module Table d'Enchantement Custom (depend de customItemManager) ----
         setupEnchantement();
+
+        // ---- Module Classes/Metiers (depend d'economyManager) ----
+        setupClasses();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -389,6 +399,19 @@ public final class MysteriaCraft extends JavaPlugin {
                 new EnchantementListener(enchantementManager, enchantementService, customItemManager, messages), this);
         getCommand("enchantementadmin").setExecutor(
                 new EnchantementAdminCommand(enchantementConfig, enchantementManager, messages));
+    }
+
+    private void setupClasses() {
+        this.classesConfig = new ConfigManager(this, "classes.yml");
+        this.classeManager = new ClasseManager(this, database, classesConfig);
+        this.classeService = new ClasseService(this, classeManager, economyManager, messages);
+
+        Bukkit.getPluginManager().registerEvents(new ClasseListener(classeService), this);
+        getCommand("classe").setExecutor(new ClasseCommand(this, classesConfig, classeManager, classeService, messages));
+
+        // Reapplique l'effet de classe de chaque joueur en ligne avant l'expiration naturelle
+        // de la duree de potion (voir ClasseService#EFFECT_DURATION_TICKS), toutes les 70 minutes.
+        Bukkit.getScheduler().runTaskTimer(this, classeService::reapplyAllOnline, 20L * 60 * 70, 20L * 60 * 70);
     }
 
     @Override

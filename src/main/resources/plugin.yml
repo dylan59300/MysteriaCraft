@@ -98,6 +98,11 @@ commands:
     description: Recharge la configuration de la Table d'Enchantement Custom
     usage: /<command> reload
     permission: mysteriacraft.enchantement.admin
+  classe:
+    description: Choisit ou affiche votre classe/metier (bonus passif)
+    usage: /<command> [choisir <id>|reload]
+    # Pas de "permission:" ici : le choix doit rester accessible a tout joueur.
+    # reload est verifie manuellement dans le code (mysteriacraft.classes.admin).
 
 permissions:
   mysteriacraft.eco.admin:
@@ -144,4 +149,7 @@ permissions:
     default: op
   mysteriacraft.enchantement.admin:
     description: Autorise la gestion admin de la Table d'Enchantement Custom (reload)
+    default: op
+  mysteriacraft.classes.admin:
+    description: Autorise la gestion admin des Classes/Metiers (reload)
     default: op

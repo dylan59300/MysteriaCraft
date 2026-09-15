@@ -212,6 +212,18 @@ customitem:
   reparation-inutile: "&eCet item est deja a durabilite maximale."
   reparation-reussie: "&a&lReparation reussie ! &a{item} &arestaure a 100% de durabilite."
 
+classes:
+  usage: "&cUsage : /classe [choisir <id>]"
+  reload: "&aLa configuration des Classes/Metiers a ete rechargee."
+  introuvable: "&cCette classe n'existe pas."
+  deja-active: "&eCette classe est deja active."
+  fonds-insuffisants: "&cVous n'avez pas assez d'argent pour changer de classe."
+  choisie: "&a&lClasse choisie ! &aVous etes desormais : &e{classe}"
+  titre-gui: "&8Classes / Metiers"
+  gui-active: "&a&lActive"
+  gui-cliquer-gratuit: "&eCliquez pour choisir (gratuit)"
+  gui-cliquer-payant: "&eCliquez pour changer (&6{prix}&e)"
+
 enchantement:
   usage: "&cUsage : /enchantementadmin reload"
   reload: "&aLa configuration de la Table d'Enchantement Custom a ete rechargee."
