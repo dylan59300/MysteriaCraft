@@ -1,0 +1,67 @@
+# =========================================
+#   MysteriaCraft - Configuration du PNJ Marchand
+# =========================================
+# Le PNJ Marchand s'invoque en clic-droit sur un bloc avec l'item custom "oeuf_pnj_marchand"
+# (voir custom_items.yml) en main. Une fois invoque, il est invulnerable, immobile et persiste
+# au redemarrage du serveur (comme n'importe quelle entite normale du monde). Clic-droit dessus
+# ouvre son menu d'echange.
+#
+# id-piece : id de l'item custom (voir custom_items.yml) utilise comme monnaie d'echange.
+# nom-pnj : nom affiche au-dessus du PNJ.
+#
+# offres : chaque entree coute "cout" pieces d'echange (retirees de l'inventaire du joueur, meme
+#          reparties sur plusieurs piles) contre la "recompense" (n'importe quel type de Reward :
+#          ITEM, ECONOMIE, OBJET_CUSTOM, GENERATEUR, MACHINE, AGRANDISSEMENT_ILE, TITRE_CHAT...).
+#          nom/icone optionnels : par defaut, repris de la recompense elle-meme.
+
+id-piece: piece_echange
+nom-pnj: "&6&lMarchand"
+
+offres:
+  fer_rapide:
+    cout: 5
+    recompense:
+      type: GENERATEUR
+      type-id: fer
+      quantite: 1
+
+  carburant_ameliore_lot:
+    cout: 8
+    recompense:
+      type: OBJET_CUSTOM
+      item-id: carburant_ameliore
+      quantite: 5
+
+  machine_transformation:
+    cout: 25
+    recompense:
+      type: MACHINE
+      machine-id: transformation
+      quantite: 1
+
+  machine_miniere:
+    cout: 40
+    recompense:
+      type: MACHINE
+      machine-id: miniere
+      quantite: 1
+
+  agrandissement_ile:
+    cout: 15
+    recompense:
+      type: AGRANDISSEMENT_ILE
+      blocs: 10
+      nom: "&aAgrandissement d'ile (+10 blocs)"
+
+  boost_xp:
+    cout: 6
+    recompense:
+      type: BOOST_XP
+      duree-secondes: 1800
+      multiplicateur: 2.0
+
+  economie_lot:
+    cout: 3
+    recompense:
+      type: ECONOMIE
+      montant: 500

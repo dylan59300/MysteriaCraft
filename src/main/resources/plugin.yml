@@ -85,6 +85,10 @@ commands:
     usage: /<command> <create|home|spawn|sethome|delete confirm|invite <joueur>|accept <joueur>|kick <joueur>|membres|visit <joueur>|upgrade|niveau|top [page]>
     # Pas de "permission:" ici : la plupart des sous-commandes doivent rester accessibles a tout
     # joueur. reload/tp sont verifies manuellement dans le code (mysteriacraft.island.admin).
+  pnjmarchand:
+    description: Recharge la configuration du PNJ Marchand (offres, nom)
+    usage: /<command> reload
+    permission: mysteriacraft.pnjmarchand.admin
 
 permissions:
   mysteriacraft.eco.admin:
@@ -122,4 +126,7 @@ permissions:
     default: op
   mysteriacraft.island.admin:
     description: Autorise la gestion admin des Iles (reload, tp sur l'ile d'un joueur, bypass protection)
+    default: op
+  mysteriacraft.pnjmarchand.admin:
+    description: Autorise la gestion admin du PNJ Marchand (reload)
     default: op

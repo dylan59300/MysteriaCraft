@@ -977,3 +977,44 @@ items:
         F: IRON_BLOCK
         B: BLAZE_POWDER
         C: REDSTONE_BLOCK
+
+  # ---- Module PNJ Marchand (voir marchand.yml) ----
+
+  piece_echange:
+    nom: "&6&lPiece d'Echange"
+    lore:
+      - "&7Monnaie du PNJ Marchand :"
+      - "&7clic-droit sur lui pour echanger"
+      - "&7ces pieces contre des objets rares."
+    item-de-base: GOLD_NUGGET
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : un lingot d'or entoure d'emeraudes.
+    recette:
+      forme:
+        - "EEE"
+        - "EGE"
+        - "EEE"
+      ingredients:
+        E: EMERALD
+        G: GOLD_INGOT
+
+  oeuf_pnj_marchand:
+    nom: "&6&lOeuf du PNJ Marchand"
+    lore:
+      - "&7Clic-droit sur un bloc pour"
+      - "&7invoquer le Marchand a cet endroit."
+    item-de-base: VILLAGER_SPAWN_EGG
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli, mais volontairement couteux (rare, usage admin/recompense recommande).
+    recette:
+      forme:
+        - "DDD"
+        - "DND"
+        - "DDD"
+      ingredients:
+        D: DIAMOND_BLOCK
+        N: NETHER_STAR

@@ -58,6 +58,10 @@ import com.mysteriacraft.island.IslandManager;
 import com.mysteriacraft.island.IslandService;
 import com.mysteriacraft.island.commands.IslandCommand;
 import com.mysteriacraft.island.listeners.IslandProtectionListener;
+import com.mysteriacraft.marchand.MarchandManager;
+import com.mysteriacraft.marchand.MarchandService;
+import com.mysteriacraft.marchand.commands.MarchandAdminCommand;
+import com.mysteriacraft.marchand.listeners.MarchandListener;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -116,6 +120,9 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager islandsConfig;
     private IslandManager islandManager;
     private IslandService islandService;
+    private ConfigManager marchandConfig;
+    private MarchandManager marchandManager;
+    private MarchandService marchandService;
 
     @Override
     public void onEnable() {
@@ -162,6 +169,9 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Module Iles (skyblock) ----
         setupIslands();
+
+        // ---- Module PNJ Marchand ----
+        setupMarchand();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -337,6 +347,16 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // Jauge de particules le long du perimetre de l'ile de chaque joueur present, toutes les 3 secondes.
         Bukkit.getScheduler().runTaskTimer(this, islandService::tickBorders, 60L, 60L);
+    }
+
+    private void setupMarchand() {
+        this.marchandConfig = new ConfigManager(this, "marchand.yml");
+        this.marchandManager = new MarchandManager(this, marchandConfig);
+        this.marchandService = new MarchandService(this, marchandManager, customItemManager, rewardGiver, messages);
+
+        Bukkit.getPluginManager().registerEvents(
+                new MarchandListener(marchandManager, marchandService, customItemManager, messages), this);
+        getCommand("pnjmarchand").setExecutor(new MarchandAdminCommand(marchandConfig, marchandManager, messages));
     }
 
     @Override

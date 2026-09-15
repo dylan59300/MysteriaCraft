@@ -212,6 +212,19 @@ customitem:
   reparation-inutile: "&eCet item est deja a durabilite maximale."
   reparation-reussie: "&a&lReparation reussie ! &a{item} &arestaure a 100% de durabilite."
 
+marchand:
+  usage: "&cUsage : /pnjmarchand reload"
+  reload: "&aLa configuration du PNJ Marchand a ete rechargee."
+  invoque: "&aLe PNJ Marchand a ete invoque !"
+  titre-gui: "&8Le Marchand"
+  offre-invalide: "&cCette offre n'est pas configuree correctement."
+  pieces-insuffisantes: "&cIl vous manque des pieces d'echange (cout : &e{cout}&c)."
+  echange-reussi: "&a&lEchange reussi ! &aVous avez recu : &e{recompense} &7(-&e{cout} pieces&7)"
+  gui-cout: "&7Cout : &e{cout} &7piece(s) d'echange"
+  gui-vos-pieces: "&7Vos pieces : &e{pieces}"
+  gui-cliquer-echanger: "&eCliquez pour echanger"
+  gui-pieces-insuffisantes: "&c&lPieces insuffisantes"
+
 machine:
   usage: "&cUsage : /machine <give <joueur> [quantite]|preset|reload|stats|info|doubleloot <secondes>|simulate <minerai> <nombre>>"
   simulation-titre: "&d&l=== Simulation : {nombre}x {minerai} (items reellement recus) ==="
