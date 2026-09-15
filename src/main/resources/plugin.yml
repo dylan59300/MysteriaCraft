@@ -55,17 +55,17 @@ commands:
     description: Ouvre le menu des Lucky Blocks, ou achete directement avec buy
     usage: /<command> [buy <famille> [quantite]]
   luckyblockadmin:
-    description: Donne un Lucky Block a un joueur ou recharge luckyblocks.yml
-    usage: /<command> <give <joueur> <famille> [quantite]|reload>
+    description: Donne un Lucky Block, simule N casses reelles (test/preview), ou recharge luckyblocks.yml
+    usage: /<command> <give <joueur> <famille> [quantite]|simulate <famille> <nombre>|reload>
     permission: mysteriacraft.luckyblock.admin
   customitem:
     description: Catalogue des items custom, gere les minerais/objets (give admin, sell, reload admin)
     usage: /<command> [gui|give <joueur> <id> [quantite]|sell <id>|reload]
   machine:
-    description: Donne/recharge la Machine a Transformation (admin), ou affiche vos stats
-    usage: /<command> <give <joueur> [quantite]|preset|reload|stats>
-    # Pas de "permission:" ici : /machine stats doit rester accessible a tout joueur (les
-    # sous-commandes admin restent protegees dans le code par mysteriacraft.machine.admin).
+    description: Donne/recharge/simule la Machine a Transformation (admin), ou affiche vos stats/infos
+    usage: /<command> <give <joueur> [quantite]|preset|reload|stats|info|doubleloot <secondes>|simulate <minerai> <nombre>>
+    # Pas de "permission:" ici : /machine stats et /machine info doivent rester accessibles a
+    # tout joueur (les sous-commandes admin restent protegees dans le code par mysteriacraft.machine.admin).
   machineminiere:
     description: Donne/recharge la Machine a Miner (admin)
     usage: /<command> <give <joueur> [quantite]|reload>

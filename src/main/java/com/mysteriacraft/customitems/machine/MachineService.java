@@ -26,6 +26,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -347,6 +348,61 @@ public class MachineService {
         if (!leftovers.isEmpty()) {
             leftovers.values().forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
         }
+    }
+
+    /** Plafond de /machine simulate, meme raison que LuckyBlockService#MAX_SIMULATION. */
+    private static final int MAX_SIMULATION = 200;
+
+    /**
+     * Outil admin (/machine simulate) : rejoue REELLEMENT count echanges pour ce minerai, sans
+     * machine posee (utilise la chance du tier de base, sans bonus d'amelioration/streak), donne
+     * VRAIMENT chaque recompense a l'admin (Lucky Block ou item custom), puis affiche un
+     * recapitulatif. Ne consomme ni minerai ni carburant (il s'agit d'un test), mais interagit
+     * avec le VRAI compteur de pity de l'admin comme un echange normal. Plafonne a MAX_SIMULATION.
+     */
+    public void simulate(Player admin, Material ore, int count) {
+        String familyId = manager.getTargetFamily(ore);
+        if (familyId == null) {
+            messages.send(admin, "machine.minerai-non-accepte");
+            return;
+        }
+        LuckyBlockFamily family = luckyBlockManager.getFamily(familyId);
+        if (family == null) {
+            messages.send(admin, "machine.famille-introuvable");
+            return;
+        }
+
+        int total = Math.max(1, Math.min(count, MAX_SIMULATION));
+        double chance = manager.getBaseTier().chance();
+        int pityThreshold = manager.getPityThreshold();
+        int luckyBlockCount = 0;
+        Map<String, Integer> itemTally = new LinkedHashMap<>();
+
+        for (int i = 0; i < total; i++) {
+            boolean pityGuaranteed = pityThreshold > 0 && manager.getPityProgress(admin.getUniqueId()) >= pityThreshold;
+            boolean gotLuckyBlock = pityGuaranteed || ThreadLocalRandom.current().nextDouble(100.0) < chance;
+            manager.recordPityResult(admin.getUniqueId(), gotLuckyBlock);
+
+            if (gotLuckyBlock) {
+                luckyBlockCount++;
+                giveItem(admin, luckyBlockManager.createItem(family));
+            } else {
+                CustomItemDefinition definition = pickRandomCustomItem();
+                ItemStack reward = definition != null
+                        ? customItemManager.createItem(definition) : luckyBlockManager.createItem(family);
+                giveItem(admin, reward);
+                itemTally.merge(definition != null ? definition.displayName() : family.displayName(), 1, Integer::sum);
+            }
+        }
+
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("nombre", String.valueOf(total));
+        placeholders.put("minerai", ore.name());
+        messages.send(admin, "machine.simulation-titre", placeholders);
+        admin.sendMessage(MessageManager.color("&7- &6" + family.displayName() + " &7x&a" + luckyBlockCount
+                + " &7(&e" + String.format("%.1f", 100.0 * luckyBlockCount / total) + "%&7)"));
+        itemTally.forEach((name, obtained) -> admin.sendMessage(MessageManager.color(
+                "&7- &e" + name + " &7x&a" + obtained + " &7(&e" + String.format("%.1f", 100.0 * obtained / total) + "%&7)")));
     }
 
     /**

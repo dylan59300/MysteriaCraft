@@ -3,6 +3,7 @@ package com.mysteriacraft.customitems.machine.commands;
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.customitems.machine.MachineManager;
+import com.mysteriacraft.customitems.machine.MachineService;
 import com.mysteriacraft.customitems.machine.gui.MachineStatsGui;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -19,18 +20,22 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * /machine give <joueur> [quantite] | preset | reload | doubleloot <secondes> (admin uniquement)
+ * /machine give <joueur> [quantite] | preset | reload | doubleloot <secondes> |
+ * simulate <minerai> <nombre> (admin uniquement)
  * /machine stats | info (ouvert a tous les joueurs)
  */
 public class MachineCommand implements CommandExecutor {
 
     private final ConfigManager customItemsConfig;
     private final MachineManager manager;
+    private final MachineService service;
     private final MessageManager messages;
 
-    public MachineCommand(ConfigManager customItemsConfig, MachineManager manager, MessageManager messages) {
+    public MachineCommand(ConfigManager customItemsConfig, MachineManager manager, MachineService service,
+                           MessageManager messages) {
         this.customItemsConfig = customItemsConfig;
         this.manager = manager;
+        this.service = service;
         this.messages = messages;
     }
 
@@ -125,6 +130,31 @@ public class MachineCommand implements CommandExecutor {
             manager.activateDoubleLoot(seconds);
             Bukkit.broadcastMessage(MessageManager.color(
                     messages.raw("machine.doubleloot-annonce").replace("{duree}", formatDuration(seconds * 1000L))));
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("simulate")) {
+            if (!(sender instanceof Player player)) {
+                messages.send(sender, "general.commande-joueur-uniquement");
+                return true;
+            }
+            if (args.length < 3) {
+                messages.send(sender, "machine.usage");
+                return true;
+            }
+            Material ore = Material.matchMaterial(args[1]);
+            if (ore == null) {
+                messages.send(sender, "machine.minerai-non-accepte");
+                return true;
+            }
+            int count;
+            try {
+                count = Integer.parseInt(args[2]);
+            } catch (NumberFormatException e) {
+                messages.send(sender, "machine.usage");
+                return true;
+            }
+            service.simulate(player, ore, count);
             return true;
         }
 

@@ -17,6 +17,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -33,6 +34,10 @@ import java.util.Map;
  * au lieu de l'effet attendu.
  */
 public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
+
+    /** Plafond de casses par appel de /luckyblockadmin simulate, pour eviter qu'un admin ne
+     * declenche par erreur des centaines d'effets MAUVAIS reels (TNT, mobs...) d'un coup. */
+    private static final int MAX_SIMULATION = 200;
 
     private final LuckyBlockManager manager;
     private final EconomyManager economyManager;
@@ -64,19 +69,30 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
     }
 
     private void applyEffect(Player player, Location location, LuckyBlockEffect effect) {
+        applyEffect(player, location, effect, true);
+    }
+
+    /** @param announce si false, donne/applique l'effet REELLEMENT (items, argent, TNT, mobs...)
+     *                  sans envoyer le message de chat par casse ni jouer les sons/particules :
+     *                  utilise par simulate() pour eviter le spam sur un grand nombre de casses. */
+    private void applyEffect(Player player, Location location, LuckyBlockEffect effect, boolean announce) {
         if (effect.kind() == EffectKind.BON) {
             rewardGiver.give(player, effect.reward());
-            location.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, location.clone().add(0.5, 0.5, 0.5), 30, 0.5, 0.5, 0.5);
-            player.playSound(location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
+            if (announce) {
+                location.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, location.clone().add(0.5, 0.5, 0.5), 30, 0.5, 0.5, 0.5);
+                player.playSound(location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
 
-            Map<String, String> placeholders = new HashMap<>();
-            placeholders.put("effet", effect.reward().displayName());
-            messages.send(player, "luckyblock.bon-effet", placeholders);
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("effet", effect.reward().displayName());
+                messages.send(player, "luckyblock.bon-effet", placeholders);
+            }
             return;
         }
 
-        location.getWorld().spawnParticle(Particle.SMOKE_NORMAL, location.clone().add(0.5, 0.5, 0.5), 40, 0.5, 0.5, 0.5);
-        player.playSound(location, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1.5f);
+        if (announce) {
+            location.getWorld().spawnParticle(Particle.SMOKE_NORMAL, location.clone().add(0.5, 0.5, 0.5), 40, 0.5, 0.5, 0.5);
+            player.playSound(location, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1.5f);
+        }
 
         switch (effect.badType()) {
             case TNT -> spawnTnt(location, effect.intValue());
@@ -85,9 +101,43 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
             case FOUDRE -> location.getWorld().strikeLightning(location);
         }
 
-        Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("effet", effect.displayName());
-        messages.send(player, "luckyblock.mauvais-effet", placeholders);
+        if (announce) {
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("effet", effect.displayName());
+            messages.send(player, "luckyblock.mauvais-effet", placeholders);
+        }
+    }
+
+    /**
+     * Outil admin (/luckyblockadmin simulate) : rejoue REELLEMENT count casses de cette famille
+     * pour cet admin (mêmes effets qu'une vraie casse : items/argent recus, TNT/mobs si un effet
+     * MAUVAIS existe dans cette famille), sans le spam d'un message par casse, puis affiche un
+     * recapitulatif du nombre de fois obtenu par effet. Plafonne a MAX_SIMULATION.
+     */
+    public void simulate(Player admin, LuckyBlockFamily family, int count) {
+        int total = Math.max(1, Math.min(count, MAX_SIMULATION));
+        Map<String, Integer> tally = new LinkedHashMap<>();
+        int aucunEffet = 0;
+
+        for (int i = 0; i < total; i++) {
+            LuckyBlockEffect effect = manager.pickEffect(admin.getUniqueId(), family, 0);
+            if (effect == null) {
+                aucunEffet++;
+                continue;
+            }
+            applyEffect(admin, admin.getLocation(), effect, false);
+            tally.merge(effect.displayName(), 1, Integer::sum);
+        }
+
+        Map<String, String> titlePlaceholders = new HashMap<>();
+        titlePlaceholders.put("nombre", String.valueOf(total));
+        titlePlaceholders.put("famille", family.displayName());
+        messages.send(admin, "luckyblock.simulation-titre", titlePlaceholders);
+        tally.forEach((name, obtained) -> admin.sendMessage(MessageManager.color(
+                "&7- &e" + name + " &7x&a" + obtained + " &7(&e" + String.format("%.1f", 100.0 * obtained / total) + "%&7)")));
+        if (aucunEffet > 0) {
+            admin.sendMessage(MessageManager.color("&7- &c(aucun effet configure) &7x&c" + aucunEffet));
+        }
     }
 
     private void spawnTnt(Location location, int amount) {

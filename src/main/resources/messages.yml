@@ -113,7 +113,8 @@ pets:
 
 luckyblock:
   usage: "&cUsage : /luckyblock buy <famille> [quantite]"
-  admin-usage: "&cUsage : /luckyblockadmin <give <joueur> <famille> [quantite]|reload>"
+  admin-usage: "&cUsage : /luckyblockadmin <give <joueur> <famille> [quantite]|simulate <famille> <nombre>|reload>"
+  simulation-titre: "&d&l=== Simulation : {nombre}x {famille} (items reellement recus) ==="
   introuvable: "&cCette famille de Lucky Block n'existe pas."
   non-achetable: "&cCette famille n'est pas achetable directement (craft ou recompense uniquement)."
   hors-saison: "&cCette famille de Lucky Block n'est disponible que pendant sa periode saisonniere."
@@ -166,7 +167,8 @@ customitem:
   reparation-reussie: "&a&lReparation reussie ! &a{item} &arestaure a 100% de durabilite."
 
 machine:
-  usage: "&cUsage : /machine <give <joueur> [quantite]|preset|reload|stats|info|doubleloot <secondes>>"
+  usage: "&cUsage : /machine <give <joueur> [quantite]|preset|reload|stats|info|doubleloot <secondes>|simulate <minerai> <nombre>>"
+  simulation-titre: "&d&l=== Simulation : {nombre}x {minerai} (items reellement recus) ==="
   aucun-item: "&cVous devez tenir un minerai en main pour utiliser la machine."
   minerai-non-accepte: "&cCe minerai n'est pas accepte par la machine."
   info-titre: "&6&l=== Minerais acceptes par la Machine ==="

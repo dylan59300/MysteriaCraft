@@ -231,7 +231,7 @@ public final class MysteriaCraft extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new LuckyBlockListener(luckyBlockManager, luckyBlockService, messages), this);
 
         getCommand("luckyblock").setExecutor(new LuckyBlockCommand(luckyBlockManager, luckyBlockService, economyManager, messages));
-        getCommand("luckyblockadmin").setExecutor(new LuckyBlockAdminCommand(luckyBlocksConfig, luckyBlockManager, messages));
+        getCommand("luckyblockadmin").setExecutor(new LuckyBlockAdminCommand(luckyBlocksConfig, luckyBlockManager, luckyBlockService, messages));
     }
 
     private void setupCustomItems() {
@@ -249,7 +249,7 @@ public final class MysteriaCraft extends JavaPlugin {
         this.machineManager = new MachineManager(this, database, customItemsConfig);
         this.machineService = new MachineService(this, machineManager, customItemManager, luckyBlockManager, questService, messages);
         Bukkit.getPluginManager().registerEvents(new MachineListener(machineManager, machineService, customItemManager, messages), this);
-        getCommand("machine").setExecutor(new MachineCommand(customItemsConfig, machineManager, messages));
+        getCommand("machine").setExecutor(new MachineCommand(customItemsConfig, machineManager, machineService, messages));
 
         // Effet de particules ambiant (densite/couleur selon le niveau de carburant), toutes les 5 secondes.
         Bukkit.getScheduler().runTaskTimer(this, machineService::tickAmbientParticles, 100L, 100L);
