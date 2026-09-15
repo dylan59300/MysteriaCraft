@@ -18,7 +18,8 @@
 # pvp-autorise : si false (par defaut), les degats entre joueurs sont bloques sur toute ile.
 # explosions-autorisees : si false (par defaut), TNT/creepers ne detruisent aucun bloc sur les
 #                          iles (les fermes a TNT ne fonctionnent pas tant que desactive).
-# kit-depart : items donnes au joueur a la creation de son ile (materiel vanilla + quantite).
+# kit-depart : items donnes au joueur a la creation de son ile. Chaque entree est SOIT "materiel"
+#              (item vanilla) SOIT "objet-custom" (id d'un item du module Custom Items), + quantite.
 # valeurs-blocs : points de "valeur d'ile" attribues par bloc POSE (retires si casse) : determine
 #                 le niveau de l'ile (somme totale). Materiaux absents = 0 point.
 # paliers : recompenses AUTOMATIQUES donnees au proprietaire des que la valeur totale de son ile
@@ -28,8 +29,10 @@
 # defis : objectifs ponctuels donnant de l'XP BattlePass (+ une recompense optionnelle, meme
 #         format que "paliers"), une seule fois par defi et par ile.
 #         type : NIVEAU (valeur d'ile atteinte) | MEMBRES (nombre de membres invites atteint) |
-#                TAILLE (rayon protege atteint, via /ile upgrade).
+#                TAILLE (rayon protege atteint, via /ile upgrade) | BLOCS_POSES (nombre total de
+#                blocs poses sur l'ile, quelle que soit leur valeur).
 #         id : identifiant unique du defi (libre, utilise uniquement en interne pour le suivi).
+# argent-depart : credite au joueur (economie interne) a la creation de son ile.
 monde: "iles"
 espacement-blocs: 300
 spawn-monde:
@@ -42,6 +45,7 @@ prix-agrandissement: 5000
 blocs-par-agrandissement: 5
 pvp-autorise: false
 explosions-autorisees: false
+argent-depart: 500
 
 kit-depart:
   - materiel: OAK_SAPLING
@@ -57,6 +61,16 @@ kit-depart:
   - materiel: STONE_PICKAXE
     quantite: 1
   - materiel: STONE_AXE
+    quantite: 1
+  - materiel: FISHING_ROD
+    quantite: 1
+  - materiel: COAL
+    quantite: 8
+  - materiel: SAND
+    quantite: 8
+  - materiel: GRAVEL
+    quantite: 8
+  - objet-custom: carburant_ameliore
     quantite: 1
 
 valeurs-blocs:
@@ -99,6 +113,10 @@ paliers:
       quantite: 1
 
 defis:
+  - id: premier_bloc
+    type: BLOCS_POSES
+    objectif: 1
+    xp: 20
   - id: premiers_pas
     type: NIVEAU
     objectif: 25

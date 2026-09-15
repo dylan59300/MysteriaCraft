@@ -249,6 +249,7 @@ ile:
   aucune: "&cVous n'avez pas d'ile. Utilisez &e/ile create &cpour en creer une."
   aucune-pour-joueur: "&cCe joueur n'a pas d'ile."
   creee: "&a&lIle creee ! &aBienvenue sur votre nouvelle ile."
+  creee-guide: "&7Une Machine a Transformation et un Generateur de Fer vous attendent deja sur votre ile ! &7Tapez &e/guide &7pour tout savoir sur le module Iles."
   delete-confirmation: "&c&lAttention : cette action est irreversible ! &7Tapez &e/ile delete confirm &7pour confirmer la suppression de votre ile."
   supprimee: "&cVotre ile a ete supprimee."
   protection-refusee: "&cVous n'etes pas autorise a construire ici (ile privee ou zone hors ile)."

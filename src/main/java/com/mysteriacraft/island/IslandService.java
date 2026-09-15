@@ -4,12 +4,17 @@ import com.mysteriacraft.battlepass.BattlePassService;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.core.reward.Reward;
 import com.mysteriacraft.core.reward.RewardGiver;
+import com.mysteriacraft.customitems.CustomItemDefinition;
+import com.mysteriacraft.customitems.CustomItemManager;
+import com.mysteriacraft.customitems.generator.GeneratorManager;
+import com.mysteriacraft.customitems.machine.MachineManager;
 import com.mysteriacraft.economy.EconomyManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -32,6 +37,9 @@ public class IslandService {
     private final EconomyManager economyManager;
     private final RewardGiver rewardGiver;
     private final BattlePassService battlePassService;
+    private final CustomItemManager customItemManager;
+    private final MachineManager machineManager;
+    private final GeneratorManager generatorManager;
     private final MessageManager messages;
 
     /** Invitations en attente : proprietaire -> ensemble des UUID invites (en memoire uniquement,
@@ -39,16 +47,21 @@ public class IslandService {
     private final Map<UUID, Set<UUID>> pendingInvites = new ConcurrentHashMap<>();
 
     public IslandService(IslandManager manager, EconomyManager economyManager, RewardGiver rewardGiver,
-                          BattlePassService battlePassService, MessageManager messages) {
+                          BattlePassService battlePassService, CustomItemManager customItemManager,
+                          MachineManager machineManager, GeneratorManager generatorManager, MessageManager messages) {
         this.manager = manager;
         this.economyManager = economyManager;
         this.rewardGiver = rewardGiver;
         this.battlePassService = battlePassService;
+        this.customItemManager = customItemManager;
+        this.machineManager = machineManager;
+        this.generatorManager = generatorManager;
         this.messages = messages;
     }
 
-    /** Cree l'ile du joueur (si aucune deja), construit sa plateforme de depart, donne le kit, et
-     * le teleporte dessus. */
+    /** Cree l'ile du joueur (si aucune deja), construit sa plateforme de depart (+ annexe avec
+     * Machine a Transformation et Generateur de Fer), donne le kit et l'argent de depart, et le
+     * teleporte dessus. */
     public void create(Player player) {
         if (manager.hasIsland(player.getUniqueId())) {
             messages.send(player, "ile.deja-existante");
@@ -56,13 +69,22 @@ public class IslandService {
         }
         IslandManager.Island island = manager.createIsland(player.getUniqueId());
         buildStarterPlatform(island);
+        buildAnnex(island);
         giveStarterKit(player);
+        double startingMoney = manager.getStartingMoney();
+        if (startingMoney > 0) {
+            economyManager.deposit(player.getUniqueId(), startingMoney);
+        }
         teleportToIsland(player, island);
         messages.send(player, "ile.creee");
+        messages.send(player, "ile.creee-guide");
     }
 
-    /** Plateforme de depart : 5x5 (herbe sur terre sur pierre), un arbre decale du centre pour
-     * laisser le point d'atterrissage (le centre exact) degage. */
+    /**
+     * Plateforme de depart : 5x5 (herbe sur terre sur pierre), un arbre decale du centre, une
+     * petite mare avec canne a sucre et une parcelle de pastèques, un carre de sable/gravier, un
+     * mouton, et une petite poche minee sous la plateforme avec quelques minerais.
+     */
     private void buildStarterPlatform(IslandManager.Island island) {
         World world = manager.getWorld();
         int cx = island.centerX;
@@ -94,6 +116,73 @@ public class IslandService {
 
         // Coffre de secours (vide, purement decoratif/utilitaire) a cote du point d'atterrissage.
         world.getBlockAt(cx - 2, cy + 2, cz - 2).setType(Material.CHEST);
+
+        // Petite mare (1x2) avec canne a sucre sur la berge, dans le coin oppose de l'arbre.
+        int wx = cx - 1;
+        int wz = cz - 2;
+        world.getBlockAt(wx, cy + 1, wz).setType(Material.WATER);
+        world.getBlockAt(wx, cy + 1, wz - 1).setType(Material.WATER);
+        world.getBlockAt(wx - 1, cy + 2, wz).setType(Material.SUGAR_CANE);
+        world.getBlockAt(wx + 1, cy + 2, wz - 1).setType(Material.SUGAR_CANE);
+
+        // Parcelle de pastèques (terre agricole + tige murie) pres de la mare.
+        int mx = cx - 2;
+        int mz = cz + 1;
+        world.getBlockAt(mx, cy, mz).setType(Material.FARMLAND);
+        world.getBlockAt(mx, cy + 1, mz).setType(Material.MELON_STEM);
+        world.getBlockAt(mx - 1, cy + 1, mz).setType(Material.MELON);
+
+        // Carre de sable/gravier (acces direct au verre sans avoir a en trouver).
+        world.getBlockAt(cx + 2, cy + 1, cz - 1).setType(Material.SAND);
+        world.getBlockAt(cx + 2, cy + 1, cz - 2).setType(Material.GRAVEL);
+
+        // Petite poche minee sous la plateforme, avec quelques minerais visibles.
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                world.getBlockAt(cx + dx, cy - 3, cz + dz).setType(Material.CAVE_AIR);
+                world.getBlockAt(cx + dx, cy - 4, cz + dz).setType(Material.STONE);
+            }
+        }
+        world.getBlockAt(cx, cy - 4, cz).setType(Material.COAL_ORE);
+        world.getBlockAt(cx - 1, cy - 4, cz + 1).setType(Material.IRON_ORE);
+
+        // Mouton (laine + reproduction).
+        world.spawnEntity(new Location(world, cx - 1.5, cy + 2, cz + 1.5), EntityType.SHEEP);
+    }
+
+    /**
+     * Annexe reliee a la plateforme principale par un pont de terre : une Machine a
+     * Transformation et un Generateur de Fer, deja prets a l'emploi (kit "les machines a leur
+     * disposition des le depart").
+     */
+    private void buildAnnex(IslandManager.Island island) {
+        World world = manager.getWorld();
+        int cx = island.centerX;
+        int cy = island.centerY;
+        int cz = island.centerZ;
+        int ax = cx - 4;
+        int az = cz - 1;
+
+        // Pont de terre reliant la plateforme principale a l'annexe.
+        for (int x = cx - 3; x >= ax; x--) {
+            world.getBlockAt(x, cy, az).setType(Material.DIRT);
+        }
+        // Petite plateforme 3x3 pour l'annexe.
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                world.getBlockAt(ax + dx, cy - 1, az + dz).setType(Material.STONE);
+                world.getBlockAt(ax + dx, cy, az + dz).setType(Material.DIRT);
+            }
+        }
+
+        Block machineBlock = world.getBlockAt(ax - 1, cy + 1, az);
+        machineManager.tagBlock(machineBlock);
+
+        GeneratorManager.GeneratorType ironType = generatorManager.getType("fer");
+        if (ironType != null) {
+            Block generatorBlock = world.getBlockAt(ax + 1, cy + 1, az);
+            generatorManager.tagBlock(generatorBlock, ironType, island.owner());
+        }
     }
 
     private void setIfAir(World world, int x, int y, int z, Material material) {
@@ -105,12 +194,21 @@ public class IslandService {
 
     private void giveStarterKit(Player player) {
         for (Map<?, ?> raw : manager.getStarterKitRaw()) {
-            Material material = Material.matchMaterial(String.valueOf(raw.get("materiel")));
-            if (material == null) {
-                continue;
-            }
             int amount = raw.containsKey("quantite") ? Integer.parseInt(String.valueOf(raw.get("quantite"))) : 1;
-            ItemStack item = new ItemStack(material, Math.max(1, amount));
+            ItemStack item;
+            if (raw.containsKey("objet-custom")) {
+                CustomItemDefinition definition = customItemManager.getItem(String.valueOf(raw.get("objet-custom")));
+                if (definition == null) {
+                    continue;
+                }
+                item = customItemManager.createItem(definition, Math.max(1, amount));
+            } else {
+                Material material = Material.matchMaterial(String.valueOf(raw.get("materiel")));
+                if (material == null) {
+                    continue;
+                }
+                item = new ItemStack(material, Math.max(1, amount));
+            }
             Map<Integer, ItemStack> leftovers = player.getInventory().addItem(item);
             leftovers.values().forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
         }
@@ -258,7 +356,12 @@ public class IslandService {
     // ---- Valeur / paliers (appele par IslandProtectionListener a chaque pose/casse) ----
 
     public void onBlockPlaced(IslandManager.Island island, Material material) {
+        manager.incrementBlocksPlaced(island);
         applyValueChange(island, manager.getBlockValue(material));
+        Player owner = Bukkit.getPlayer(island.owner());
+        if (owner != null) {
+            giveChallengeRewards(owner, manager.checkChallenges(island, IslandManager.ChallengeType.BLOCS_POSES, island.blocksPlaced()));
+        }
     }
 
     public void onBlockBroken(IslandManager.Island island, Material material) {

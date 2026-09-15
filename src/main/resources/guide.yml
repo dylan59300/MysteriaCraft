@@ -103,3 +103,17 @@ sujets:
       - "&7/pets &7- ouvrir le menu"
       - "&7Achetez ou debloquez des compagnons"
       - "&7qui vous suivent en jeu."
+
+  iles:
+    nom: "&b&lIles (Skyblock)"
+    icone: GRASS_BLOCK
+    lore:
+      - "&7/ile create &7- creer votre ile (kit +"
+      - "&7Machine a Transformation et Generateur"
+      - "&7de Fer deja installes)"
+      - "&7/ile home, sethome, spawn, visit <joueur>"
+      - "&7/ile invite, accept, kick, membres"
+      - "&7/ile upgrade, niveau, top"
+      - "&7Casser/poser des blocs et remplir des"
+      - "&7defis donnent de l'XP BattlePass et des"
+      - "&7recompenses (paliers de niveau d'ile)."

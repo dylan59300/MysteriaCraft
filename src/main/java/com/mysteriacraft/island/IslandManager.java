@@ -45,6 +45,7 @@ public class IslandManager {
         int centerZ;
         int size;
         long value;
+        long blocksPlaced;
         int lastTierIndex;
         /** Point d'atterrissage personnalise (/ile sethome), ou null = utiliser le centre par defaut. */
         Double homeX;
@@ -67,6 +68,10 @@ public class IslandManager {
             return value;
         }
 
+        public long blocksPlaced() {
+            return blocksPlaced;
+        }
+
         public Set<UUID> members() {
             return members;
         }
@@ -85,7 +90,7 @@ public class IslandManager {
 
     /** Type de condition d'un defi d'ile (voir "defis" dans islands.yml). */
     public enum ChallengeType {
-        NIVEAU, MEMBRES, TAILLE
+        NIVEAU, MEMBRES, TAILLE, BLOCS_POSES
     }
 
     /** Un defi d'ile : condition (type + objectif), xp BattlePass et recompense optionnelle,
@@ -106,6 +111,7 @@ public class IslandManager {
     private int blocksPerUpgrade = 5;
     private boolean pvpAllowed = false;
     private boolean explosionsAllowed = false;
+    private double startingMoney = 0;
     private int spawnX = 0;
     private int spawnY = 100;
     private int spawnZ = 0;
@@ -141,7 +147,8 @@ public class IslandManager {
                 "valeur INTEGER NOT NULL DEFAULT 0, " +
                 "dernier_palier INTEGER NOT NULL DEFAULT 0, " +
                 "home_x REAL, home_y REAL, home_z REAL, home_yaw REAL NOT NULL DEFAULT 0, " +
-                "home_pitch REAL NOT NULL DEFAULT 0" +
+                "home_pitch REAL NOT NULL DEFAULT 0, " +
+                "blocs_poses INTEGER NOT NULL DEFAULT 0" +
                 ");";
         String membres = "CREATE TABLE IF NOT EXISTS ile_membres (" +
                 "uuid_proprietaire TEXT NOT NULL, " +
@@ -177,7 +184,8 @@ public class IslandManager {
         // Migration : une base creee AVANT l'ajout de /ile sethome n'a pas ces colonnes (CREATE
         // TABLE IF NOT EXISTS ne les rajoute pas toute seule). Ignore silencieusement si presentes.
         for (String column : new String[] {"home_x REAL", "home_y REAL", "home_z REAL",
-                "home_yaw REAL NOT NULL DEFAULT 0", "home_pitch REAL NOT NULL DEFAULT 0"}) {
+                "home_yaw REAL NOT NULL DEFAULT 0", "home_pitch REAL NOT NULL DEFAULT 0",
+                "blocs_poses INTEGER NOT NULL DEFAULT 0"}) {
             try (PreparedStatement statement = connection.prepareStatement(
                     "ALTER TABLE iles ADD COLUMN " + column + ";")) {
                 statement.executeUpdate();
@@ -196,6 +204,7 @@ public class IslandManager {
         blocksPerUpgrade = Math.max(1, islandsConfig.get().getInt("blocs-par-agrandissement", 5));
         pvpAllowed = islandsConfig.get().getBoolean("pvp-autorise", false);
         explosionsAllowed = islandsConfig.get().getBoolean("explosions-autorisees", false);
+        startingMoney = Math.max(0, islandsConfig.get().getDouble("argent-depart", 0));
 
         ConfigurationSection spawnSection = islandsConfig.get().getConfigurationSection("spawn-monde");
         if (spawnSection != null) {
@@ -295,7 +304,8 @@ public class IslandManager {
         islandsByIndex.clear();
         Connection connection = database.getConnection();
         String select = "SELECT uuid_proprietaire, position_index, centre_x, centre_y, centre_z, "
-                + "taille, valeur, dernier_palier, home_x, home_y, home_z, home_yaw, home_pitch FROM iles;";
+                + "taille, valeur, dernier_palier, home_x, home_y, home_z, home_yaw, home_pitch, "
+                + "blocs_poses FROM iles;";
         try (PreparedStatement statement = connection.prepareStatement(select);
              ResultSet rs = statement.executeQuery()) {
             while (rs.next()) {
@@ -308,6 +318,7 @@ public class IslandManager {
                 island.size = rs.getInt("taille");
                 island.value = rs.getLong("valeur");
                 island.lastTierIndex = rs.getInt("dernier_palier");
+                island.blocksPlaced = rs.getLong("blocs_poses");
                 double homeX = rs.getDouble("home_x");
                 if (!rs.wasNull()) {
                     island.homeX = homeX;
@@ -453,6 +464,7 @@ public class IslandManager {
         int z = island.centerZ;
         int size = island.size;
         long value = island.value;
+        long blocksPlaced = island.blocksPlaced;
         int lastTier = island.lastTierIndex;
         Double homeX = island.homeX;
         Double homeY = island.homeY;
@@ -462,12 +474,13 @@ public class IslandManager {
         String ownerStr = island.owner.toString();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             String upsert = "INSERT INTO iles (uuid_proprietaire, position_index, centre_x, centre_y, centre_z, "
-                    + "taille, valeur, dernier_palier, home_x, home_y, home_z, home_yaw, home_pitch) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    + "taille, valeur, dernier_palier, home_x, home_y, home_z, home_yaw, home_pitch, blocs_poses) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                     + "ON CONFLICT(uuid_proprietaire) DO UPDATE SET taille = excluded.taille, "
                     + "valeur = excluded.valeur, dernier_palier = excluded.dernier_palier, "
                     + "home_x = excluded.home_x, home_y = excluded.home_y, home_z = excluded.home_z, "
-                    + "home_yaw = excluded.home_yaw, home_pitch = excluded.home_pitch;";
+                    + "home_yaw = excluded.home_yaw, home_pitch = excluded.home_pitch, "
+                    + "blocs_poses = excluded.blocs_poses;";
             try (PreparedStatement statement = connection.prepareStatement(upsert)) {
                 statement.setString(1, ownerStr);
                 statement.setInt(2, index);
@@ -488,6 +501,7 @@ public class IslandManager {
                 }
                 statement.setFloat(12, homeYaw);
                 statement.setFloat(13, homePitch);
+                statement.setLong(14, blocksPlaced);
                 statement.executeUpdate();
             } catch (SQLException e) {
                 plugin.getLogger().severe("Erreur sauvegarde ile de " + ownerStr + " : " + e.getMessage());
@@ -601,6 +615,17 @@ public class IslandManager {
 
     public boolean areExplosionsAllowed() {
         return explosionsAllowed;
+    }
+
+    public double getStartingMoney() {
+        return startingMoney;
+    }
+
+    /** Incremente le compteur total de blocs poses sur cette ile (jamais decremente, meme si le
+     * bloc est ensuite casse : sert au defi BLOCS_POSES, pas a la valeur). Persiste. */
+    public void incrementBlocksPlaced(Island island) {
+        island.blocksPlaced++;
+        persistIslandAsync(island);
     }
 
     /** Ajoute (ou retire, si negatif) de la valeur a cette ile, persiste, et renvoie la liste des
