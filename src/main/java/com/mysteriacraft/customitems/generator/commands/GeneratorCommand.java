@@ -1,9 +1,9 @@
-package com.mysteriacraft.economy.generator.commands;
+package com.mysteriacraft.customitems.generator.commands;
 
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.economy.EconomyManager;
-import com.mysteriacraft.economy.generator.GeneratorManager;
+import com.mysteriacraft.customitems.generator.GeneratorManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;

@@ -8,7 +8,8 @@
 #         id de famille Lucky Block (MACHINE_TRANSFORM). Absent = tout compte (FISH, MACHINE_TRANSFORM).
 # xp : ajoutee automatiquement au BattlePass a la completion.
 # recompense : ITEM, ECONOMIE, BOOST_XP (duree-secondes + multiplicateur), PET, LUCKYBLOCK,
-#              OBJET_CUSTOM ou GENERATEUR (type-id + quantite).
+#              OBJET_CUSTOM, GENERATEUR (type-id + quantite) ou MACHINE (machine-id:
+#              "transformation" ou "miniere" + quantite).
 #              Donnee automatiquement a la completion (optionnel).
 
 quotidiennes:

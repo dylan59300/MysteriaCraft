@@ -27,8 +27,22 @@ public final class RewardParser {
             case "LUCKYBLOCK" -> parseLuckyBlock(section);
             case "OBJET_CUSTOM" -> parseCustomItem(section);
             case "GENERATEUR" -> parseGenerator(section);
+            case "MACHINE" -> parseMachine(section);
             default -> parseItem(section);
         };
+    }
+
+    private static Reward parseMachine(ConfigurationSection section) {
+        String machineId = section.getString("machine-id", "transformation");
+        int amount = Math.max(1, section.getInt("quantite", 1));
+        String displayName = section.getString("nom", "Machine : " + machineId);
+        Material iconMaterial = Material.matchMaterial(section.getString("icone",
+                machineId.equalsIgnoreCase("miniere") ? "NETHERITE_BLOCK" : "IRON_BLOCK"));
+        if (iconMaterial == null) {
+            iconMaterial = Material.IRON_BLOCK;
+        }
+        ItemStack icon = new ItemBuilder(iconMaterial, amount).name("&e" + displayName).build();
+        return Reward.ofMachine(machineId, amount, displayName, icon);
     }
 
     private static Reward parseGenerator(ConfigurationSection section) {

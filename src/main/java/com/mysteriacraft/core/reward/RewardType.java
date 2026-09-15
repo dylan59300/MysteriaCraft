@@ -17,5 +17,7 @@ public enum RewardType {
     /** Donne un minerai/objet custom (module Custom Items). */
     OBJET_CUSTOM,
     /** Donne un Generateur d'Argent d'un type precis (module Generateurs). */
-    GENERATEUR
+    GENERATEUR,
+    /** Donne une Machine ("transformation" ou "miniere") a son tier de base (module Custom Items). */
+    MACHINE
 }

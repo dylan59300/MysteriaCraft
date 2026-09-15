@@ -12,10 +12,6 @@ import com.mysteriacraft.economy.commands.EcoReloadCommand;
 import com.mysteriacraft.economy.commands.PayCommand;
 import com.mysteriacraft.economy.commands.PayConfirmCommand;
 import com.mysteriacraft.economy.listeners.EconomyJoinQuitListener;
-import com.mysteriacraft.economy.generator.GeneratorManager;
-import com.mysteriacraft.economy.generator.GeneratorService;
-import com.mysteriacraft.economy.generator.commands.GeneratorCommand;
-import com.mysteriacraft.economy.generator.listeners.GeneratorListener;
 import com.mysteriacraft.core.gui.MenuListener;
 import com.mysteriacraft.battlepass.BattlePassManager;
 import com.mysteriacraft.battlepass.BattlePassService;
@@ -50,8 +46,15 @@ import com.mysteriacraft.customitems.miningmachine.MiningMachineManager;
 import com.mysteriacraft.customitems.miningmachine.MiningMachineService;
 import com.mysteriacraft.customitems.miningmachine.commands.MiningMachineCommand;
 import com.mysteriacraft.customitems.miningmachine.listeners.MiningMachineListener;
+import com.mysteriacraft.customitems.generator.GeneratorManager;
+import com.mysteriacraft.customitems.generator.GeneratorService;
+import com.mysteriacraft.customitems.generator.commands.GeneratorCommand;
+import com.mysteriacraft.customitems.generator.listeners.GeneratorListener;
 import org.bukkit.Bukkit;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.Map;
 
 /**
  * Classe principale du plugin MysteriaCraft.
@@ -66,10 +69,6 @@ public final class MysteriaCraft extends JavaPlugin {
 
     private EconomyManager economyManager;
     private PendingPaymentManager pendingPaymentManager;
-
-    private ConfigManager generatorsConfig;
-    private GeneratorManager generatorManager;
-    private GeneratorService generatorService;
 
     private RewardGiver rewardGiver;
 
@@ -98,6 +97,10 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager miningMachineConfig;
     private MiningMachineManager miningMachineManager;
     private MiningMachineService miningMachineService;
+
+    private ConfigManager generatorsConfig;
+    private GeneratorManager generatorManager;
+    private GeneratorService generatorService;
 
     @Override
     public void onEnable() {
@@ -134,10 +137,9 @@ public final class MysteriaCraft extends JavaPlugin {
         // ---- Module LuckyBlock ----
         setupLuckyBlock();
 
-        // ---- Module Custom Items ----
+        // ---- Module Custom Items (minerais/objets, Machine a Transformation, Machine a Miner,
+        // Generateurs d'Argent) ----
         setupCustomItems();
-
-        // ---- Module Generateurs d'Argent ----
         setupGenerators();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
@@ -254,6 +256,20 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // Traite blocs-par-tick blocs pour chaque machine active, chaque tick serveur.
         Bukkit.getScheduler().runTaskTimer(this, miningMachineService::tickAll, 20L, 1L);
+
+        // MachineManager et MiningMachineManager n'ont pas de type commun : ce petit adaptateur
+        // choisit laquelle appeler selon machineId ("transformation" ou "miniere") pour le type
+        // de recompense MACHINE (Lucky Block/BattlePass/Quetes).
+        rewardGiver.setMachineGiveHandler((player, machineId, amount) -> {
+            ItemStack item = "miniere".equalsIgnoreCase(machineId)
+                    ? miningMachineManager.createMachineItem(amount)
+                    : machineManager.createMachineItem(amount);
+            Map<Integer, ItemStack> leftovers = player.getInventory().addItem(item);
+            if (!leftovers.isEmpty()) {
+                leftovers.values().forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
+                messages.send(player, "general.inventaire-plein");
+            }
+        });
     }
 
     private void setupGenerators() {

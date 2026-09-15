@@ -1,4 +1,4 @@
-package com.mysteriacraft.economy.generator;
+package com.mysteriacraft.customitems.generator;
 
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;

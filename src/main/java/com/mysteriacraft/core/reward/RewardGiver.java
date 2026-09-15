@@ -27,6 +27,7 @@ public class RewardGiver {
     private LuckyBlockGiveHandler luckyBlockGiveHandler;
     private CustomItemGiveHandler customItemGiveHandler;
     private GeneratorGiveHandler generatorGiveHandler;
+    private MachineGiveHandler machineGiveHandler;
 
     public RewardGiver(EconomyManager economyManager, MessageManager messages) {
         this.economyManager = economyManager;
@@ -58,6 +59,13 @@ public class RewardGiver {
         void giveGenerator(Player player, String generatorTypeId, int amount);
     }
 
+    /** Petit contrat minimal pour donner une Machine ("transformation" ou "miniere"), implemente
+     * via un petit adaptateur branche dans MysteriaCraft (MachineManager/MiningMachineManager
+     * n'ont pas de type commun, l'adaptateur choisit lequel appeler selon machineId). */
+    public interface MachineGiveHandler {
+        void giveMachine(Player player, String machineId, int amount);
+    }
+
     public void setBoosterHandler(XpBoosterHandler boosterHandler) {
         this.boosterHandler = boosterHandler;
     }
@@ -76,6 +84,10 @@ public class RewardGiver {
 
     public void setGeneratorGiveHandler(GeneratorGiveHandler generatorGiveHandler) {
         this.generatorGiveHandler = generatorGiveHandler;
+    }
+
+    public void setMachineGiveHandler(MachineGiveHandler machineGiveHandler) {
+        this.machineGiveHandler = machineGiveHandler;
     }
 
     public void give(Player player, Reward reward) {
@@ -104,6 +116,11 @@ public class RewardGiver {
             case GENERATEUR -> {
                 if (generatorGiveHandler != null) {
                     generatorGiveHandler.giveGenerator(player, reward.customItemId(), Math.max(1, reward.amount()));
+                }
+            }
+            case MACHINE -> {
+                if (machineGiveHandler != null) {
+                    machineGiveHandler.giveMachine(player, reward.customItemId(), Math.max(1, reward.amount()));
                 }
             }
             case ITEM -> giveItem(player, reward);

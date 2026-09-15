@@ -20,7 +20,7 @@
 #
 # effets[].type : BON | MAUVAIS
 # effets[].recompense (si BON) : ITEM, ECONOMIE, BOOST_XP, PET, LUCKYBLOCK,
-#                                 OBJET_CUSTOM ou GENERATEUR (meme format que
+#                                 OBJET_CUSTOM, GENERATEUR ou MACHINE (meme format que
 #                                 battlepass.yml/quests.yml).
 # effets[].action (si MAUVAIS) : TNT | MOBS | POTION | FOUDRE
 #

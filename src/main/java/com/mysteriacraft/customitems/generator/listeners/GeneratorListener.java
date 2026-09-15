@@ -1,8 +1,8 @@
-package com.mysteriacraft.economy.generator.listeners;
+package com.mysteriacraft.customitems.generator.listeners;
 
 import com.mysteriacraft.core.config.MessageManager;
-import com.mysteriacraft.economy.generator.GeneratorManager;
-import com.mysteriacraft.economy.generator.GeneratorService;
+import com.mysteriacraft.customitems.generator.GeneratorManager;
+import com.mysteriacraft.customitems.generator.GeneratorService;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
