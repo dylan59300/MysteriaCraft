@@ -5,6 +5,7 @@ import com.mysteriacraft.core.gui.ItemBuilder;
 import com.mysteriacraft.core.gui.Menu;
 import com.mysteriacraft.core.gui.MenuHolder;
 import com.mysteriacraft.economy.EconomyManager;
+import com.mysteriacraft.shop.PromotionManager;
 import com.mysteriacraft.shop.ShopManager;
 import com.mysteriacraft.shop.ShopService;
 import org.bukkit.Bukkit;
@@ -21,11 +22,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Menu listant les articles d'une categorie de boutique (ou de la categorie virtuelle "Favoris").
  * Clic gauche = acheter, clic droit = revendre (si l'article tenu en main correspond, voir
  * ShopService#sell), shift-clic (gauche ou droit) = basculer le favori de cet article.
+ * Affiche le prix barre + le prix final des lors qu'une reduction (voir PromotionManager)
+ * s'applique a cet article pour ce joueur.
  */
 public class ShopItemsGui extends Menu {
 
@@ -40,6 +44,7 @@ public class ShopItemsGui extends Menu {
     private final ShopManager manager;
     private final ShopService service;
     private final EconomyManager economyManager;
+    private final PromotionManager promotionManager;
     private final MessageManager messages;
     private final Map<Integer, String> slotToItemId = new HashMap<>();
 
@@ -47,13 +52,15 @@ public class ShopItemsGui extends Menu {
     private int page = 0;
 
     public ShopItemsGui(Plugin plugin, Player viewer, ShopManager.ShopCategory category, ShopManager manager,
-                         ShopService service, EconomyManager economyManager, MessageManager messages) {
+                         ShopService service, EconomyManager economyManager, PromotionManager promotionManager,
+                         MessageManager messages) {
         super(viewer);
         this.plugin = plugin;
         this.category = category;
         this.manager = manager;
         this.service = service;
         this.economyManager = economyManager;
+        this.promotionManager = promotionManager;
         this.messages = messages;
     }
 
@@ -103,19 +110,45 @@ public class ShopItemsGui extends Menu {
         }
     }
 
-    private ItemStack buildItemIcon(java.util.UUID viewerId, ShopManager.ShopItem item) {
+    private ItemStack buildItemIcon(UUID viewerId, ShopManager.ShopItem item) {
         ItemStack icon = item.icon() != null ? item.icon().clone() : new ItemStack(Material.STONE);
         boolean favorite = manager.isFavorite(viewerId, item.categoryId(), item.id());
 
         List<String> lore = new ArrayList<>();
+        List<String> badges = new ArrayList<>();
         if (item.isPurchasable()) {
-            lore.add(replace(messages.raw("boutique.gui-prix-achat"), "prix", economyManager.format(item.buyPrice())));
+            List<String> toutesLesCles = manager.getAllItemKeysSorted();
+            double reduction = promotionManager.getReductionAutomatiquePourcent(viewer, item.categoryId(), item.id(), toutesLesCles);
+            if (reduction > 0) {
+                double prixFinal = item.buyPrice() * (1.0 - reduction / 100.0);
+                lore.add("&7Prix : &m" + economyManager.format(item.buyPrice()));
+                lore.add(replace(messages.raw("boutique.gui-prix-reduit"), "prix", economyManager.format(prixFinal)));
+
+                if (promotionManager.isHappyHourActive()) {
+                    badges.add(messages.raw("boutique.gui-badge-happy-hour"));
+                }
+                if (promotionManager.estArticleDuJour(item.categoryId(), item.id(), toutesLesCles)) {
+                    badges.add(messages.raw("boutique.gui-badge-article-du-jour"));
+                }
+                if (!promotionManager.aDejaAchete(viewerId)) {
+                    badges.add(messages.raw("boutique.gui-badge-premier-achat"));
+                }
+                if (promotionManager.estAnniversaireAujourdhui(viewer)) {
+                    badges.add(messages.raw("boutique.gui-badge-anniversaire"));
+                }
+                if (promotionManager.getReductionVipPourcent(viewer) > 0) {
+                    badges.add(messages.raw("boutique.gui-badge-vip"));
+                }
+            } else {
+                lore.add(replace(messages.raw("boutique.gui-prix-achat"), "prix", economyManager.format(item.buyPrice())));
+            }
         } else {
             lore.add(messages.raw("boutique.gui-non-achetable"));
         }
         if (item.isSellable()) {
             lore.add(replace(messages.raw("boutique.gui-prix-vente"), "prix", economyManager.format(item.sellPrice())));
         }
+        lore.addAll(badges);
         lore.add("");
         if (item.isPurchasable()) {
             lore.add(messages.raw("boutique.gui-clic-acheter"));
@@ -132,7 +165,9 @@ public class ShopItemsGui extends Menu {
         if (meta != null) {
             List<String> combined = new ArrayList<>(meta.hasLore() && meta.getLore() != null ? meta.getLore() : List.of());
             combined.add("");
-            combined.addAll(lore);
+            for (String line : lore) {
+                combined.add(MessageManager.color(line));
+            }
             meta.setLore(combined);
             icon.setItemMeta(meta);
         }
@@ -149,7 +184,7 @@ public class ShopItemsGui extends Menu {
 
         if (slot == BACK_SLOT) {
             if (event.getWhoClicked() instanceof Player player) {
-                new ShopCategoriesGui(plugin, player, manager, service, economyManager, messages).open();
+                new ShopCategoriesGui(plugin, player, manager, service, economyManager, promotionManager, messages).open();
             }
             return;
         }
@@ -182,6 +217,7 @@ public class ShopItemsGui extends Menu {
         } else {
             service.buy(player, item);
         }
+        render();
     }
 
     private void toggleFavorite(Player player, ShopManager.ShopItem item) {

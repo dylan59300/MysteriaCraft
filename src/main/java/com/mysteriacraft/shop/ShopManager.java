@@ -139,6 +139,18 @@ public class ShopManager {
         return id == null ? null : categories.get(id.toLowerCase());
     }
 
+    /** Toutes les cles "categorie:item" de la boutique, dans un ordre stable (celui du chargement
+     * de la config) : utilise par PromotionManager pour tirer un article du jour deterministe. */
+    public List<String> getAllItemKeysSorted() {
+        List<String> keys = new ArrayList<>();
+        for (ShopCategory category : categories.values()) {
+            for (ShopItem item : category.items()) {
+                keys.add(category.id() + ":" + item.id());
+            }
+        }
+        return keys;
+    }
+
     public ShopItem getItem(ShopCategory category, String itemId) {
         if (category == null || itemId == null) {
             return null;

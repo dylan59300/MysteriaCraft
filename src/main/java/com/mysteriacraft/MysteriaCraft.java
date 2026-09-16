@@ -83,6 +83,8 @@ import com.mysteriacraft.encheres.EnchereManager;
 import com.mysteriacraft.encheres.EnchereService;
 import com.mysteriacraft.encheres.commands.EnchereCommand;
 import com.mysteriacraft.shop.ShopManager;
+import com.mysteriacraft.shop.PromotionManager;
+import com.mysteriacraft.shop.TokenManager;
 import com.mysteriacraft.shop.ShopService;
 import com.mysteriacraft.shop.commands.ShopCommand;
 import com.mysteriacraft.kit.KitManager;
@@ -218,8 +220,11 @@ public final class MysteriaCraft extends JavaPlugin {
     private EnchereManager enchereManager;
     private EnchereService enchereService;
     private ConfigManager boutiqueConfig;
+    private ConfigManager promotionsConfig;
     private ShopManager shopManager;
     private ShopService shopService;
+    private PromotionManager promotionManager;
+    private TokenManager tokenManager;
     private ConfigManager kitsConfig;
     private KitManager kitManager;
     private KitService kitService;
@@ -685,9 +690,14 @@ public final class MysteriaCraft extends JavaPlugin {
 
     private void setupBoutique() {
         this.boutiqueConfig = new ConfigManager(this, "boutique.yml");
+        this.promotionsConfig = new ConfigManager(this, "promotions.yml");
         this.shopManager = new ShopManager(this, database, boutiqueConfig);
-        this.shopService = new ShopService(economyManager, rewardGiver, customItemManager, rankManager, talentManager, messages);
-        getCommand("boutique").setExecutor(new ShopCommand(this, boutiqueConfig, shopManager, shopService, economyManager, messages));
+        this.promotionManager = new PromotionManager(this, database, promotionsConfig);
+        this.tokenManager = new TokenManager(this, database, promotionsConfig);
+        this.shopService = new ShopService(shopManager, economyManager, rewardGiver, customItemManager, rankManager,
+                talentManager, promotionManager, tokenManager, messages);
+        getCommand("boutique").setExecutor(new ShopCommand(this, boutiqueConfig, promotionsConfig, shopManager,
+                shopService, promotionManager, economyManager, messages));
     }
 
     private void setupKits() {

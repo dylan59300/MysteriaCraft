@@ -5,6 +5,7 @@ import com.mysteriacraft.core.gui.ItemBuilder;
 import com.mysteriacraft.core.gui.Menu;
 import com.mysteriacraft.core.gui.MenuHolder;
 import com.mysteriacraft.economy.EconomyManager;
+import com.mysteriacraft.shop.PromotionManager;
 import com.mysteriacraft.shop.ShopManager;
 import com.mysteriacraft.shop.ShopService;
 import org.bukkit.Bukkit;
@@ -20,13 +21,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Menu listant les categories de la Boutique (+ un raccourci Favoris). Clic sur une categorie
- * ouvre ses articles. */
+/** Menu listant les categories de la Boutique (+ un raccourci Favoris et une banniere Happy
+ * Hour). Clic sur une categorie ouvre ses articles. */
 public class ShopCategoriesGui extends Menu {
 
     private static final int SIZE = 27;
     private static final int[] CATEGORY_SLOTS = {10, 11, 12, 13, 14, 15, 16};
     private static final int FAVORITES_SLOT = 22;
+    private static final int HAPPY_HOUR_SLOT = 4;
     private static final int PREVIOUS_SLOT = 18;
     private static final int NEXT_SLOT = 26;
 
@@ -34,6 +36,7 @@ public class ShopCategoriesGui extends Menu {
     private final ShopManager manager;
     private final ShopService service;
     private final EconomyManager economyManager;
+    private final PromotionManager promotionManager;
     private final MessageManager messages;
     private final Map<Integer, String> slotToCategoryId = new HashMap<>();
 
@@ -42,12 +45,13 @@ public class ShopCategoriesGui extends Menu {
     private int page = 0;
 
     public ShopCategoriesGui(Plugin plugin, Player viewer, ShopManager manager, ShopService service,
-                              EconomyManager economyManager, MessageManager messages) {
+                              EconomyManager economyManager, PromotionManager promotionManager, MessageManager messages) {
         super(viewer);
         this.plugin = plugin;
         this.manager = manager;
         this.service = service;
         this.economyManager = economyManager;
+        this.promotionManager = promotionManager;
         this.messages = messages;
     }
 
@@ -93,6 +97,20 @@ public class ShopCategoriesGui extends Menu {
                 .lore(List.of(messages.raw("boutique.gui-clic-ouvrir")))
                 .build());
 
+        if (promotionManager.isHappyHourActive()) {
+            inventory.setItem(HAPPY_HOUR_SLOT, new ItemBuilder(Material.CLOCK)
+                    .name(messages.raw("boutique.gui-happy-hour-active"))
+                    .lore(List.of(messages.raw("boutique.gui-happy-hour-reduction")
+                            .replace("{reduction}", String.valueOf((int) promotionManager.getHappyHourReductionPourcent()))))
+                    .build());
+        } else {
+            inventory.setItem(HAPPY_HOUR_SLOT, new ItemBuilder(Material.CLOCK)
+                    .name(messages.raw("boutique.gui-happy-hour-a-venir"))
+                    .lore(List.of(messages.raw("boutique.gui-happy-hour-heure")
+                            .replace("{heure}", String.valueOf(promotionManager.getHeureHappyHour()))))
+                    .build());
+        }
+
         int maxPage = maxPage();
         if (page > 0) {
             inventory.setItem(PREVIOUS_SLOT, new ItemBuilder(Material.ARROW)
@@ -134,7 +152,7 @@ public class ShopCategoriesGui extends Menu {
         if (category == null) {
             return;
         }
-        new ShopItemsGui(plugin, player, category, manager, service, economyManager, messages).open();
+        new ShopItemsGui(plugin, player, category, manager, service, economyManager, promotionManager, messages).open();
     }
 
     private void openFavorites(Player player) {
@@ -146,7 +164,7 @@ public class ShopCategoriesGui extends Menu {
                 }
                 ShopManager.ShopCategory favoritesCategory = new ShopManager.ShopCategory(
                         "favoris", messages.raw("boutique.gui-favoris"), Material.NETHER_STAR, favorites);
-                new ShopItemsGui(plugin, player, favoritesCategory, manager, service, economyManager, messages).open();
+                new ShopItemsGui(plugin, player, favoritesCategory, manager, service, economyManager, promotionManager, messages).open();
             });
         });
     }
