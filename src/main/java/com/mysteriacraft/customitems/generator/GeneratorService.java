@@ -9,8 +9,7 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.block.Hopper;
-import org.bukkit.entity.ArmorStand;
+import org.bukkit.block.Container;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -74,7 +73,6 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
             Map<String, String> placeholders = new HashMap<>();
             placeholders.put("generateur", type.displayName());
             messages.send(player, "generateur.rien-a-recuperer", placeholders);
-            updateHologram(block);
             return;
         }
 
@@ -93,7 +91,6 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
         Location loc = block.getLocation().add(0.5, 1.0, 0.5);
         loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 20, 0.4, 0.4, 0.4);
         player.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
-        updateHologram(block);
     }
 
     /** Recupere les exemplaires ENTIERS accumules par un generateur OBJET (voir
@@ -104,7 +101,6 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
             Map<String, String> placeholders = new HashMap<>();
             placeholders.put("generateur", type.displayName());
             messages.send(player, "generateur.rien-a-recuperer", placeholders);
-            updateHologram(block);
             return;
         }
 
@@ -121,7 +117,6 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
         Location loc = block.getLocation().add(0.5, 1.0, 0.5);
         loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 20, 0.4, 0.4, 0.4);
         player.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
-        updateHologram(block);
     }
 
     /** Fabrique l'ItemStack effectivement donne par un generateur OBJET : un item CUSTOM si
@@ -167,7 +162,6 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
         Location loc = block.getLocation().add(0.5, 1.0, 0.5);
         loc.getWorld().spawnParticle(Particle.END_ROD, loc, 20, 0.3, 0.5, 0.3, 0.02);
         player.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.6f);
-        updateHologram(block);
     }
 
     private void upgradeStorage(Player player, Block block, ItemStack boostItem) {
@@ -191,7 +185,6 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
         Location loc = block.getLocation().add(0.5, 1.0, 0.5);
         loc.getWorld().spawnParticle(Particle.END_ROD, loc, 20, 0.3, 0.5, 0.3, 0.02);
         player.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.6f);
-        updateHologram(block);
     }
 
     /** A appeler quand un generateur est casse : recupere automatiquement son stock pour le joueur
@@ -245,8 +238,8 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
         }
     }
 
-    /** Recalcule le stock de tous les generateurs actifs, applique l'auto-collecte (hopper colle)
-     * et met a jour leur hologramme. Appele periodiquement depuis MysteriaCraft (generateurs.yml). */
+    /** Recalcule le stock de tous les generateurs actifs et applique l'auto-collecte (conteneur
+     * colle). Appele periodiquement depuis MysteriaCraft (generateurs.yml). */
     public void tickGenerators() {
         List<Location> stale = new ArrayList<>();
         for (Location location : manager.getActiveGeneratorLocations()) {
@@ -264,30 +257,30 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
             if (manager.getAdjacentHopper(block) != null) {
                 autoCollect(block);
             }
-            updateHologram(block);
         }
         stale.forEach(manager::forgetGenerator);
     }
 
-    /** Auto-collecte silencieuse des qu'un hopper est colle a la machine : pour un generateur
-     * ARGENT, credite directement le proprietaire (le hopper sert de detecteur, pas de
-     * transporteur d'argent) ; pour un generateur OBJET, pousse REELLEMENT les exemplaires
-     * complets accumules dans l'inventaire du hopper (rien n'est credite tant que le hopper est
-     * plein : le surplus reste dans le stock du generateur, jamais perdu). */
+    /** Auto-collecte silencieuse des qu'un conteneur (coffre, coffre piege, tonneau ou hopper) est
+     * colle a la machine : pour un generateur ARGENT, credite directement le proprietaire (le
+     * conteneur sert de detecteur, pas de transporteur d'argent) ; pour un generateur OBJET, pousse
+     * REELLEMENT les exemplaires complets accumules dans l'inventaire du conteneur (rien n'est
+     * credite tant que celui-ci est plein : le surplus reste dans le stock du generateur, jamais
+     * perdu). */
     private void autoCollect(Block block) {
         GeneratorManager.GeneratorType type = manager.getBlockType(block);
         if (type != null && type.producesItems()) {
-            Block hopperBlock = manager.getAdjacentHopper(block);
-            if (hopperBlock == null || !(hopperBlock.getState() instanceof Hopper hopper)) {
+            Block containerBlock = manager.getAdjacentHopper(block);
+            if (containerBlock == null || !(containerBlock.getState() instanceof Container container)) {
                 return;
             }
             int whole = manager.collectWholeUnits(block);
             if (whole <= 0) {
                 return;
             }
-            Map<Integer, ItemStack> leftovers = hopper.getInventory().addItem(createResultItem(type, whole));
+            Map<Integer, ItemStack> leftovers = container.getInventory().addItem(createResultItem(type, whole));
             if (!leftovers.isEmpty()) {
-                // Le hopper n'a pas pu tout accepter : remet le reste dans le stock du generateur.
+                // Le conteneur n'a pas pu tout accepter : remet le reste dans le stock du generateur.
                 int refused = leftovers.values().stream().mapToInt(ItemStack::getAmount).sum();
                 manager.setStored(block, manager.getStored(block) + refused);
             }
@@ -310,38 +303,6 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
         double net = gross * (1.0 - manager.getTaxPercent() / 100.0);
         economyManager.deposit(uuid, net);
         return net;
-    }
-
-    private void updateHologram(Block block) {
-        ArmorStand stand = manager.getHologram(block);
-        if (stand == null) {
-            return;
-        }
-        GeneratorManager.GeneratorType type = manager.getBlockType(block);
-        if (type == null) {
-            return;
-        }
-
-        double stored = manager.getStored(block);
-        double effectiveStorageMax = manager.getEffectiveStorageMax(block);
-        int segments = 10;
-        double progress = effectiveStorageMax > 0 ? Math.min(1.0, stored / effectiveStorageMax) : 1.0;
-        int filled = Math.max(0, Math.min(segments, (int) Math.round(progress * segments)));
-        boolean full = filled >= segments;
-
-        String bar = "&f[" + (full ? "&a" : "&e") + "■".repeat(filled) + "&7" + "□".repeat(segments - filled) + "&f]";
-        double bonus = manager.getBonusPercent(block);
-        String bonusSuffix = bonus > 0 ? " &7(&d+" + formatPercent(bonus) + "&7)" : "";
-        double storageBonus = manager.getStorageBonusPercent(block);
-        String storageBonusSuffix = storageBonus > 0 ? " &7(&b+" + formatPercent(storageBonus) + "&7 stock)" : "";
-        String autoSuffix = manager.getAdjacentHopper(block) != null ? " &7| &b[AUTO]" : "";
-
-        String storedText = type.producesItems()
-                ? String.valueOf((int) Math.floor(stored)) + " &7/ &a" + (int) effectiveStorageMax
-                : economyManager.format(stored) + " &7/ &a" + economyManager.format(effectiveStorageMax);
-
-        String text = type.displayName() + bonusSuffix + storageBonusSuffix + " &7| " + bar + " &7| &a" + storedText + autoSuffix;
-        stand.setCustomName(MessageManager.color(text));
     }
 
     private String formatPercent(double value) {

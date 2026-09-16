@@ -107,7 +107,7 @@ generateurs:
     type-resultat: OBJET
     objet-resultat: IRON_INGOT
     montant: 8
-    intervalle-secondes: 600     # 10 minutes -> ~48 lingots/heure
+    intervalle-secondes: 5       # ~5760 lingots/heure
     stockage-max: 128
     recette:
       - materiel: IRON_BLOCK
@@ -123,7 +123,7 @@ generateurs:
     type-resultat: OBJET
     objet-resultat: GOLD_INGOT
     montant: 4
-    intervalle-secondes: 900     # 15 minutes -> ~16 lingots/heure
+    intervalle-secondes: 5       # ~2880 lingots/heure
     stockage-max: 64
     generateur-precedent: ressource_fer
     recette:
@@ -140,7 +140,7 @@ generateurs:
     type-resultat: OBJET
     objet-resultat: DIAMOND
     montant: 1
-    intervalle-secondes: 1200    # 20 minutes -> 3 diamants/heure
+    intervalle-secondes: 5       # ~720 diamants/heure
     stockage-max: 32
     generateur-precedent: ressource_or
     recette:
@@ -158,7 +158,7 @@ generateurs:
     type-resultat: OBJET
     objet-resultat: NETHERITE_SCRAP
     montant: 1
-    intervalle-secondes: 3600    # 1 heure -> 1 eclat de netherite/heure
+    intervalle-secondes: 5       # ~720 eclats de netherite/heure
     stockage-max: 8
     generateur-precedent: ressource_diamant
     recette:
@@ -179,7 +179,7 @@ generateurs:
     type-resultat: OBJET
     objet-resultat-custom: essence_enchantement
     montant: 1
-    intervalle-secondes: 1800    # 30 minutes -> 2 essences/heure
+    intervalle-secondes: 5       # ~720 essences/heure
     stockage-max: 8
     recette:
       - materiel: LAPIS_BLOCK

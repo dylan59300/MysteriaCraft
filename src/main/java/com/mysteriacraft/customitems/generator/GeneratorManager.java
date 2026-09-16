@@ -16,7 +16,6 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapelessRecipe;
@@ -576,8 +575,6 @@ public class GeneratorManager {
         state.lastTickMillis = System.currentTimeMillis();
         generators.put(key, state);
         persistAsync(key, state);
-
-        spawnHologram(block);
     }
 
     /** A appeler quand un generateur est casse, pour arreter son suivi (accumulation/hologramme). */
@@ -618,12 +615,15 @@ public class GeneratorManager {
         return count;
     }
 
-    /** Bloc conteneur (hopper) colle a une face de ce generateur, ou null. Coller un hopper active
-     * l'auto-collecte : l'argent genere est credite en continu au proprietaire sans clic-droit. */
+    /** Bloc conteneur (coffre, coffre piege, tonneau ou hopper) colle a une face de ce generateur,
+     * ou null. Coller un conteneur active l'auto-collecte : l'argent genere est credite en continu
+     * au proprietaire sans clic-droit (pour un generateur OBJET, les objets sont deposes dedans). */
     public Block getAdjacentHopper(Block generatorBlock) {
         for (BlockFace face : ADJACENT_FACES) {
             Block relative = generatorBlock.getRelative(face);
-            if (relative.getType() == Material.HOPPER) {
+            Material material = relative.getType();
+            if (material == Material.HOPPER || material == Material.CHEST
+                    || material == Material.TRAPPED_CHEST || material == Material.BARREL) {
                 return relative;
             }
         }
@@ -705,30 +705,8 @@ public class GeneratorManager {
         return whole;
     }
 
-    // ---- Hologramme d'etat (ArmorStand invisible affichant le stock accumule) ----
-
-    public void spawnHologram(Block block) {
-        if (getHologram(block) != null) {
-            return;
-        }
-        Location key = blockKey(block);
-        GeneratorState state = generators.get(key);
-        if (state == null) {
-            return;
-        }
-        Location location = block.getLocation().add(0.5, 1.3, 0.5);
-        ArmorStand stand = (ArmorStand) block.getWorld().spawnEntity(location, EntityType.ARMOR_STAND);
-        stand.setInvisible(true);
-        stand.setMarker(true);
-        stand.setGravity(false);
-        stand.setSmall(true);
-        stand.setBasePlate(false);
-        stand.setCustomNameVisible(true);
-        stand.setCustomName(MessageManager.color("&2&lGenerateur"));
-        stand.setPersistent(true);
-        state.hologramUuid = stand.getUniqueId();
-        persistAsync(key, state);
-    }
+    // ---- Nettoyage d'un ancien hologramme (fonctionnalite retiree : plus d'ArmorStand affiche
+    // au-dessus des generateurs) ----
 
     public ArmorStand getHologram(Block block) {
         GeneratorState state = generators.get(blockKey(block));
