@@ -99,6 +99,26 @@ import com.mysteriacraft.storage.commands.SacCommand;
 import com.mysteriacraft.storage.commands.CoffreFortCommand;
 import com.mysteriacraft.storage.listeners.StorageListener;
 import com.mysteriacraft.tools.commands.SortCommand;
+import com.mysteriacraft.raffinerie.RaffinerieManager;
+import com.mysteriacraft.raffinerie.RaffinerieService;
+import com.mysteriacraft.raffinerie.commands.RaffinerieCommand;
+import com.mysteriacraft.raffinerie.listeners.RaffinerieListener;
+import com.mysteriacraft.recyclage.RecyclageManager;
+import com.mysteriacraft.recyclage.RecyclageService;
+import com.mysteriacraft.recyclage.commands.RecyclageCommand;
+import com.mysteriacraft.grappin.GrappinManager;
+import com.mysteriacraft.grappin.GrappinService;
+import com.mysteriacraft.grappin.listeners.GrappinListener;
+import com.mysteriacraft.gemmes.GemmeManager;
+import com.mysteriacraft.gemmes.GemmeService;
+import com.mysteriacraft.gemmes.commands.GemmeCommand;
+import com.mysteriacraft.runes.RuneManager;
+import com.mysteriacraft.runes.RuneService;
+import com.mysteriacraft.runes.commands.RuneCommand;
+import com.mysteriacraft.runes.listeners.RuneListener;
+import com.mysteriacraft.marchenoir.MarcheNoirManager;
+import com.mysteriacraft.marchenoir.MarcheNoirService;
+import com.mysteriacraft.marchenoir.commands.MarcheNoirCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -189,6 +209,24 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager storageConfig;
     private PersonalStorageManager personalStorageManager;
     private StorageService storageService;
+    private ConfigManager raffinerieConfig;
+    private RaffinerieManager raffinerieManager;
+    private RaffinerieService raffinerieService;
+    private ConfigManager recyclageConfig;
+    private RecyclageManager recyclageManager;
+    private RecyclageService recyclageService;
+    private ConfigManager grappinConfig;
+    private GrappinManager grappinManager;
+    private GrappinService grappinService;
+    private ConfigManager gemmesConfig;
+    private GemmeManager gemmeManager;
+    private GemmeService gemmeService;
+    private ConfigManager runesConfig;
+    private RuneManager runeManager;
+    private RuneService runeService;
+    private ConfigManager marcheNoirConfig;
+    private MarcheNoirManager marcheNoirManager;
+    private MarcheNoirService marcheNoirService;
 
     @Override
     public void onEnable() {
@@ -274,6 +312,24 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Outils divers (/trier) ----
         setupTools();
+
+        // ---- Raffinerie ----
+        setupRaffinerie();
+
+        // ---- Recyclage (depend de customItemManager) ----
+        setupRecyclage();
+
+        // ---- Grappin (depend de customItemManager) ----
+        setupGrappin();
+
+        // ---- Gemmes (depend de customItemManager) ----
+        setupGemmes();
+
+        // ---- Runes (depend de customItemManager) ----
+        setupRunes();
+
+        // ---- Marche Noir (depend d'economyManager et rewardGiver) ----
+        setupMarcheNoir();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -598,6 +654,51 @@ public final class MysteriaCraft extends JavaPlugin {
 
     private void setupTools() {
         getCommand("trier").setExecutor(new SortCommand(messages));
+    }
+
+    private void setupRaffinerie() {
+        this.raffinerieConfig = new ConfigManager(this, "raffinerie.yml");
+        this.raffinerieManager = new RaffinerieManager(this, raffinerieConfig);
+        this.raffinerieService = new RaffinerieService(raffinerieManager, messages);
+        Bukkit.getPluginManager().registerEvents(new RaffinerieListener(raffinerieManager, raffinerieService), this);
+        getCommand("raffinerie").setExecutor(new RaffinerieCommand(raffinerieConfig, raffinerieManager, messages));
+    }
+
+    private void setupRecyclage() {
+        this.recyclageConfig = new ConfigManager(this, "recyclage.yml");
+        this.recyclageManager = new RecyclageManager(this, recyclageConfig);
+        this.recyclageService = new RecyclageService(recyclageManager, customItemManager, messages);
+        getCommand("recycler").setExecutor(new RecyclageCommand(recyclageConfig, recyclageManager, recyclageService, messages));
+    }
+
+    private void setupGrappin() {
+        this.grappinConfig = new ConfigManager(this, "grappin.yml");
+        this.grappinManager = new GrappinManager(grappinConfig);
+        this.grappinService = new GrappinService(grappinManager, messages);
+        Bukkit.getPluginManager().registerEvents(new GrappinListener(grappinManager, grappinService, customItemManager), this);
+    }
+
+    private void setupGemmes() {
+        this.gemmesConfig = new ConfigManager(this, "gemmes.yml");
+        this.gemmeManager = new GemmeManager(this, gemmesConfig);
+        this.gemmeService = new GemmeService(gemmeManager, customItemManager, messages);
+        getCommand("gemme").setExecutor(new GemmeCommand(gemmesConfig, gemmeManager, gemmeService, messages));
+    }
+
+    private void setupRunes() {
+        this.runesConfig = new ConfigManager(this, "runes.yml");
+        this.runeManager = new RuneManager(this, runesConfig);
+        this.runeService = new RuneService(runeManager, customItemManager, messages);
+        Bukkit.getPluginManager().registerEvents(new RuneListener(runeService), this);
+        getCommand("rune").setExecutor(new RuneCommand(runesConfig, runeManager, runeService, messages));
+    }
+
+    private void setupMarcheNoir() {
+        this.marcheNoirConfig = new ConfigManager(this, "marche_noir.yml");
+        this.marcheNoirManager = new MarcheNoirManager(this, marcheNoirConfig);
+        this.marcheNoirService = new MarcheNoirService(marcheNoirManager, economyManager, rewardGiver, messages);
+        getCommand("marchenoir").setExecutor(
+                new MarcheNoirCommand(marcheNoirConfig, marcheNoirManager, marcheNoirService, economyManager, messages));
     }
 
     @Override

@@ -142,6 +142,30 @@ commands:
   trier:
     description: Range et fusionne automatiquement votre inventaire
     usage: /<command>
+  raffinerie:
+    description: Recharge la configuration de la Raffinerie (admin)
+    usage: /<command> reload
+    permission: mysteriacraft.raffinerie.admin
+  recycler:
+    description: Recycle l'item custom use en main contre des materiaux
+    usage: /<command> [reload]
+    # Pas de "permission:" ici : recycler doit rester accessible a tout joueur. reload est verifie
+    # manuellement dans le code (mysteriacraft.recyclage.admin).
+  gemme:
+    description: Insere la gemme en main secondaire dans l'equipement en main principale
+    usage: /<command> [inserer|reload]
+    # Pas de "permission:" ici : inserer doit rester accessible a tout joueur. reload est verifie
+    # manuellement dans le code (mysteriacraft.gemme.admin).
+  rune:
+    description: Grave la rune en main secondaire sur l'arme en main principale
+    usage: /<command> [graver|reload]
+    # Pas de "permission:" ici : graver doit rester accessible a tout joueur. reload est verifie
+    # manuellement dans le code (mysteriacraft.rune.admin).
+  marchenoir:
+    description: Ouvre le menu du Marche Noir (selection aleatoire d'objets rares)
+    usage: /<command> [reload]
+    # Pas de "permission:" ici : ouvrir le menu doit rester accessible a tout joueur. reload est
+    # verifie manuellement dans le code (mysteriacraft.marchenoir.admin).
 
 permissions:
   mysteriacraft.eco.admin:
@@ -207,3 +231,18 @@ permissions:
   mysteriacraft.kit.vip:
     description: Autorise la recuperation du Kit VIP (a lier a un rang)
     default: false
+  mysteriacraft.raffinerie.admin:
+    description: Autorise la gestion admin de la Raffinerie (reload)
+    default: op
+  mysteriacraft.recyclage.admin:
+    description: Autorise la gestion admin du Recyclage (reload)
+    default: op
+  mysteriacraft.gemme.admin:
+    description: Autorise la gestion admin des Gemmes (reload)
+    default: op
+  mysteriacraft.rune.admin:
+    description: Autorise la gestion admin des Runes (reload)
+    default: op
+  mysteriacraft.marchenoir.admin:
+    description: Autorise la gestion admin du Marche Noir (reload)
+    default: op

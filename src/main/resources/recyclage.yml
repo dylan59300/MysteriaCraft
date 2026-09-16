@@ -1,0 +1,24 @@
+# =========================================
+#   MysteriaCraft - Configuration du Recyclage
+# =========================================
+# /recycler consomme l'item custom use tenu en main et rend une liste de materiaux vanilla de
+# base (voir custom_items.yml pour la liste des ids d'items custom existants).
+items:
+  epee_guerrier:
+    recompenses:
+      - materiel: IRON_INGOT
+        quantite: 2
+      - materiel: STICK
+        quantite: 1
+
+  pioche_expert:
+    recompenses:
+      - materiel: DIAMOND
+        quantite: 1
+      - materiel: IRON_INGOT
+        quantite: 2
+
+  kit_argent:
+    recompenses:
+      - materiel: IRON_INGOT
+        quantite: 3

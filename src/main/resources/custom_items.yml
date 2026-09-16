@@ -503,6 +503,173 @@ items:
         G: GOLD_INGOT
         E: ENDER_EYE
 
+  gemme_force:
+    nom: "&cGemme de Force"
+    lore:
+      - "&7Tenez cette gemme en main secondaire"
+      - "&7et un equipement en main principale,"
+      - "&7puis /gemme inserer."
+    item-de-base: REDSTONE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 30
+    # Craftable a l'etabli : 4 redstones + 4 lingots de fer autour d'un diamant.
+    recette:
+      forme:
+        - "RFR"
+        - "FDF"
+        - "RFR"
+      ingredients:
+        R: REDSTONE
+        F: IRON_INGOT
+        D: DIAMOND
+
+  gemme_protection:
+    nom: "&9Gemme de Protection"
+    lore:
+      - "&7Tenez cette gemme en main secondaire"
+      - "&7et un equipement en main principale,"
+      - "&7puis /gemme inserer."
+    item-de-base: LAPIS_LAZULI
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 30
+    # Craftable a l'etabli : 4 lapis + 4 lingots de fer autour d'un diamant.
+    recette:
+      forme:
+        - "LFL"
+        - "FDF"
+        - "LFL"
+      ingredients:
+        L: LAPIS_LAZULI
+        F: IRON_INGOT
+        D: DIAMOND
+
+  gemme_vitalite:
+    nom: "&aGemme de Vitalite"
+    lore:
+      - "&7Tenez cette gemme en main secondaire"
+      - "&7et un equipement en main principale,"
+      - "&7puis /gemme inserer."
+    item-de-base: EMERALD
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 30
+    # Craftable a l'etabli : 4 emeraudes + 4 pommes dorees autour d'un diamant.
+    recette:
+      forme:
+        - "EPE"
+        - "PDP"
+        - "EPE"
+      ingredients:
+        E: EMERALD
+        P: GOLDEN_APPLE
+        D: DIAMOND
+
+  gemme_agilite:
+    nom: "&bGemme d'Agilite"
+    lore:
+      - "&7Tenez cette gemme en main secondaire"
+      - "&7et un equipement en main principale,"
+      - "&7puis /gemme inserer."
+    item-de-base: QUARTZ
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 30
+    # Craftable a l'etabli : 4 quartz + 4 plumes autour d'un diamant.
+    recette:
+      forme:
+        - "QPQ"
+        - "PDP"
+        - "QPQ"
+      ingredients:
+        Q: QUARTZ
+        P: FEATHER
+        D: DIAMOND
+
+  rune_feu:
+    nom: "&6Rune de Flammes"
+    lore:
+      - "&7Tenez cette rune en main secondaire"
+      - "&7et une arme en main principale,"
+      - "&7puis /rune graver."
+    item-de-base: BLAZE_POWDER
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 25
+    # Craftable a l'etabli : 4 poudres de blaze + 4 charbons autour d'un lingot d'or.
+    recette:
+      forme:
+        - "BCB"
+        - "CGC"
+        - "BCB"
+      ingredients:
+        B: BLAZE_POWDER
+        C: COAL
+        G: GOLD_INGOT
+
+  rune_glace:
+    nom: "&bRune de Givre"
+    lore:
+      - "&7Tenez cette rune en main secondaire"
+      - "&7et une arme en main principale,"
+      - "&7puis /rune graver."
+    item-de-base: PACKED_ICE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 25
+    # Craftable a l'etabli : 4 glaces + 4 lapis autour d'un lingot d'or.
+    recette:
+      forme:
+        - "IPI"
+        - "PGP"
+        - "IPI"
+      ingredients:
+        I: PACKED_ICE
+        P: LAPIS_LAZULI
+        G: GOLD_INGOT
+
+  rune_vie:
+    nom: "&dRune de Vie"
+    lore:
+      - "&7Tenez cette rune en main secondaire"
+      - "&7et une arme en main principale,"
+      - "&7puis /rune graver."
+    item-de-base: GHAST_TEAR
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 25
+    # Craftable a l'etabli : 4 larmes de ghast + 4 pommes dorees autour d'un lingot d'or.
+    recette:
+      forme:
+        - "TPT"
+        - "PGP"
+        - "TPT"
+      ingredients:
+        T: GHAST_TEAR
+        P: GOLDEN_APPLE
+        G: GOLD_INGOT
+
+  grappin:
+    nom: "&b&lGrappin"
+    lore:
+      - "&7Clic-droit pour vous projeter"
+      - "&7vers le bloc vise."
+    item-de-base: FISHING_ROD
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 4 fils + 4 lingots de fer autour d'une canne a peche.
+    recette:
+      forme:
+        - "SFS"
+        - "FCF"
+        - "SFS"
+      ingredients:
+        S: STRING
+        F: IRON_INGOT
+        C: FISHING_ROD
+
   amelioration_sac:
     nom: "&6&lAmelioration de Sac"
     lore:

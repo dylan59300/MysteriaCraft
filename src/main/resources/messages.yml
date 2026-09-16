@@ -480,6 +480,46 @@ stockage:
 trier:
   effectue: "&aVotre inventaire a ete trie et range."
 
+raffinerie:
+  minerai-non-accepte: "&cCe minerai ne peut pas etre raffine."
+  raffine: "&aVous avez raffine &e{quantite}x {objet}&a."
+  raffine-bonus: "&d&lLingot bonus ! &aVous avez raffine &e{quantite}x {objet}&a."
+  reload: "&aLa raffinerie a ete rechargee."
+
+recyclage:
+  non-recyclable: "&cCet item ne peut pas etre recycle (tenez-en un recyclable en main)."
+  reussi: "&aItem recycle ! Vous avez recu : &e{materiaux}&a."
+  reload: "&aLe recyclage a ete recharge."
+
+grappin:
+  rien-vise: "&cAucun bloc a portee dans votre ligne de mire."
+
+gemme:
+  usage: "&cUsage : /gemme inserer &7(equipement en main principale, gemme en main secondaire)"
+  equipement-requis: "&cTenez un equipement (arme/outil/armure) en main principale."
+  gemme-requise-main-secondaire: "&cTenez une gemme valide en main secondaire."
+  equipement-invalide: "&cCet objet ne peut pas recevoir de gemme."
+  inseree: "&d&lGemme inseree ! &a{gemme} &aappliquee a votre equipement."
+  reload: "&aLes gemmes ont ete rechargees."
+
+rune:
+  usage: "&cUsage : /rune graver &7(arme en main principale, rune en main secondaire)"
+  arme-requise: "&cTenez une arme en main principale."
+  rune-requise-main-secondaire: "&cTenez une rune valide en main secondaire."
+  gravee: "&5&lRune gravee ! &a{rune} &aappliquee a votre arme."
+  reload: "&aLes runes ont ete rechargees."
+
+marchenoir:
+  titre-gui: "&0Marche Noir"
+  offre-expiree: "&cCette offre n'est plus disponible (la selection a change)."
+  fonds-insuffisants: "&cVous n'avez pas assez d'argent pour cet achat (&e{prix}&c requis)."
+  achat-reussi: "&aVous avez achete &e{item} &apour &e{prix}&a au Marche Noir."
+  reload: "&aLe Marche Noir a ete recharge."
+  gui-prochaine-rotation: "&6&lProchaine rotation"
+  gui-temps-restant: "&7Dans : &e{temps}"
+  gui-prix: "&7Prix : &e{prix}"
+  gui-clic-acheter: "&eClic gauche pour acheter"
+
 kit:
   reload: "&aLes kits ont ete recharges."
   introuvable: "&cCe kit n'existe pas. &7Kits valides : &e{ids}"

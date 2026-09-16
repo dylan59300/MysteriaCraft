@@ -1,0 +1,13 @@
+# =========================================
+#   MysteriaCraft - Configuration de la Raffinerie
+# =========================================
+# La Raffinerie est materialisee par un bloc unique (n'importe quel bloc pose de ce materiau agit
+# comme une Raffinerie, sans suivi de position). Clic-droit avec un minerai brut en main le
+# convertit en son lingot (recettes ci-dessous), avec une chance d'obtenir un lingot BONUS.
+bloc: SMOKER
+chance-bonus-pourcent: 15
+recettes:
+  RAW_IRON: IRON_INGOT
+  RAW_GOLD: GOLD_INGOT
+  RAW_COPPER: COPPER_INGOT
+  ANCIENT_DEBRIS: NETHERITE_SCRAP
