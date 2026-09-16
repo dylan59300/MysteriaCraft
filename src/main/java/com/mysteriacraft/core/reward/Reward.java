@@ -13,6 +13,7 @@ import org.bukkit.inventory.ItemStack;
  * - LUCKYBLOCK : luckyBlockFamilyId
  * - OBJET_CUSTOM : customItemId + amount
  * - GENERATEUR : customItemId reutilise comme id de type de generateur + amount
+ * - GENERATEUR_LUCKYBLOCK : luckyBlockFamilyId reutilise comme famille ciblee + amount
  * - MACHINE : customItemId reutilise comme id de machine ("transformation" ou "miniere") + amount
  * - AGRANDISSEMENT_ILE : amount reutilise comme nombre de blocs de rayon offerts
  * - TITRE_CHAT : customItemId reutilise comme texte du titre debloque
@@ -59,6 +60,10 @@ public record Reward(
         return new Reward(RewardType.GENERATEUR, null, 0, amount, 0, 0, null, null, generatorTypeId, displayName, displayIcon);
     }
 
+    public static Reward ofGeneratorLuckyBlock(String familyId, int amount, String displayName, ItemStack displayIcon) {
+        return new Reward(RewardType.GENERATEUR_LUCKYBLOCK, null, 0, amount, 0, 0, null, familyId, null, displayName, displayIcon);
+    }
+
     public static Reward ofMachine(String machineId, int amount, String displayName, ItemStack displayIcon) {
         return new Reward(RewardType.MACHINE, null, 0, amount, 0, 0, null, null, machineId, displayName, displayIcon);
     }
@@ -84,8 +89,9 @@ public record Reward(
                 yield new Reward(type, doubledItem, economyAmount, amount, boosterDurationSeconds, boosterMultiplier,
                         petId, luckyBlockFamilyId, customItemId, displayName, displayIcon);
             }
-            case OBJET_CUSTOM, GENERATEUR, MACHINE, AGRANDISSEMENT_ILE -> new Reward(type, item, economyAmount, amount * 2,
-                    boosterDurationSeconds, boosterMultiplier, petId, luckyBlockFamilyId, customItemId, displayName, displayIcon);
+            case OBJET_CUSTOM, GENERATEUR, GENERATEUR_LUCKYBLOCK, MACHINE, AGRANDISSEMENT_ILE -> new Reward(type, item,
+                    economyAmount, amount * 2, boosterDurationSeconds, boosterMultiplier,
+                    petId, luckyBlockFamilyId, customItemId, displayName, displayIcon);
             case BOOST_XP -> new Reward(type, item, economyAmount, amount, boosterDurationSeconds * 2, boosterMultiplier,
                     petId, luckyBlockFamilyId, customItemId, displayName, displayIcon);
             default -> this;

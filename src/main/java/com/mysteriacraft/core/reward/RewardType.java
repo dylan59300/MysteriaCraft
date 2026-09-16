@@ -18,6 +18,8 @@ public enum RewardType {
     OBJET_CUSTOM,
     /** Donne un Generateur d'Argent d'un type precis (module Generateurs). */
     GENERATEUR,
+    /** Donne un Generateur de Lucky Block cible sur une famille precise (module LuckyBlock). */
+    GENERATEUR_LUCKYBLOCK,
     /** Donne une Machine ("transformation" ou "miniere") a son tier de base (module Custom Items). */
     MACHINE,
     /** Agrandit gratuitement le rayon protege de l'ile du joueur, d'un nombre de blocs fixe

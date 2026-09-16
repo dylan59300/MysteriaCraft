@@ -21,8 +21,9 @@
 #              reduction = min(reduction-max, (total / seuil) * reduction-pourcent), en %.
 #   offres : chaque entree coute "cout" pieces d'echange (avant reduction fidelite, retirees de
 #            l'inventaire du joueur, meme reparties sur plusieurs piles) contre la "recompense"
-#            (n'importe quel type de Reward : ITEM, ECONOMIE, OBJET_CUSTOM, GENERATEUR, MACHINE,
-#            AGRANDISSEMENT_ILE, TITRE_CHAT...). limite-periode (JOUR/SEMAINE/absent) + limite-
+#            (n'importe quel type de Reward : ITEM, ECONOMIE, OBJET_CUSTOM, GENERATEUR,
+#            GENERATEUR_LUCKYBLOCK, MACHINE, AGRANDISSEMENT_ILE, TITRE_CHAT...). limite-periode
+#            (JOUR/SEMAINE/absent) + limite-
 #            quantite : nombre maximum d'achats de CETTE offre par joueur sur la periode donnee.
 #   rachats : le SENS INVERSE des offres (accessible via le bouton "Vendre des ressources" du menu
 #             du marchand) : le joueur donne "quantite" exemplaires de "materiel" (materiau
@@ -126,6 +127,42 @@ marchands:
         recompense:
           type: GENERATEUR
           type-id: ressource_essence
+          quantite: 1
+
+      generateur_lb_commune:
+        cout: 10
+        limite-periode: JOUR
+        limite-quantite: 2
+        recompense:
+          type: GENERATEUR_LUCKYBLOCK
+          famille: commune
+          quantite: 1
+
+      generateur_lb_rare:
+        cout: 25
+        limite-periode: SEMAINE
+        limite-quantite: 2
+        recompense:
+          type: GENERATEUR_LUCKYBLOCK
+          famille: rare
+          quantite: 1
+
+      generateur_lb_epique:
+        cout: 50
+        limite-periode: SEMAINE
+        limite-quantite: 1
+        recompense:
+          type: GENERATEUR_LUCKYBLOCK
+          famille: epique
+          quantite: 1
+
+      generateur_lb_legendaire:
+        cout: 100
+        limite-periode: SEMAINE
+        limite-quantite: 1
+        recompense:
+          type: GENERATEUR_LUCKYBLOCK
+          famille: legendaire
           quantite: 1
 
       carburant_ameliore_lot:

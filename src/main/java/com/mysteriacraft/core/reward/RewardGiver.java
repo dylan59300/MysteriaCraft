@@ -27,6 +27,7 @@ public class RewardGiver {
     private LuckyBlockGiveHandler luckyBlockGiveHandler;
     private CustomItemGiveHandler customItemGiveHandler;
     private GeneratorGiveHandler generatorGiveHandler;
+    private GeneratorLuckyBlockGiveHandler generatorLuckyBlockGiveHandler;
     private MachineGiveHandler machineGiveHandler;
     private IslandUpgradeGiveHandler islandUpgradeGiveHandler;
     private TitleUnlockHandler titleUnlockHandler;
@@ -59,6 +60,12 @@ public class RewardGiver {
     /** Petit contrat minimal pour donner un Generateur d'Argent, implemente par GeneratorService. */
     public interface GeneratorGiveHandler {
         void giveGenerator(Player player, String generatorTypeId, int amount);
+    }
+
+    /** Petit contrat minimal pour donner un Generateur de Lucky Block cible sur une famille
+     * precise, implemente par LuckyBlockGeneratorService. */
+    public interface GeneratorLuckyBlockGiveHandler {
+        void giveGeneratorLuckyBlock(Player player, String familyId, int amount);
     }
 
     /** Petit contrat minimal pour donner une Machine ("transformation" ou "miniere"), implemente
@@ -96,6 +103,10 @@ public class RewardGiver {
 
     public void setGeneratorGiveHandler(GeneratorGiveHandler generatorGiveHandler) {
         this.generatorGiveHandler = generatorGiveHandler;
+    }
+
+    public void setGeneratorLuckyBlockGiveHandler(GeneratorLuckyBlockGiveHandler generatorLuckyBlockGiveHandler) {
+        this.generatorLuckyBlockGiveHandler = generatorLuckyBlockGiveHandler;
     }
 
     public void setMachineGiveHandler(MachineGiveHandler machineGiveHandler) {
@@ -136,6 +147,11 @@ public class RewardGiver {
             case GENERATEUR -> {
                 if (generatorGiveHandler != null) {
                     generatorGiveHandler.giveGenerator(player, reward.customItemId(), Math.max(1, reward.amount()));
+                }
+            }
+            case GENERATEUR_LUCKYBLOCK -> {
+                if (generatorLuckyBlockGiveHandler != null) {
+                    generatorLuckyBlockGiveHandler.giveGeneratorLuckyBlock(player, reward.luckyBlockFamilyId(), Math.max(1, reward.amount()));
                 }
             }
             case MACHINE -> {

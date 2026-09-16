@@ -20,7 +20,7 @@
 #
 # effets[].type : BON | MAUVAIS
 # effets[].recompense (si BON) : ITEM, ECONOMIE, BOOST_XP, PET, LUCKYBLOCK,
-#                                 OBJET_CUSTOM, GENERATEUR ou MACHINE (meme format que
+#                                 OBJET_CUSTOM, GENERATEUR, GENERATEUR_LUCKYBLOCK ou MACHINE (meme format que
 #                                 battlepass.yml/quests.yml).
 # effets[].action (si MAUVAIS) : TNT | MOBS | POTION | FOUDRE
 #
@@ -276,6 +276,12 @@ familles:
           type: OBJET_CUSTOM
           item-id: armure_garde_bottes
           quantite: 1
+      - type: BON
+        chance: 12
+        recompense:
+          type: GENERATEUR_LUCKYBLOCK
+          famille: commune
+          quantite: 1
 
   rare:
     nom: "&b&lLucky Block Rare"
@@ -403,6 +409,12 @@ familles:
         recompense:
           type: OBJET_CUSTOM
           item-id: armure_paladin_plastron
+          quantite: 1
+      - type: BON
+        chance: 12
+        recompense:
+          type: GENERATEUR_LUCKYBLOCK
+          famille: rare
           quantite: 1
 
   epique:
@@ -533,6 +545,12 @@ familles:
         recompense:
           type: OBJET_CUSTOM
           item-id: oeuf_pnj_forgeron
+          quantite: 1
+      - type: BON
+        chance: 10
+        recompense:
+          type: GENERATEUR_LUCKYBLOCK
+          famille: epique
           quantite: 1
 
   legendaire:
@@ -665,6 +683,13 @@ familles:
         recompense:
           type: OBJET_CUSTOM
           item-id: oeuf_pnj_marchand
+          quantite: 1
+      - type: BON
+        chance: 10
+        pity: true
+        recompense:
+          type: GENERATEUR_LUCKYBLOCK
+          famille: legendaire
           quantite: 1
 
   # Exemple de famille SAISONNIERE (voir actif-du/actif-au ci-dessus) : disponible seulement du

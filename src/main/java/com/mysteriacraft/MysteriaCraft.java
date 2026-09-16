@@ -412,6 +412,25 @@ public final class MysteriaCraft extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this,
                 () -> luckyBlockGeneratorService.tickAll(luckyBlockGeneratorManager.getActiveGeneratorLocations()),
                 100L, 100L);
+
+        // Permet au Generateur de Lucky Block d'etre distribue comme n'importe quelle Reward
+        // generique (type GENERATEUR_LUCKYBLOCK : LuckyBlock/BattlePass/Quetes/Marchand/paliers d'ile).
+        rewardGiver.setGeneratorLuckyBlockGiveHandler((player, familyId, amount) -> {
+            var family = luckyBlockManager.getFamily(familyId);
+            if (family == null) {
+                return;
+            }
+            ItemStack item = luckyBlockGeneratorManager.createItem(family, amount);
+            Map<Integer, ItemStack> leftovers = player.getInventory().addItem(item);
+            if (!leftovers.isEmpty()) {
+                leftovers.values().forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
+                messages.send(player, "general.inventaire-plein");
+            }
+        });
+
+        // Injecte apres-coup (setter) : le module Generateur de Lucky Block n'existe pas encore
+        // quand machineService est construit dans setupCustomItems() (appelee avant celle-ci).
+        machineService.setLuckyBlockGeneratorManager(luckyBlockGeneratorManager);
     }
 
     private void setupGuide() {

@@ -7,6 +7,7 @@ import com.mysteriacraft.customitems.generator.GeneratorManager;
 import com.mysteriacraft.customitems.miningmachine.MiningMachineManager;
 import com.mysteriacraft.luckyblock.LuckyBlockFamily;
 import com.mysteriacraft.luckyblock.LuckyBlockManager;
+import com.mysteriacraft.luckyblock.generator.LuckyBlockGeneratorManager;
 import com.mysteriacraft.quests.QuestService;
 import com.mysteriacraft.quests.QuestType;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -61,6 +62,7 @@ public class MachineService {
      * un court instant au demarrage ; pickRandomLoot() les ignore tant qu'ils ne sont pas definis. */
     private GeneratorManager generatorManager;
     private MiningMachineManager miningMachineManager;
+    private LuckyBlockGeneratorManager luckyBlockGeneratorManager;
 
     /** Tache d'actionbar en cours par joueur, pour eviter d'en empiler plusieurs en parallele. */
     private final Map<UUID, BukkitTask> cooldownActionbarTasks = new ConcurrentHashMap<>();
@@ -81,6 +83,10 @@ public class MachineService {
 
     public void setMiningMachineManager(MiningMachineManager miningMachineManager) {
         this.miningMachineManager = miningMachineManager;
+    }
+
+    public void setLuckyBlockGeneratorManager(LuckyBlockGeneratorManager luckyBlockGeneratorManager) {
+        this.luckyBlockGeneratorManager = luckyBlockGeneratorManager;
     }
 
     public void handleInteract(Player player, Block machineBlock) {
@@ -350,10 +356,12 @@ public class MachineService {
     /** Pioche au hasard, PONDERE par machine-transformation.poids-loot (voir custom_items.yml),
      * parmi : tous les items custom charges depuis custom_items.yml qui n'excluent pas ce tirage
      * (voir CustomItemDefinition#excluLootMachine), tous les types de Generateurs (voir
-     * generateurs.yml), la Machine a Transformation elle-meme et la Machine a Miner (les 2
-     * dernieres uniquement si leurs managers sont deja injectes, voir setGeneratorManager/
-     * setMiningMachineManager). Plus un poids est eleve, plus l'entree a de chances de sortir.
-     * Ne renvoie jamais null : la Machine a Transformation elle-meme est toujours candidate. */
+     * generateurs.yml), un Generateur de Lucky Block pour chaque famille ACTUELLEMENT active (voir
+     * luckyblocks.yml), la Machine a Transformation elle-meme et la Machine a Miner (ces 3
+     * dernieres categories uniquement si leurs managers sont deja injectes, voir
+     * setGeneratorManager/setLuckyBlockGeneratorManager/setMiningMachineManager). Plus un poids
+     * est eleve, plus l'entree a de chances de sortir. Ne renvoie jamais null : la Machine a
+     * Transformation elle-meme est toujours candidate. */
     private MachineLoot pickRandomLoot() {
         List<LootCandidate> candidates = new ArrayList<>();
 
@@ -369,6 +377,15 @@ public class MachineService {
             for (GeneratorManager.GeneratorType type : generatorManager.getTypes()) {
                 candidates.add(new LootCandidate(manager.getGeneratorLootWeight(type.id()),
                         () -> new MachineLoot(type.displayName(), generatorManager.createGeneratorItem(type, 1))));
+            }
+        }
+
+        if (luckyBlockGeneratorManager != null) {
+            for (LuckyBlockFamily family : luckyBlockManager.getFamiliesSorted()) {
+                candidates.add(new LootCandidate(manager.getGeneratorLuckyBlockLootWeight(family.id()), () -> {
+                    ItemStack item = luckyBlockGeneratorManager.createItem(family, 1);
+                    return new MachineLoot(item.getItemMeta().getDisplayName(), item);
+                }));
             }
         }
 

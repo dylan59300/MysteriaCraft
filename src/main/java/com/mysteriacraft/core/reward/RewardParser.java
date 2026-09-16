@@ -27,6 +27,7 @@ public final class RewardParser {
             case "LUCKYBLOCK" -> parseLuckyBlock(section);
             case "OBJET_CUSTOM" -> parseCustomItem(section);
             case "GENERATEUR" -> parseGenerator(section);
+            case "GENERATEUR_LUCKYBLOCK" -> parseGeneratorLuckyBlock(section);
             case "MACHINE" -> parseMachine(section);
             case "AGRANDISSEMENT_ILE" -> parseIslandUpgrade(section);
             case "TITRE_CHAT" -> parseTitle(section);
@@ -79,6 +80,18 @@ public final class RewardParser {
         }
         ItemStack icon = new ItemBuilder(iconMaterial, amount).name("&e" + displayName).build();
         return Reward.ofGenerator(generatorTypeId, amount, displayName, icon);
+    }
+
+    private static Reward parseGeneratorLuckyBlock(ConfigurationSection section) {
+        String familyId = section.getString("famille", "");
+        int amount = Math.max(1, section.getInt("quantite", 1));
+        String displayName = section.getString("nom", "Generateur de Lucky Block : " + familyId);
+        Material iconMaterial = Material.matchMaterial(section.getString("icone", "BEACON"));
+        if (iconMaterial == null) {
+            iconMaterial = Material.BEACON;
+        }
+        ItemStack icon = new ItemBuilder(iconMaterial, amount).name("&e" + displayName).build();
+        return Reward.ofGeneratorLuckyBlock(familyId, amount, displayName, icon);
     }
 
     private static Reward parseCustomItem(ConfigurationSection section) {

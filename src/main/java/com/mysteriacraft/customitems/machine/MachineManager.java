@@ -135,6 +135,7 @@ public class MachineManager {
      * a de chances de sortir. Toute entree absente de ces maps recoit lootWeightDefault. */
     private final Map<String, Integer> lootWeightItems = new LinkedHashMap<>();
     private final Map<String, Integer> lootWeightGenerators = new LinkedHashMap<>();
+    private final Map<String, Integer> lootWeightGeneratorsLuckyBlock = new LinkedHashMap<>();
     private final Map<String, Integer> lootWeightMachines = new LinkedHashMap<>();
     private int lootWeightDefault = 10;
 
@@ -489,6 +490,7 @@ public class MachineManager {
         tiers.clear();
         lootWeightItems.clear();
         lootWeightGenerators.clear();
+        lootWeightGeneratorsLuckyBlock.clear();
         lootWeightMachines.clear();
         ConfigurationSection section = customItemsConfig.get().getConfigurationSection("machine-transformation");
         if (section == null) {
@@ -574,6 +576,7 @@ public class MachineManager {
         if (poidsLoot != null) {
             loadLootWeights(poidsLoot.getConfigurationSection("poids-items"), lootWeightItems);
             loadLootWeights(poidsLoot.getConfigurationSection("poids-generateurs"), lootWeightGenerators);
+            loadLootWeights(poidsLoot.getConfigurationSection("poids-generateurs-lb"), lootWeightGeneratorsLuckyBlock);
             loadLootWeights(poidsLoot.getConfigurationSection("poids-machines"), lootWeightMachines);
         }
 
@@ -610,6 +613,10 @@ public class MachineManager {
 
     public int getGeneratorLootWeight(String generatorTypeId) {
         return lootWeightGenerators.getOrDefault(generatorTypeId.toLowerCase(), lootWeightDefault);
+    }
+
+    public int getGeneratorLuckyBlockLootWeight(String familyId) {
+        return lootWeightGeneratorsLuckyBlock.getOrDefault(familyId.toLowerCase(), lootWeightDefault);
     }
 
     public int getMachineLootWeight(String machineId) {

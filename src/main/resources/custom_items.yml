@@ -126,6 +126,8 @@ machine-transformation:
   # elles-memes. poids-defaut s'applique a toute entree ABSENTE des 3 listes ci-dessous (pas besoin
   # de lister les ~60 entrees possibles : seules celles dont la rarete doit differer du defaut ont
   # besoin d'une ligne). poids-machines utilise les cles "transformation"/"miniere".
+  # poids-generateurs-lb utilise les ids de famille de Lucky Block (voir luckyblocks.yml) : chaque
+  # famille peut donner un Generateur de Lucky Block cible sur elle (voir luckyblock_generateur.yml).
   poids-loot:
     poids-defaut: 10
     poids-items:
@@ -172,6 +174,11 @@ machine-transformation:
       ressource_diamant: 5
       ressource_legendaire: 1
       ressource_essence: 8
+    poids-generateurs-lb:
+      commune: 15
+      rare: 8
+      epique: 4
+      legendaire: 1
     poids-machines:
       transformation: 1
       miniere: 1
