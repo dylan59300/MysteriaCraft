@@ -14,7 +14,6 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -324,15 +323,13 @@ public class MiningMachineManager {
         return item.getItemMeta().getPersistentDataContainer().has(machineKey, PersistentDataType.BYTE);
     }
 
-    /** Marque un bloc pose comme etant une Machine a Miner appartenant a ce joueur, et fait
-     * apparaitre son hologramme d'etat. */
+    /** Marque un bloc pose comme etant une Machine a Miner appartenant a ce joueur. */
     public void tagBlock(Block block, UUID owner) {
         Location key = blockKey(block);
         MachineState state = new MachineState();
         state.owner = owner;
         machines.put(key, state);
         persistAsync(key, state);
-        spawnHologram(block);
     }
 
     public void forgetMachine(Location location) {
@@ -384,31 +381,8 @@ public class MiningMachineManager {
         return null;
     }
 
-    // ---- Hologramme d'etat (ArmorStand invisible affichant carburant/progression) ----
-
-    /** Fait apparaitre l'hologramme au-dessus du bloc, s'il n'en a pas deja un (ex: rechargement du plugin). */
-    public void spawnHologram(Block block) {
-        if (getHologram(block) != null) {
-            return;
-        }
-        Location key = blockKey(block);
-        MachineState state = machines.get(key);
-        if (state == null) {
-            return;
-        }
-        Location location = block.getLocation().add(0.5, 1.4, 0.5);
-        ArmorStand stand = (ArmorStand) block.getWorld().spawnEntity(location, EntityType.ARMOR_STAND);
-        stand.setInvisible(true);
-        stand.setMarker(true);
-        stand.setGravity(false);
-        stand.setSmall(true);
-        stand.setBasePlate(false);
-        stand.setCustomNameVisible(true);
-        stand.setCustomName(MessageManager.color("&b&lMachine a Miner"));
-        stand.setPersistent(true);
-        state.hologramUuid = stand.getUniqueId();
-        persistAsync(key, state);
-    }
+    // ---- Nettoyage d'un ancien hologramme (fonctionnalite retiree : plus d'ArmorStand affiche
+    // au-dessus des machines) ----
 
     public ArmorStand getHologram(Block block) {
         MachineState state = machines.get(blockKey(block));

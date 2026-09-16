@@ -6,7 +6,6 @@ import com.mysteriacraft.economy.EconomyManager;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -22,10 +21,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Orchestre l'utilisation d'un Lucky Block pose : clic-droit dessus (aucun cooldown, reutilisable
- * immediatement, le bloc n'est PAS casse) tire un effet pondere et l'applique (bon via RewardGiver,
- * mauvais via TNT/mobs/potion/foudre). Gere aussi l'achat direct (/luckyblock buy) via la monnaie
- * interne.
+ * Orchestre l'utilisation d'un Lucky Block : clic-droit alors qu'il est tenu en main (aucun
+ * cooldown, aucune pose de bloc) tire un effet pondere et l'applique (bon via RewardGiver, mauvais
+ * via TNT/mobs/potion/foudre), en consommant un exemplaire. Gere aussi l'achat direct
+ * (/luckyblock buy) via la monnaie interne.
  */
 public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
 
@@ -46,16 +45,16 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
         this.messages = messages;
     }
 
-    /** Appele par le listener sur un clic-droit sur un Lucky Block pose et marque : tire un effet
-     * et l'applique. Le bloc reste en place et reste utilisable immediatement (pas de cooldown). */
-    public void handleRightClick(Player player, Block block, LuckyBlockFamily family) {
-        double bonusPercent = manager.getBonus(block);
-        LuckyBlockEffect effect = manager.pickEffect(player.getUniqueId(), family, bonusPercent);
+    /** Appele par le listener sur un clic-droit alors que le joueur tient un Lucky Block en main :
+     * tire un effet et l'applique immediatement, sans jamais poser de bloc (l'item est consomme
+     * par l'appelant). */
+    public void handleRightClick(Player player, LuckyBlockFamily family) {
+        LuckyBlockEffect effect = manager.pickEffect(player.getUniqueId(), family, 0);
         if (effect == null) {
             messages.send(player, "luckyblock.aucun-effet");
             return;
         }
-        applyEffect(player, block.getLocation(), effect);
+        applyEffect(player, player.getLocation(), effect);
     }
 
     private void applyEffect(Player player, Location location, LuckyBlockEffect effect) {

@@ -553,7 +553,7 @@ public class LuckyBlockManager {
     public ItemStack createItem(LuckyBlockFamily family, int amount) {
         ItemStack item = new ItemBuilder(family.blockMaterial(), amount)
                 .name(family.displayName())
-                .lore(List.of("&7Placez-le, puis cassez-le", "&7pour declencher un effet aleatoire !"))
+                .lore(List.of("&7Clic-droit en main", "&7pour declencher un effet aleatoire !"))
                 .build();
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {

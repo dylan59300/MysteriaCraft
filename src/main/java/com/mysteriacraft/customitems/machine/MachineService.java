@@ -20,7 +20,6 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -157,7 +156,6 @@ public class MachineService {
         } else {
             messages.send(player, "machine.statut-pret", placeholders);
         }
-        updateHologram(machineBlock);
     }
 
     private void refuel(Player player, Block machineBlock, ItemStack fuelItem, MachineManager.FuelType fuelType) {
@@ -176,7 +174,6 @@ public class MachineService {
         Location loc = machineBlock.getLocation().add(0.5, 1.0, 0.5);
         loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 15, 0.4, 0.4, 0.4);
         player.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 0.6f, 1.5f);
-        updateHologram(machineBlock);
     }
 
     private void upgrade(Player player, Block machineBlock, ItemStack upgradeItem) {
@@ -199,7 +196,6 @@ public class MachineService {
         Location loc = machineBlock.getLocation().add(0.5, 1.0, 0.5);
         loc.getWorld().spawnParticle(Particle.END_ROD, loc, 20, 0.3, 0.5, 0.3, 0.02);
         player.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.6f);
-        updateHologram(machineBlock);
     }
 
     /**
@@ -241,7 +237,6 @@ public class MachineService {
         Location loc = machineBlock.getLocation().add(0.5, 1.0, 0.5);
         loc.getWorld().spawnParticle(Particle.TOTEM, loc, 40, 0.4, 0.5, 0.4, 0.1);
         loc.getWorld().playSound(loc, Sound.ITEM_TOTEM_USE, 1f, 1.2f);
-        updateHologram(machineBlock);
     }
 
     private void attemptTransformation(Player player, Block machineBlock, ItemStack inHand) {
@@ -339,7 +334,6 @@ public class MachineService {
                 messages.send(player, "machine.doubleloot-bonus-luckyblock", bonusPlaceholders);
             }
         }
-        updateHologram(machineBlock);
     }
 
     /** Une recompense "objet aleatoire" possible de la Machine : soit un item custom, soit un
@@ -500,7 +494,6 @@ public class MachineService {
             } else {
                 world.spawnParticle(Particle.END_ROD, effectLocation, 2, 0.2, 0.15, 0.2, 0.0);
             }
-            updateHologram(block);
             tickAutoFeed(block);
         }
         stale.forEach(manager::forgetMachine);
@@ -596,7 +589,6 @@ public class MachineService {
                 outputReward(outputInventory, containers, luckyBlockManager.createItem(family));
             }
         }
-        updateHologram(machineBlock);
     }
 
     private void outputReward(Inventory outputInventory, MachineManager.AdjacentContainers containers, ItemStack reward) {
@@ -618,34 +610,6 @@ public class MachineService {
         }
     }
 
-    /** Met a jour le texte de l'hologramme de cette machine. En mode normal : nom, jauge de
-     * carburant, % de reussite, barre de cooldown et faces d'entree/sortie de l'auto-alimentation
-     * si des conteneurs sont colles. En mode compact (hologramme-compact: true) : uniquement la
-     * barre de cooldown et le % de reussite. */
-    private void updateHologram(Block machineBlock) {
-        ArmorStand stand = manager.getHologram(machineBlock);
-        if (stand == null) {
-            return;
-        }
-        int chance = (int) manager.getEffectiveChance(machineBlock);
-        long remaining = manager.getRemainingCooldownMillis(machineBlock);
-        int segments = manager.getHologramSegments();
-        String cooldownBar = remaining > 0
-                ? cooldownProgressBar(remaining, machineBlock, segments) + " &f" + formatDuration(remaining)
-                : "&a[" + "■".repeat(segments) + "] &aPrete";
-
-        if (manager.isHologramCompact()) {
-            stand.setCustomName(MessageManager.color(cooldownBar + " &7| &e" + chance + "%"));
-            return;
-        }
-
-        MachineManager.MachineTier tier = manager.getBlockTier(machineBlock);
-        String fuelBar = fuelGaugeBar(manager.getFuel(machineBlock), tier);
-        String ligne1 = "&b&lMachine &7[" + tier.displayName() + "&7] &7| " + fuelBar
-                + " &7| &e" + chance + "% &7| " + cooldownBar;
-        stand.setCustomName(MessageManager.color(ligne1 + autoFeedSuffix(machineBlock)));
-    }
-
     /** Barre "[■■■□□]" coloree du rouge (debut) au vert (fin) selon l'avancement du cooldown. */
     private String cooldownProgressBar(long remainingMillis, Block machineBlock, int segments) {
         long totalMillis = manager.getActiveCooldownSeconds(machineBlock) * 1000L;
@@ -656,29 +620,6 @@ public class MachineService {
 
         String filledColor = progress < 0.34 ? "&c" : progress < 0.67 ? "&6" : "&a";
         return "&f[" + filledColor + "■".repeat(filled) + "&7" + "□".repeat(segments - filled) + "&f]";
-    }
-
-    /** Petite jauge "[■■□□□]" (5 segments fixes, bleue) indiquant le niveau de carburant par
-     * rapport a la jauge-carburant-max du tier actuel (purement visuel, ne plafonne pas le stock reel). */
-    private String fuelGaugeBar(int fuel, MachineManager.MachineTier tier) {
-        int segments = 5;
-        double progress = Math.min(1.0, (double) fuel / tier.fuelGaugeMax());
-        int filled = Math.max(0, Math.min(segments, (int) Math.round(progress * segments)));
-        return "&f[&b" + "■".repeat(filled) + "&7" + "□".repeat(segments - filled) + "&f]";
-    }
-
-    /** "&7| &aEntree: Nord &7| &6Sortie: Sud" (ou juste "Entree/Sortie: Nord" si un seul conteneur colle), vide sinon. */
-    private String autoFeedSuffix(Block machineBlock) {
-        MachineManager.AdjacentContainers containers = manager.getAdjacentContainers(machineBlock);
-        if (containers == null) {
-            return "";
-        }
-        String inputLabel = MachineManager.faceLabel(containers.inputFace());
-        if (containers.inputFace() == containers.outputFace()) {
-            return " &7| &bE/S: " + inputLabel;
-        }
-        String outputLabel = MachineManager.faceLabel(containers.outputFace());
-        return " &7| &aEntree: " + inputLabel + " &7| &6Sortie: " + outputLabel;
     }
 
     /** Envoie un compte a rebours en actionbar tant que le cooldown de cette machine n'est pas ecoule. */
