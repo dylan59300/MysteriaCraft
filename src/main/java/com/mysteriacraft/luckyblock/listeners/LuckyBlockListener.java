@@ -4,7 +4,7 @@ import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.luckyblock.LuckyBlockFamily;
 import com.mysteriacraft.luckyblock.LuckyBlockManager;
 import com.mysteriacraft.luckyblock.LuckyBlockService;
-import com.mysteriacraft.luckyblock.gui.LuckyBlockOddsGui;
+import org.bukkit.GameMode;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
@@ -22,12 +22,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Marque un bloc pose comme Lucky Block s'il provient d'un item marque (craft/achat/recompense),
- * et delegue sa casse au LuckyBlockService s'il s'agit bien d'un Lucky Block.
+ * Marque un bloc pose comme Lucky Block s'il provient d'un item marque (craft/achat/recompense).
  * Gere aussi le bonus de minerais : poser un minerai a cote d'un Lucky Block (ou l'inverse)
  * augmente sa chance d'effet BON, selon le minerai (voir bonus-minerais dans luckyblocks.yml).
- * Un clic droit avec un Lucky Block en main (sans etre accroupi sur un bloc, pour ne pas gener
- * la pose normale) ouvre le GUI des loot disponibles pour cette famille.
+ * Un Lucky Block pose N'EST PLUS CASSABLE en survie (reste en place indefiniment) : un clic-droit
+ * dessus tire et applique directement un effet, sans consommer ni endommager le bloc (voir
+ * LuckyBlockService#handleRightClick). Les admins en mode creatif peuvent toujours le retirer.
  */
 public class LuckyBlockListener implements Listener {
 
@@ -81,28 +81,21 @@ public class LuckyBlockListener implements Listener {
         }
     }
 
+    /** Clic-droit sur un Lucky Block DEJA POSE : tire et applique directement un effet (voir
+     * LuckyBlockService#handleRightClick), sans passer par un menu d'apercu. Reutilisable
+     * immediatement, le bloc n'est jamais consomme ni endommage par cette interaction. */
     @EventHandler(ignoreCancelled = true)
-    public void onInteractWithItem(PlayerInteractEvent event) {
-        if (event.getHand() != EquipmentSlot.HAND) {
+    public void onInteractPlacedBlock(PlayerInteractEvent event) {
+        if (event.getHand() != EquipmentSlot.HAND || event.getAction() != Action.RIGHT_CLICK_BLOCK) {
             return;
         }
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK && event.getAction() != Action.RIGHT_CLICK_AIR) {
-            return;
-        }
-        String familyId = manager.getFamilyIdFromItem(event.getItem());
-        if (familyId == null) {
-            return;
-        }
-        // Accroupi + clic sur un bloc : on laisse la pose normale se derouler.
-        if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getPlayer().isSneaking()) {
-            return;
-        }
-        LuckyBlockFamily family = manager.getFamily(familyId);
+        Block block = event.getClickedBlock();
+        LuckyBlockFamily family = block != null ? manager.getFamilyOfBlock(block) : null;
         if (family == null) {
             return;
         }
         event.setCancelled(true);
-        new LuckyBlockOddsGui(event.getPlayer(), family, manager, null, messages).open();
+        service.handleRightClick(event.getPlayer(), block, family);
     }
 
     /** Kit de connexion (voir luckyblocks.yml: kit-connexion) : donne "quantite" exemplaires de
@@ -132,12 +125,18 @@ public class LuckyBlockListener implements Listener {
         messages.send(player, "luckyblock.kit-connexion", placeholders);
     }
 
+    /** Un Lucky Block pose ne se casse plus en survie (voir la classe). En creatif, un admin peut
+     * toujours le retirer normalement (untagBlock nettoie son suivi en base). */
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
-        LuckyBlockFamily family = manager.getFamilyOfBlock(block);
-        if (family != null) {
-            service.handleBreak(event, family);
+        if (manager.getFamilyOfBlock(block) == null) {
+            return;
         }
+        if (event.getPlayer().getGameMode() == GameMode.CREATIVE) {
+            manager.untagBlock(block);
+            return;
+        }
+        event.setCancelled(true);
     }
 }

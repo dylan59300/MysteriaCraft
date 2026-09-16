@@ -6,12 +6,12 @@ import com.mysteriacraft.economy.EconomyManager;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TNTPrimed;
-import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -22,21 +22,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Orchestre la casse d'un Lucky Block : tirage pondere (aucun cooldown, se recasse immediatement)
- * et application de l'effet (bon via RewardGiver, mauvais via TNT/mobs/potion/foudre).
- * Gere aussi l'achat direct (/luckyblock buy) via la monnaie interne.
- *
- * IMPORTANT : tout est traite de maniere SYNCHRONE, dans le handler d'evenement lui-meme.
- * BlockBreakEvent#setCancelled()/setDropItems() n'ont aucun effet si on les appelle apres que
- * l'evenement a fini d'etre traite (ex: depuis un Bukkit.getScheduler().runTaskAsynchronously()
- * puis un runTask() planifie pour plus tard) : Bukkit a deja casse le bloc et applique ses drops
- * par defaut avant que ce code differe ne s'execute. C'est ce qui causait a la fois le Lucky Block
- * qui se cassait quand meme pendant son cooldown et le drop du bloc vanilla brut (GOLD_BLOCK...)
- * au lieu de l'effet attendu.
+ * Orchestre l'utilisation d'un Lucky Block pose : clic-droit dessus (aucun cooldown, reutilisable
+ * immediatement, le bloc n'est PAS casse) tire un effet pondere et l'applique (bon via RewardGiver,
+ * mauvais via TNT/mobs/potion/foudre). Gere aussi l'achat direct (/luckyblock buy) via la monnaie
+ * interne.
  */
 public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
 
-    /** Plafond de casses par appel de /luckyblockadmin simulate, pour eviter qu'un admin ne
+    /** Plafond d'utilisations par appel de /luckyblockadmin simulate, pour eviter qu'un admin ne
      * declenche par erreur des centaines d'effets MAUVAIS reels (TNT, mobs...) d'un coup. */
     private static final int MAX_SIMULATION = 200;
 
@@ -53,20 +46,16 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
         this.messages = messages;
     }
 
-    /** Appele par le listener sur BlockBreakEvent quand le bloc casse est un Lucky Block marque. */
-    public void handleBreak(BlockBreakEvent event, LuckyBlockFamily family) {
-        Player player = event.getPlayer();
-        double bonusPercent = manager.getBonus(event.getBlock());
-
+    /** Appele par le listener sur un clic-droit sur un Lucky Block pose et marque : tire un effet
+     * et l'applique. Le bloc reste en place et reste utilisable immediatement (pas de cooldown). */
+    public void handleRightClick(Player player, Block block, LuckyBlockFamily family) {
+        double bonusPercent = manager.getBonus(block);
         LuckyBlockEffect effect = manager.pickEffect(player.getUniqueId(), family, bonusPercent);
-
-        event.setDropItems(false);
-        manager.untagBlock(event.getBlock());
         if (effect == null) {
             messages.send(player, "luckyblock.aucun-effet");
             return;
         }
-        applyEffect(player, event.getBlock().getLocation(), effect);
+        applyEffect(player, block.getLocation(), effect);
     }
 
     private void applyEffect(Player player, Location location, LuckyBlockEffect effect) {

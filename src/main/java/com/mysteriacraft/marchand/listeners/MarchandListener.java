@@ -5,7 +5,6 @@ import com.mysteriacraft.customitems.CustomItemManager;
 import com.mysteriacraft.marchand.MarchandDefinition;
 import com.mysteriacraft.marchand.MarchandManager;
 import com.mysteriacraft.marchand.MarchandService;
-import com.mysteriacraft.marchand.gui.MarchandGui;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -17,17 +16,22 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MerchantInventory;
 
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Invoque le PNJ Marchand correspondant a l'item custom tenu en main (clic-droit sur un bloc),
- * ouvre son menu d'echange (clic sur lui), le protege de tout dommage (en plus de setInvulnerable),
- * et fait tomber occasionnellement des pieces d'echange en minant/tuant un mob (voir "drop-passif").
+ * ouvre son ecran de troc NATIF (le vrai ecran villageois de Minecraft, voir
+ * MarchandService#openMerchant) au clic sur lui, le protege de tout dommage (en plus de
+ * setInvulnerable), et fait tomber occasionnellement des pieces d'echange en minant/tuant un mob
+ * (voir "drop-passif").
  */
 public class MarchandListener implements Listener {
 
@@ -83,7 +87,32 @@ public class MarchandListener implements Listener {
             return;
         }
         event.setCancelled(true);
-        new MarchandGui(event.getPlayer(), definition, service, messages).open();
+        service.openMerchant(event.getPlayer(), definition, event.getRightClicked().getUniqueId());
+    }
+
+    /** Un troc se finalise en cliquant sur son resultat (slot 2 de l'ecran de troc, comme sur
+     * n'importe quel villageois vanilla) : on l'intercepte pour donner nous-memes la VRAIE
+     * recompense (voir MarchandService#handleTrade) au lieu de laisser Minecraft donner l'icone de
+     * representation. Ignore tout Merchant qui n'est pas un de nos PNJ (ex: un vrai villageois). */
+    @EventHandler(ignoreCancelled = true)
+    public void onMerchantClick(InventoryClickEvent event) {
+        if (!(event.getClickedInventory() instanceof MerchantInventory merchantInventory)
+                || event.getRawSlot() != 2
+                || !(event.getWhoClicked() instanceof Player player)
+                || !service.isTrackedMerchant(merchantInventory.getMerchant())) {
+            return;
+        }
+        event.setCancelled(true);
+        service.handleTrade(player, merchantInventory.getMerchant(), merchantInventory.getSelectedRecipeIndex());
+    }
+
+    /** Libere la session en memoire des qu'un joueur ferme l'ecran de troc (voir
+     * MarchandService#forgetSession). */
+    @EventHandler(ignoreCancelled = true)
+    public void onMerchantClose(InventoryCloseEvent event) {
+        if (event.getInventory() instanceof MerchantInventory merchantInventory) {
+            service.forgetSession(merchantInventory.getMerchant());
+        }
     }
 
     @EventHandler(ignoreCancelled = true)

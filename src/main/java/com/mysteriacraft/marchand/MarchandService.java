@@ -3,13 +3,18 @@ package com.mysteriacraft.marchand;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.core.reward.RewardGiver;
 import com.mysteriacraft.core.storage.Database;
+import com.mysteriacraft.customitems.CustomItemDefinition;
 import com.mysteriacraft.customitems.CustomItemManager;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Merchant;
+import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
@@ -32,8 +37,11 @@ import java.util.UUID;
 /**
  * Orchestre les PNJ Marchands : invocation (villageois immobile/invulnerable marque via
  * PersistentDataContainer avec l'id du marchand, persiste automatiquement avec le monde comme
- * toute entite), rotation quotidienne des offres, limites d'achat par periode, reduction fidelite
- * cumulative, et echange effectif d'une offre contre des pieces d'echange.
+ * toute entite), rotation quotidienne des offres (propre a CHAQUE PNJ physique, voir
+ * getActiveOffers), limites d'achat par periode, reduction fidelite cumulative, et interface
+ * d'echange EN NATIF (le vrai ecran de troc des villageois vanilla, voir openMerchant) plutot qu'un
+ * menu-coffre custom : seuls les items proposes changent (items custom au lieu de ressources
+ * vanilla), toute l'experience visuelle/interaction reste celle d'un villageois normal.
  */
 public class MarchandService {
 
@@ -43,6 +51,27 @@ public class MarchandService {
     private final RewardGiver rewardGiver;
     private final MessageManager messages;
     private final NamespacedKey npcIdKey;
+
+    /** Etat d'un ecran de troc natif actuellement ouvert : le joueur, la definition, et les offres/
+     * rachats consideres (rotation deja figee) a partir desquels les recettes sont (re)construites
+     * a chaque ouverture et apres chaque echange (pour retirer celles qui viennent d'atteindre leur
+     * limite de periode et refleter un eventuel changement de palier de fidelite). */
+    private static final class MerchantSession {
+        final Player player;
+        final MarchandDefinition definition;
+        final List<MarchandOffer> offers;
+        final List<MarchandRachat> rachats;
+        List<Object> currentEntries = List.of();
+
+        MerchantSession(Player player, MarchandDefinition definition, List<MarchandOffer> offers, List<MarchandRachat> rachats) {
+            this.player = player;
+            this.definition = definition;
+            this.offers = offers;
+            this.rachats = rachats;
+        }
+    }
+
+    private final Map<Merchant, MerchantSession> openSessions = new HashMap<>();
 
     public MarchandService(Plugin plugin, Database database, CustomItemManager customItemManager,
                             RewardGiver rewardGiver, MessageManager messages) {
@@ -104,17 +133,22 @@ public class MarchandService {
 
     // ---- Rotation quotidienne des offres (voir "offres-actives-par-jour") ----
 
-    /** Offres EFFECTIVEMENT proposees aujourd'hui par ce marchand : toutes si "offres-actives-par-jour"
-     * vaut 0 ou depasse le nombre d'offres, sinon un sous-ensemble tire au sort MAIS IDENTIQUE pour
-     * tous les joueurs et stable sur toute une journee (seed = date du jour + id du marchand). */
-    public List<MarchandOffer> getActiveOffers(MarchandDefinition definition) {
+    /** Offres EFFECTIVEMENT proposees aujourd'hui par CE PNJ precis : toutes si
+     * "offres-actives-par-jour" vaut 0 ou depasse le nombre d'offres, sinon un sous-ensemble tire au
+     * sort stable sur toute une journee (seed = date du jour + id du marchand + UUID de CETTE
+     * entite). Chaque PNJ physique invoque (meme du meme type "marchand") a donc sa PROPRE rotation
+     * independante des autres : spawner plusieurs marchands identiques donne des offres variees
+     * plutot que strictement les memes partout, contrairement a l'ancien comportement (seed
+     * uniquement basee sur le type de marchand, identique pour tous les PNJ du meme type). */
+    public List<MarchandOffer> getActiveOffers(MarchandDefinition definition, UUID npcInstanceId) {
         int count = definition.offresActivesParJour();
         List<MarchandOffer> all = definition.offres();
         if (count <= 0 || count >= all.size()) {
             return all;
         }
         List<MarchandOffer> shuffled = new ArrayList<>(all);
-        long seed = LocalDate.now().toEpochDay() * 1_000_003L + definition.id().hashCode();
+        long seed = LocalDate.now().toEpochDay() * 1_000_003L + definition.id().hashCode() * 31L
+                + (npcInstanceId != null ? npcInstanceId.hashCode() : 0);
         Collections.shuffle(shuffled, new Random(seed));
         return shuffled.subList(0, count);
     }
@@ -361,5 +395,108 @@ public class MarchandService {
         placeholders.put("materiel", rachat.materiel().name().replace('_', ' ').toLowerCase());
         placeholders.put("recompense", rachat.recompense().displayName());
         messages.send(player, "marchand.rachat-reussi", placeholders);
+    }
+
+    // ---- Ecran de troc natif (voir MarchandListener) ----
+
+    /** Ouvre pour ce joueur le VRAI ecran de troc des villageois (Merchant natif de Bukkit) pour ce
+     * PNJ : offres (payees en pieces d'echange) ET rachats (payes en materiel vendu) apparaissent
+     * comme des trocs normaux dans la MEME liste, exactement comme un villageois vanilla propose
+     * plusieurs trocs a la fois. npcInstanceId (l'UUID de l'entite cliquee) fixe la rotation
+     * quotidienne des offres PROPRE a ce PNJ (voir getActiveOffers). */
+    public void openMerchant(Player player, MarchandDefinition definition, UUID npcInstanceId) {
+        List<MarchandOffer> offers = getActiveOffers(definition, npcInstanceId);
+        List<MarchandRachat> rachats = definition.rachats();
+
+        String title = MessageManager.color(messages.raw("marchand.titre-gui").replace("{nom}", definition.npcName()));
+        Merchant merchant = Bukkit.createMerchant(title);
+        MerchantSession session = new MerchantSession(player, definition, offers, rachats);
+        openSessions.put(merchant, session);
+        refreshRecipes(merchant, session);
+        player.openMerchant(merchant, true);
+    }
+
+    /** (Re)construit la liste des recettes de troc pour ce joueur : ignore silencieusement toute
+     * offre/rachat sans recompense valide ou ayant deja atteint sa limite de periode pour lui (au
+     * lieu de l'afficher grisee, elle disparait simplement de la liste jusqu'au prochain
+     * renouvellement de periode). "currentEntries" garde, dans le MEME ordre que les recettes
+     * envoyees au client, l'offre ou le rachat correspondant a chaque index (voir handleTrade). */
+    private void refreshRecipes(Merchant merchant, MerchantSession session) {
+        UUID uuid = session.player.getUniqueId();
+        List<MerchantRecipe> recipes = new ArrayList<>();
+        List<Object> entries = new ArrayList<>();
+
+        for (MarchandOffer offer : session.offers) {
+            if (offer.recompense() == null) {
+                continue;
+            }
+            if (offer.isLimited() && countPurchasesThisPeriod(uuid, session.definition, offer) >= offer.limiteQuantite()) {
+                continue;
+            }
+            int cost = getEffectiveCost(uuid, session.definition, offer);
+            ItemStack ingredient = createPieceStack(session.definition.pieceItemId(), cost);
+
+            MerchantRecipe recipe = new MerchantRecipe(offer.icon(), Integer.MAX_VALUE);
+            recipe.setExperienceReward(false);
+            recipe.setIngredients(List.of(ingredient));
+            recipes.add(recipe);
+            entries.add(offer);
+        }
+
+        for (MarchandRachat rachat : session.rachats) {
+            if (rachat.recompense() == null) {
+                continue;
+            }
+            if (rachat.isLimited() && countRachatsThisPeriod(uuid, session.definition, rachat) >= rachat.limiteQuantite()) {
+                continue;
+            }
+            ItemStack ingredient = new ItemStack(rachat.materiel(), rachat.quantite());
+
+            MerchantRecipe recipe = new MerchantRecipe(rachat.recompense().displayIcon(), Integer.MAX_VALUE);
+            recipe.setExperienceReward(false);
+            recipe.setIngredients(List.of(ingredient));
+            recipes.add(recipe);
+            entries.add(rachat);
+        }
+
+        session.currentEntries = entries;
+        merchant.setRecipes(recipes);
+    }
+
+    private ItemStack createPieceStack(String pieceItemId, int amount) {
+        CustomItemDefinition pieceDefinition = customItemManager.getItem(pieceItemId);
+        return pieceDefinition != null
+                ? customItemManager.createItem(pieceDefinition, amount)
+                : new ItemStack(Material.EMERALD, amount);
+    }
+
+    /** true si ce Merchant est un ecran de troc de PNJ Marchand ouvert par ce plugin (par
+     * opposition a un vrai villageois vanilla, que MarchandListener ne doit pas toucher). */
+    public boolean isTrackedMerchant(Merchant merchant) {
+        return openSessions.containsKey(merchant);
+    }
+
+    /** Traite le clic sur le resultat d'un troc (voir MarchandListener) : retrouve l'offre ou le
+     * rachat correspondant a l'index de la recette selectionnee et delegue a purchase()/rachat(),
+     * puis reconstruit les recettes (cout/fidelite/limites a jour). Ne fait rien si le Merchant
+     * n'est pas suivi ou si l'index ne correspond a rien (ecran deja perime, ex: apres reload). */
+    public void handleTrade(Player player, Merchant merchant, int index) {
+        MerchantSession session = openSessions.get(merchant);
+        if (session == null || index < 0 || index >= session.currentEntries.size()) {
+            return;
+        }
+        Object entry = session.currentEntries.get(index);
+        if (entry instanceof MarchandOffer offer) {
+            purchase(player, session.definition, offer);
+        } else if (entry instanceof MarchandRachat rachat) {
+            rachat(player, session.definition, rachat);
+        }
+        refreshRecipes(merchant, session);
+    }
+
+    /** A appeler a la fermeture de l'ecran de troc (voir MarchandListener) pour ne pas garder une
+     * reference indefiniment (le Merchant n'est autrement rattache a aucune entite persistante). */
+    public void forgetSession(Merchant merchant) {
+        openSessions.remove(merchant);
     }
 }
