@@ -75,6 +75,11 @@ commands:
     usage: /<command> <liste|give <joueur> <fer|or|diamant> [quantite]|reload>
     # Pas de "permission:" ici : /generateur liste doit rester accessible a tout joueur.
     # give/reload sont verifies manuellement dans le code (mysteriacraft.generateur.admin).
+  generateurlb:
+    description: Liste vos Generateurs de Lucky Block actifs, ou donne/recharge (admin)
+    usage: /<command> <liste|give <joueur> <famille> [quantite]|reload>
+    # Pas de "permission:" ici : /generateurlb liste doit rester accessible a tout joueur.
+    # give/reload sont verifies manuellement dans le code (mysteriacraft.generateurlb.admin).
   guide:
     description: Ouvre le guide du serveur (s'ouvre aussi automatiquement a la 1ere connexion)
     usage: /<command> [reload]
@@ -139,6 +144,9 @@ permissions:
     default: op
   mysteriacraft.generateur.admin:
     description: Autorise la gestion admin des Generateurs d'Argent (give, reload)
+    default: op
+  mysteriacraft.generateurlb.admin:
+    description: Autorise la gestion admin des Generateurs de Lucky Block (give, reload)
     default: op
   mysteriacraft.guide.admin:
     description: Autorise la gestion admin du guide (reload)

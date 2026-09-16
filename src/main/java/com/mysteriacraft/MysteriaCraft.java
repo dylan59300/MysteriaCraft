@@ -36,6 +36,10 @@ import com.mysteriacraft.luckyblock.LuckyBlockService;
 import com.mysteriacraft.luckyblock.commands.LuckyBlockAdminCommand;
 import com.mysteriacraft.luckyblock.commands.LuckyBlockCommand;
 import com.mysteriacraft.luckyblock.listeners.LuckyBlockListener;
+import com.mysteriacraft.luckyblock.generator.LuckyBlockGeneratorManager;
+import com.mysteriacraft.luckyblock.generator.LuckyBlockGeneratorService;
+import com.mysteriacraft.luckyblock.generator.commands.LuckyBlockGeneratorCommand;
+import com.mysteriacraft.luckyblock.generator.listeners.LuckyBlockGeneratorListener;
 import com.mysteriacraft.customitems.CustomItemManager;
 import com.mysteriacraft.customitems.CustomItemService;
 import com.mysteriacraft.customitems.commands.CustomItemCommand;
@@ -114,6 +118,9 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager luckyBlocksConfig;
     private LuckyBlockManager luckyBlockManager;
     private LuckyBlockService luckyBlockService;
+    private ConfigManager luckyBlockGeneratorConfig;
+    private LuckyBlockGeneratorManager luckyBlockGeneratorManager;
+    private LuckyBlockGeneratorService luckyBlockGeneratorService;
 
     private ConfigManager customItemsConfig;
     private CustomItemManager customItemManager;
@@ -190,6 +197,10 @@ public final class MysteriaCraft extends JavaPlugin {
         // Generateurs d'Argent) ----
         setupCustomItems();
         setupGenerators();
+
+        // ---- Module Generateur de Lucky Block (depend de luckyBlockManager + customItemManager,
+        // tous les deux deja initialises ci-dessus) ----
+        setupLuckyBlockGenerator();
 
         // ---- Module Guide ----
         setupGuide();
@@ -379,6 +390,28 @@ public final class MysteriaCraft extends JavaPlugin {
         // (frequence configurable, generateurs.yml: tick-secondes).
         long periodTicks = generatorManager.getTickSeconds() * 20L;
         Bukkit.getScheduler().runTaskTimer(this, generatorService::tickGenerators, periodTicks, periodTicks);
+    }
+
+    private void setupLuckyBlockGenerator() {
+        this.luckyBlockGeneratorConfig = new ConfigManager(this, "luckyblock_generateur.yml");
+        this.luckyBlockGeneratorManager = new LuckyBlockGeneratorManager(this, database, luckyBlockGeneratorConfig, luckyBlockManager);
+        this.luckyBlockGeneratorService = new LuckyBlockGeneratorService(
+                luckyBlockGeneratorManager, customItemManager, luckyBlockManager, messages);
+
+        Bukkit.getPluginManager().registerEvents(
+                new LuckyBlockGeneratorListener(luckyBlockGeneratorManager, luckyBlockGeneratorService, messages), this);
+
+        LuckyBlockGeneratorCommand luckyBlockGeneratorCommand = new LuckyBlockGeneratorCommand(
+                luckyBlockGeneratorConfig, luckyBlockGeneratorManager, luckyBlockManager, messages);
+        getCommand("generateurlb").setExecutor(luckyBlockGeneratorCommand);
+        getCommand("generateurlb").setTabCompleter(luckyBlockGeneratorCommand);
+
+        // Recalcule la production due + depose dans le conteneur colle, toutes les 5 secondes
+        // (assez frequent pour rester reactif sans jamais impacter les performances, comme les
+        // autres blocs "actifs" du plugin).
+        Bukkit.getScheduler().runTaskTimer(this,
+                () -> luckyBlockGeneratorService.tickAll(luckyBlockGeneratorManager.getActiveGeneratorLocations()),
+                100L, 100L);
     }
 
     private void setupGuide() {

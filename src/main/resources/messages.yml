@@ -368,6 +368,17 @@ generateur:
   liste-titre: "&6&l=== Vos generateurs actifs ==="
   liste-vide: "&7Aucun generateur actif trouve (suivi reinitialise a chaque redemarrage du serveur)."
 
+generateurlb:
+  usage: "&cUsage : /generateurlb <liste|give <joueur> <famille> [quantite]|reload>"
+  reload: "&aLa configuration du Generateur de Lucky Block a ete rechargee."
+  liste-titre: "&d&l=== Vos Generateurs de Lucky Block actifs ==="
+  liste-vide: "&7Aucun Generateur de Lucky Block actif trouve (suivi reinitialise a chaque redemarrage du serveur)."
+  give-effectue: "&a{joueur} a recu &e{quantite}x Generateur de Lucky Block &7[{famille}&7]&a."
+  carburant-invalide: "&cCet objet ne peut pas etre utilise comme carburant pour ce generateur."
+  ravitaille: "&a&lGenerateur ravitaille ! &7+&e{production} &7production(s) &7(total : &e{total}&7)."
+  statut: "&d&lGenerateur de Lucky Block &7[{famille}&7] &7- &e{carburant} &7carburant restant &7(1 production toutes les &e{intervalle}s&7)."
+  limite-atteinte: "&cVous avez deja atteint la limite de Generateurs de Lucky Block que vous pouvez poser."
+
 guide:
   titre-gui: "&8Guide du serveur"
   reload: "&aLe guide a ete recharge."

@@ -1118,6 +1118,48 @@ items:
         E: EXPERIENCE_BOTTLE
         X: NETHER_STAR
 
+  # ---- Module Generateur de Lucky Block (voir luckyblock_generateur.yml) ----
+
+  carburant_generateur_lb:
+    nom: "&dCarburant de Generateur de Lucky Block"
+    lore:
+      - "&7Alimente le Generateur de Lucky Block."
+      - "&7Clic-droit sur le generateur pour l'alimenter."
+    item-de-base: PRISMARINE_CRYSTALS
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : poudre de blaze + perles d'ender autour d'une pierre lumineuse (croix).
+    recette:
+      forme:
+        - "BEB"
+        - "ELE"
+        - "BEB"
+      ingredients:
+        B: BLAZE_POWDER
+        E: ENDER_PEARL
+        L: GLOWSTONE
+
+  carburant_generateur_lb_ameliore:
+    nom: "&d&lCarburant de Generateur de Lucky Block Ameliore"
+    lore:
+      - "&7Une version raffinee du carburant standard."
+      - "&7Donne beaucoup plus de production."
+    item-de-base: END_CRYSTAL
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : etoiles du Nether + perles d'ender autour d'un oeil d'ender (croix).
+    recette:
+      forme:
+        - "NEN"
+        - "EOE"
+        - "NEN"
+      ingredients:
+        N: NETHER_STAR
+        E: ENDER_PEARL
+        O: ENDER_EYE
+
   oeuf_pnj_forgeron:
     nom: "&7&lOeuf du PNJ Forgeron"
     lore:
