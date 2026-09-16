@@ -83,10 +83,16 @@ public class LuckyBlockListener implements Listener {
 
     /** Clic-droit sur un Lucky Block DEJA POSE : tire et applique directement un effet (voir
      * LuckyBlockService#handleRightClick), sans passer par un menu d'apercu. Reutilisable
-     * immediatement, le bloc n'est jamais consomme ni endommage par cette interaction. */
+     * immediatement, le bloc n'est jamais consomme ni endommage par cette interaction.
+     * IMPORTANT : si le joueur tient un item Lucky Block EN MAIN (il veut en poser un nouveau
+     * contre le bloc clique, ex: empiler des Lucky Blocks), on laisse le placement vanilla se
+     * faire normalement au lieu de declencher un effet. */
     @EventHandler(ignoreCancelled = true)
     public void onInteractPlacedBlock(PlayerInteractEvent event) {
         if (event.getHand() != EquipmentSlot.HAND || event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+        if (manager.getFamilyIdFromItem(event.getItem()) != null) {
             return;
         }
         Block block = event.getClickedBlock();
