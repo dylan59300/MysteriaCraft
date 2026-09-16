@@ -503,6 +503,27 @@ items:
         G: GOLD_INGOT
         E: ENDER_EYE
 
+  amelioration_sac:
+    nom: "&6&lAmelioration de Sac"
+    lore:
+      - "&7Utilisez /sac ameliorer en tenant"
+      - "&7cet objet en main pour augmenter"
+      - "&7durablement la taille de votre Sac."
+    item-de-base: LEATHER
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 4 cuirs + 4 fils autour d'un coffre.
+    recette:
+      forme:
+        - "LFL"
+        - "FCF"
+        - "LFL"
+      ingredients:
+        L: LEATHER
+        F: STRING
+        C: CHEST
+
   # Objet consommable (clic-droit accroupi, en main principale, avec l'item full-custom abime en
   # main secondaire) qui repare a 100% la durabilite-custom d'un item full-custom. Voir
   # CustomItemService#repairItem / CustomItemListener#onInteract.

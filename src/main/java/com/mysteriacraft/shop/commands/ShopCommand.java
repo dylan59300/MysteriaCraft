@@ -10,18 +10,21 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 /** /boutique : ouvre le menu de la Boutique. /boutique reload : recharge boutique.yml (admin). */
 public class ShopCommand implements CommandExecutor {
 
+    private final Plugin plugin;
     private final ConfigManager shopConfig;
     private final ShopManager manager;
     private final ShopService service;
     private final EconomyManager economyManager;
     private final MessageManager messages;
 
-    public ShopCommand(ConfigManager shopConfig, ShopManager manager, ShopService service,
+    public ShopCommand(Plugin plugin, ConfigManager shopConfig, ShopManager manager, ShopService service,
                         EconomyManager economyManager, MessageManager messages) {
+        this.plugin = plugin;
         this.shopConfig = shopConfig;
         this.manager = manager;
         this.service = service;
@@ -46,7 +49,7 @@ public class ShopCommand implements CommandExecutor {
             messages.send(sender, "general.commande-joueur-uniquement");
             return true;
         }
-        new ShopCategoriesGui(player, manager, service, economyManager, messages).open();
+        new ShopCategoriesGui(plugin, player, manager, service, economyManager, messages).open();
         return true;
     }
 }

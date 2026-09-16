@@ -448,6 +448,37 @@ boutique:
   gui-non-achetable: "&6Non achetable"
   gui-clic-acheter: "&eClic gauche pour acheter"
   gui-clic-vendre: "&eClic droit pour vendre ce que vous tenez en main"
+  gui-favoris: "&d&lFavoris"
+  gui-favori-marque: "&d★ Dans vos favoris"
+  gui-favori-ajouter: "&7Shift-clic pour ajouter aux favoris"
+  gui-favori-retirer: "&7Shift-clic pour retirer des favoris"
+
+prestige:
+  info: "&6&lPrestige &7- Niveau actuel : &e{niveau} &7(&e{bonus}%&7 bonus de vente). &7Prochain : &e{nom-suivant} &7pour &e{cout} &7(&e{bonus-suivant}%&7 bonus). Tapez &e/prestige confirmer"
+  info-max: "&6&lPrestige &7- Niveau actuel : &e{niveau} &7(&e{bonus}%&7 bonus de vente). &aNiveau maximum atteint !"
+  max-atteint: "&cVous avez deja atteint le niveau de prestige maximum."
+  fonds-insuffisants: "&cIl vous manque de l'argent pour ce prestige (&e{cout}&c requis)."
+  reussi: "&d&l*** PRESTIGE ! *** &aVous etes maintenant &e{nom} &7(niveau &e{niveau}&7, &e{bonus}%&7 bonus de vente en Boutique) !"
+
+home:
+  usage-del: "&cUsage : /home del <nom>"
+  introuvable: "&cAucun home nomme &e{nom} &cn'existe."
+  teleporte: "&aTeleporte vers le home &e{nom}&a."
+  limite-atteinte: "&cVous avez atteint votre limite de homes (&e{limite}&c). Supprimez-en un ou augmentez votre prestige."
+  defini: "&aHome &e{nom} &adefini a votre position actuelle."
+  supprime: "&aHome &e{nom} &asupprime."
+  liste: "&6&lVos homes (&e{nombre}&6/&e{limite}&6) : &e{noms}"
+
+stockage:
+  titre-sac: "&8Votre Sac"
+  titre-coffrefort: "&8Votre Coffre-fort"
+  item-amelioration-requis: "&cVous devez tenir une Amelioration de Sac en main pour ameliorer votre sac."
+  deja-max: "&cCe stockage a deja atteint sa taille maximale."
+  fonds-insuffisants: "&cIl vous manque de l'argent pour cette amelioration (&e{cout}&c requis)."
+  ameliore: "&a&lStockage agrandi ! &aNouvelle taille : &e{taille} &aslots."
+
+trier:
+  effectue: "&aVotre inventaire a ete trie et range."
 
 kit:
   reload: "&aLes kits ont ete recharges."

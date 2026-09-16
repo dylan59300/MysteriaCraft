@@ -88,6 +88,17 @@ import com.mysteriacraft.shop.commands.ShopCommand;
 import com.mysteriacraft.kit.KitManager;
 import com.mysteriacraft.kit.KitService;
 import com.mysteriacraft.kit.commands.KitCommand;
+import com.mysteriacraft.rank.RankManager;
+import com.mysteriacraft.rank.RankService;
+import com.mysteriacraft.rank.commands.RankCommand;
+import com.mysteriacraft.homes.HomeManager;
+import com.mysteriacraft.homes.commands.HomeCommand;
+import com.mysteriacraft.storage.PersonalStorageManager;
+import com.mysteriacraft.storage.StorageService;
+import com.mysteriacraft.storage.commands.SacCommand;
+import com.mysteriacraft.storage.commands.CoffreFortCommand;
+import com.mysteriacraft.storage.listeners.StorageListener;
+import com.mysteriacraft.tools.commands.SortCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -170,6 +181,14 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager kitsConfig;
     private KitManager kitManager;
     private KitService kitService;
+    private ConfigManager ranksConfig;
+    private RankManager rankManager;
+    private RankService rankService;
+    private ConfigManager homesConfig;
+    private HomeManager homeManager;
+    private ConfigManager storageConfig;
+    private PersonalStorageManager personalStorageManager;
+    private StorageService storageService;
 
     @Override
     public void onEnable() {
@@ -237,11 +256,24 @@ public final class MysteriaCraft extends JavaPlugin {
         // ---- Module Hotel des Ventes (depend d'economyManager) ----
         setupEncheres();
 
-        // ---- Module Boutique (depend d'economyManager, rewardGiver et customItemManager) ----
+        // ---- Module Prestige (depend d'economyManager) ----
+        setupRanks();
+
+        // ---- Module Boutique (depend d'economyManager, rewardGiver, customItemManager et
+        // rankManager pour le bonus de vente) ----
         setupBoutique();
 
         // ---- Module Kits (depend de rewardGiver) ----
         setupKits();
+
+        // ---- Module Homes (depend de rankManager pour le bonus de limite) ----
+        setupHomes();
+
+        // ---- Module Sac/Coffre-fort (depend de customItemManager et economyManager) ----
+        setupStorage();
+
+        // ---- Outils divers (/trier) ----
+        setupTools();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -524,11 +556,18 @@ public final class MysteriaCraft extends JavaPlugin {
                 new EnchereCommand(this, encheresConfig, enchereManager, enchereService, messages));
     }
 
+    private void setupRanks() {
+        this.ranksConfig = new ConfigManager(this, "ranks.yml");
+        this.rankManager = new RankManager(this, database, ranksConfig);
+        this.rankService = new RankService(this, rankManager, economyManager, messages);
+        getCommand("prestige").setExecutor(new RankCommand(rankService, messages));
+    }
+
     private void setupBoutique() {
         this.boutiqueConfig = new ConfigManager(this, "boutique.yml");
-        this.shopManager = new ShopManager(this, boutiqueConfig);
-        this.shopService = new ShopService(economyManager, rewardGiver, customItemManager, messages);
-        getCommand("boutique").setExecutor(new ShopCommand(boutiqueConfig, shopManager, shopService, economyManager, messages));
+        this.shopManager = new ShopManager(this, database, boutiqueConfig);
+        this.shopService = new ShopService(economyManager, rewardGiver, customItemManager, rankManager, messages);
+        getCommand("boutique").setExecutor(new ShopCommand(this, boutiqueConfig, shopManager, shopService, economyManager, messages));
     }
 
     private void setupKits() {
@@ -538,6 +577,27 @@ public final class MysteriaCraft extends JavaPlugin {
         KitCommand kitCommand = new KitCommand(this, kitsConfig, kitManager, kitService, messages);
         getCommand("kit").setExecutor(kitCommand);
         getCommand("kit").setTabCompleter(kitCommand);
+    }
+
+    private void setupHomes() {
+        this.homesConfig = new ConfigManager(this, "homes.yml");
+        this.homeManager = new HomeManager(this, database, homesConfig, rankManager);
+        HomeCommand homeCommand = new HomeCommand(this, homeManager, messages);
+        getCommand("home").setExecutor(homeCommand);
+        getCommand("home").setTabCompleter(homeCommand);
+    }
+
+    private void setupStorage() {
+        this.storageConfig = new ConfigManager(this, "storage.yml");
+        this.personalStorageManager = new PersonalStorageManager(this, database);
+        this.storageService = new StorageService(this, personalStorageManager, storageConfig, customItemManager, economyManager, messages);
+        Bukkit.getPluginManager().registerEvents(new StorageListener(storageService), this);
+        getCommand("sac").setExecutor(new SacCommand(storageService, messages));
+        getCommand("coffrefort").setExecutor(new CoffreFortCommand(storageService, messages));
+    }
+
+    private void setupTools() {
+        getCommand("trier").setExecutor(new SortCommand(messages));
     }
 
     @Override

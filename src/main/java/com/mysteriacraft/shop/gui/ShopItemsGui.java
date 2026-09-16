@@ -15,6 +15,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,8 +23,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Menu listant les articles d'une categorie de boutique. Clic gauche = acheter, clic droit =
- * revendre (si l'article tenu en main correspond, voir ShopService#sell).
+ * Menu listant les articles d'une categorie de boutique (ou de la categorie virtuelle "Favoris").
+ * Clic gauche = acheter, clic droit = revendre (si l'article tenu en main correspond, voir
+ * ShopService#sell), shift-clic (gauche ou droit) = basculer le favori de cet article.
  */
 public class ShopItemsGui extends Menu {
 
@@ -33,6 +35,7 @@ public class ShopItemsGui extends Menu {
     private static final int PREVIOUS_SLOT = 19;
     private static final int NEXT_SLOT = 25;
 
+    private final Plugin plugin;
     private final ShopManager.ShopCategory category;
     private final ShopManager manager;
     private final ShopService service;
@@ -43,9 +46,10 @@ public class ShopItemsGui extends Menu {
     private Inventory inventory;
     private int page = 0;
 
-    public ShopItemsGui(Player viewer, ShopManager.ShopCategory category, ShopManager manager,
+    public ShopItemsGui(Plugin plugin, Player viewer, ShopManager.ShopCategory category, ShopManager manager,
                          ShopService service, EconomyManager economyManager, MessageManager messages) {
         super(viewer);
+        this.plugin = plugin;
         this.category = category;
         this.manager = manager;
         this.service = service;
@@ -82,7 +86,7 @@ public class ShopItemsGui extends Menu {
                 break;
             }
             ShopManager.ShopItem item = items.get(index);
-            inventory.setItem(ITEM_SLOTS[i], buildItemIcon(item));
+            inventory.setItem(ITEM_SLOTS[i], buildItemIcon(viewer.getUniqueId(), item));
             slotToItemId.put(ITEM_SLOTS[i], item.id());
         }
 
@@ -99,8 +103,10 @@ public class ShopItemsGui extends Menu {
         }
     }
 
-    private ItemStack buildItemIcon(ShopManager.ShopItem item) {
+    private ItemStack buildItemIcon(java.util.UUID viewerId, ShopManager.ShopItem item) {
         ItemStack icon = item.icon() != null ? item.icon().clone() : new ItemStack(Material.STONE);
+        boolean favorite = manager.isFavorite(viewerId, item.categoryId(), item.id());
+
         List<String> lore = new ArrayList<>();
         if (item.isPurchasable()) {
             lore.add(replace(messages.raw("boutique.gui-prix-achat"), "prix", economyManager.format(item.buyPrice())));
@@ -116,6 +122,10 @@ public class ShopItemsGui extends Menu {
         }
         if (item.isSellable()) {
             lore.add(messages.raw("boutique.gui-clic-vendre"));
+        }
+        lore.add(favorite ? messages.raw("boutique.gui-favori-retirer") : messages.raw("boutique.gui-favori-ajouter"));
+        if (favorite) {
+            lore.add(0, messages.raw("boutique.gui-favori-marque"));
         }
 
         ItemMeta meta = icon.getItemMeta();
@@ -139,7 +149,7 @@ public class ShopItemsGui extends Menu {
 
         if (slot == BACK_SLOT) {
             if (event.getWhoClicked() instanceof Player player) {
-                new ShopCategoriesGui(player, manager, service, economyManager, messages).open();
+                new ShopCategoriesGui(plugin, player, manager, service, economyManager, messages).open();
             }
             return;
         }
@@ -163,10 +173,25 @@ public class ShopItemsGui extends Menu {
             return;
         }
 
+        if (event.isShiftClick()) {
+            toggleFavorite(player, item);
+            return;
+        }
         if (event.getClick() == ClickType.RIGHT) {
             service.sell(player, item);
         } else {
             service.buy(player, item);
         }
+    }
+
+    private void toggleFavorite(Player player, ShopManager.ShopItem item) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            manager.toggleFavorite(player.getUniqueId(), item.categoryId(), item.id());
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (player.isOnline()) {
+                    render();
+                }
+            });
+        });
     }
 }

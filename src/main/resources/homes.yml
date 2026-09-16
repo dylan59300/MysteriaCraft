@@ -1,0 +1,12 @@
+# =========================================
+#   MysteriaCraft - Configuration des Homes
+# =========================================
+# /home [nom] teleporte vers un home (par defaut "default"). /home set [nom] sauvegarde la position
+# actuelle. /home del <nom> supprime un home. /home liste affiche vos homes et votre limite.
+#
+# limite-homes-defaut       : nombre de homes maximum sans aucun prestige.
+# bonus-par-niveau-prestige : homes supplementaires accordes par niveau de prestige (voir
+#                             /prestige et ranks.yml) : limite finale = limite-homes-defaut +
+#                             bonus-par-niveau-prestige * niveau de prestige actuel.
+limite-homes-defaut: 3
+bonus-par-niveau-prestige: 1

@@ -1,0 +1,20 @@
+# =========================================
+#   MysteriaCraft - Configuration du Sac et du Coffre-fort
+# =========================================
+# Le Sac (/sac) et le Coffre-fort (/coffrefort) sont deux espaces de stockage personnels
+# independants de l'inventaire et de l'enderchest, chacun ameliorable pour gagner des slots
+# supplementaires (jusqu'a taille-max), par des moyens differents :
+# - Sac       : amelioration avec un item custom consommable (/sac ameliorer, en le tenant en main).
+# - Coffre-fort : amelioration en payant directement avec la monnaie interne (/coffrefort ameliorer).
+
+sac:
+  taille-base: 9              # 1 rangee au depart
+  taille-max: 54               # 6 rangees au maximum
+  slots-par-amelioration: 9    # +1 rangee par utilisation de l'item d'amelioration
+  item-amelioration: amelioration_sac   # id d'un item custom consommable (voir custom_items.yml)
+
+coffrefort:
+  taille-base: 9
+  taille-max: 54
+  slots-par-amelioration: 9
+  cout-par-amelioration: 5000

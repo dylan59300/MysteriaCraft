@@ -13,20 +13,24 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Menu listant les categories de la Boutique. Clic sur une categorie ouvre ses articles. */
+/** Menu listant les categories de la Boutique (+ un raccourci Favoris). Clic sur une categorie
+ * ouvre ses articles. */
 public class ShopCategoriesGui extends Menu {
 
     private static final int SIZE = 27;
     private static final int[] CATEGORY_SLOTS = {10, 11, 12, 13, 14, 15, 16};
+    private static final int FAVORITES_SLOT = 22;
     private static final int PREVIOUS_SLOT = 18;
     private static final int NEXT_SLOT = 26;
 
+    private final Plugin plugin;
     private final ShopManager manager;
     private final ShopService service;
     private final EconomyManager economyManager;
@@ -37,9 +41,10 @@ public class ShopCategoriesGui extends Menu {
     private List<ShopManager.ShopCategory> categories;
     private int page = 0;
 
-    public ShopCategoriesGui(Player viewer, ShopManager manager, ShopService service,
+    public ShopCategoriesGui(Plugin plugin, Player viewer, ShopManager manager, ShopService service,
                               EconomyManager economyManager, MessageManager messages) {
         super(viewer);
+        this.plugin = plugin;
         this.manager = manager;
         this.service = service;
         this.economyManager = economyManager;
@@ -83,6 +88,11 @@ public class ShopCategoriesGui extends Menu {
             slotToCategoryId.put(CATEGORY_SLOTS[i], category.id());
         }
 
+        inventory.setItem(FAVORITES_SLOT, new ItemBuilder(Material.NETHER_STAR)
+                .name(messages.raw("boutique.gui-favoris"))
+                .lore(List.of(messages.raw("boutique.gui-clic-ouvrir")))
+                .build());
+
         int maxPage = maxPage();
         if (page > 0) {
             inventory.setItem(PREVIOUS_SLOT, new ItemBuilder(Material.ARROW)
@@ -109,6 +119,13 @@ public class ShopCategoriesGui extends Menu {
             return;
         }
 
+        if (slot == FAVORITES_SLOT) {
+            if (event.getWhoClicked() instanceof Player player) {
+                openFavorites(player);
+            }
+            return;
+        }
+
         String categoryId = slotToCategoryId.get(slot);
         if (categoryId == null || !(event.getWhoClicked() instanceof Player player)) {
             return;
@@ -117,6 +134,20 @@ public class ShopCategoriesGui extends Menu {
         if (category == null) {
             return;
         }
-        new ShopItemsGui(player, category, manager, service, economyManager, messages).open();
+        new ShopItemsGui(plugin, player, category, manager, service, economyManager, messages).open();
+    }
+
+    private void openFavorites(Player player) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            List<ShopManager.ShopItem> favorites = manager.getFavorites(player.getUniqueId());
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (!player.isOnline()) {
+                    return;
+                }
+                ShopManager.ShopCategory favoritesCategory = new ShopManager.ShopCategory(
+                        "favoris", messages.raw("boutique.gui-favoris"), Material.NETHER_STAR, favorites);
+                new ShopItemsGui(plugin, player, favoritesCategory, manager, service, economyManager, messages).open();
+            });
+        });
     }
 }

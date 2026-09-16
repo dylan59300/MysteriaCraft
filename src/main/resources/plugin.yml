@@ -127,6 +127,21 @@ commands:
     # Pas de "permission:" ici : ouvrir le menu doit rester accessible a tout joueur (chaque kit
     # peut avoir sa propre permission optionnelle, voir kits.yml). reload est verifie manuellement
     # dans le code (mysteriacraft.kit.admin).
+  prestige:
+    description: Affiche votre palier de prestige, ou en achete le suivant
+    usage: /<command> [confirmer]
+  home:
+    description: Gere vos homes multiples (limite selon votre prestige)
+    usage: /<command> [nom|set [nom]|del <nom>|liste]
+  sac:
+    description: Ouvre votre Sac personnel, ou l'ameliore avec l'item dedie en main
+    usage: /<command> [ameliorer]
+  coffrefort:
+    description: Ouvre votre Coffre-fort personnel, ou paye pour l'agrandir
+    usage: /<command> [ameliorer]
+  trier:
+    description: Range et fusionne automatiquement votre inventaire
+    usage: /<command>
 
 permissions:
   mysteriacraft.eco.admin:
