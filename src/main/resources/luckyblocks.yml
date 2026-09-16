@@ -32,6 +32,14 @@
 #              d'une famille (voir effets-communs-bons et les familles ci-dessous) pour les inclure.
 pity-seuil: 40
 #
+# kit-connexion : si actif, donne "quantite" exemplaires de CHAQUE famille de Lucky Block
+#                 ACTUELLEMENT active (les familles saisonnieres hors periode sont ignorees, voir
+#                 actif-du/actif-au) a un joueur a CHAQUE connexion (pas seulement la premiere).
+#                 actif: false desactive completement le systeme.
+kit-connexion:
+  actif: true
+  quantite: 20
+#
 # effets-communs-bons : pool d'effets BONS fusionne automatiquement dans LE POOL BON DE CHAQUE
 #                       FAMILLE (commune, rare, epique, legendaire, et toute famille ajoutee plus
 #                       tard) EN PLUS de ses propres effets "effets:". Pas besoin de dupliquer ce
@@ -207,6 +215,66 @@ familles:
           type: GENERATEUR
           type-id: fer
           quantite: 1
+      - type: BON
+        chance: 20
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: rubis
+          quantite: 4
+      - type: BON
+        chance: 20
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: onyx
+          quantite: 4
+      - type: BON
+        chance: 18
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: grenat
+          quantite: 4
+      - type: BON
+        chance: 15
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: carburant
+          quantite: 8
+      - type: BON
+        chance: 12
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: kit_reparation
+          quantite: 2
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: epee_apprenti
+          quantite: 1
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: pioche_mineur
+          quantite: 1
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: hache_bucheron
+          quantite: 1
+      - type: BON
+        chance: 8
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: armure_garde_casque
+          quantite: 1
+      - type: BON
+        chance: 8
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: armure_garde_bottes
+          quantite: 1
 
   rare:
     nom: "&b&lLucky Block Rare"
@@ -250,6 +318,90 @@ familles:
         recompense:
           type: GENERATEUR
           type-id: ressource_fer
+          quantite: 1
+      - type: BON
+        chance: 18
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: saphir
+          quantite: 4
+      - type: BON
+        chance: 15
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: topaze
+          quantite: 3
+      - type: BON
+        chance: 15
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: opale
+          quantite: 3
+      - type: BON
+        chance: 12
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: amethyste
+          quantite: 3
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: aquamarine
+          quantite: 2
+      - type: BON
+        chance: 15
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: carburant_ameliore
+          quantite: 6
+      - type: BON
+        chance: 12
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: carburant_minier
+          quantite: 4
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: kit_argent
+          quantite: 1
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: epee_guerrier
+          quantite: 1
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: pioche_expert
+          quantite: 1
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: hache_demolisseur
+          quantite: 1
+      - type: BON
+        chance: 8
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: armure_garde_plastron
+          quantite: 1
+      - type: BON
+        chance: 8
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: armure_garde_jambieres
+          quantite: 1
+      - type: BON
+        chance: 8
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: armure_paladin_plastron
           quantite: 1
 
   epique:
@@ -314,6 +466,72 @@ familles:
         recompense:
           type: MACHINE
           machine-id: miniere
+          quantite: 1
+      - type: BON
+        chance: 12
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: peridot
+          quantite: 2
+      - type: BON
+        chance: 12
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: carburant_minier_ameliore
+          quantite: 3
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: amelioration_machine
+          quantite: 1
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: kit_or
+          quantite: 1
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: boost_generateur
+          quantite: 1
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: boost_stockage_generateur
+          quantite: 1
+      - type: BON
+        chance: 12
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: essence_enchantement
+          quantite: 3
+      - type: BON
+        chance: 8
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: epee_spectrale
+          quantite: 1
+      - type: BON
+        chance: 8
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: pioche_du_gouffre
+          quantite: 1
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: armure_paladin_jambieres
+          quantite: 1
+      - type: BON
+        chance: 6
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: oeuf_pnj_forgeron
           quantite: 1
 
   legendaire:
@@ -405,6 +623,47 @@ familles:
         recompense:
           type: MACHINE
           machine-id: transformation
+          quantite: 1
+      - type: BON
+        chance: 15
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: jade
+          quantite: 2
+      - type: BON
+        chance: 10
+        pity: true
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: epee_du_vide
+          quantite: 1
+      - type: BON
+        chance: 8
+        pity: true
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: armure_immortelle_plastron
+          quantite: 1
+      - type: BON
+        chance: 8
+        pity: true
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: armure_immortelle_jambieres
+          quantite: 1
+      - type: BON
+        chance: 8
+        pity: true
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: armure_immortelle_bottes
+          quantite: 1
+      - type: BON
+        chance: 6
+        pity: true
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: oeuf_pnj_marchand
           quantite: 1
 
   # Exemple de famille SAISONNIERE (voir actif-du/actif-au ci-dessus) : disponible seulement du

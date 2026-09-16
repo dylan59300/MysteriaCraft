@@ -81,6 +81,11 @@ public class LuckyBlockManager {
     /** Nombre de casses sans "gros lot" avant garantie (0 = systeme de pity desactive). */
     private int pityThreshold = 0;
 
+    /** Kit de connexion (voir luckyblocks.yml: kit-connexion) : donne "quantite" exemplaires de
+     * CHAQUE famille actuellement active a un joueur a chaque connexion. */
+    private boolean joinKitEnabled = false;
+    private int joinKitQuantity = 0;
+
     public LuckyBlockManager(Plugin plugin, Database database, ConfigManager luckyBlocksConfig) {
         this.plugin = plugin;
         this.database = database;
@@ -215,6 +220,10 @@ public class LuckyBlockManager {
         oreBonuses.clear();
         bonusMax = luckyBlocksConfig.get().getDouble("bonus-minerais-max", 45.0);
         pityThreshold = Math.max(0, luckyBlocksConfig.get().getInt("pity-seuil", 0));
+
+        ConfigurationSection joinKitSection = luckyBlocksConfig.get().getConfigurationSection("kit-connexion");
+        joinKitEnabled = joinKitSection != null && joinKitSection.getBoolean("actif", false);
+        joinKitQuantity = joinKitSection != null ? Math.max(0, joinKitSection.getInt("quantite", 0)) : 0;
 
         ConfigurationSection section = luckyBlocksConfig.get().getConfigurationSection("bonus-minerais");
         if (section == null) {
@@ -397,6 +406,16 @@ public class LuckyBlockManager {
 
     public int getPityThreshold() {
         return pityThreshold;
+    }
+
+    // ---- Kit de connexion (voir luckyblocks.yml: kit-connexion) ----
+
+    public boolean isJoinKitEnabled() {
+        return joinKitEnabled;
+    }
+
+    public int getJoinKitQuantity() {
+        return joinKitQuantity;
     }
 
     /** Casses consecutives de ce joueur sur cette famille sans effet "pity" (0 si aucune ou systeme desactive). */

@@ -7,13 +7,16 @@ import com.mysteriacraft.luckyblock.LuckyBlockService;
 import com.mysteriacraft.luckyblock.gui.LuckyBlockOddsGui;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -100,6 +103,27 @@ public class LuckyBlockListener implements Listener {
         }
         event.setCancelled(true);
         new LuckyBlockOddsGui(event.getPlayer(), family, manager, null, messages).open();
+    }
+
+    /** Kit de connexion (voir luckyblocks.yml: kit-connexion) : donne "quantite" exemplaires de
+     * CHAQUE famille de Lucky Block actuellement active a chaque connexion du joueur. */
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        if (!manager.isJoinKitEnabled() || manager.getJoinKitQuantity() <= 0) {
+            return;
+        }
+        Player player = event.getPlayer();
+        int quantity = manager.getJoinKitQuantity();
+        for (LuckyBlockFamily family : manager.getFamiliesSorted()) {
+            ItemStack item = manager.createItem(family, quantity);
+            Map<Integer, ItemStack> leftovers = player.getInventory().addItem(item);
+            if (!leftovers.isEmpty()) {
+                leftovers.values().forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
+            }
+        }
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("quantite", String.valueOf(quantity));
+        messages.send(player, "luckyblock.kit-connexion", placeholders);
     }
 
     @EventHandler(ignoreCancelled = true)

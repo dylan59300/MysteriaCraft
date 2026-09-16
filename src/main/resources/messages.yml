@@ -162,6 +162,7 @@ luckyblock:
   admin-usage: "&cUsage : /luckyblockadmin <give <joueur> <famille> [quantite]|simulate <famille> <nombre>|reload>"
   simulation-titre: "&d&l=== Simulation : {nombre}x {famille} (items reellement recus) ==="
   introuvable: "&cCette famille de Lucky Block n'existe pas. &7Familles valides : &e{ids}"
+  kit-connexion: "&d&lCadeau de bienvenue ! &aVous avez recu &e{quantite}x &ade chaque Lucky Block disponible."
   non-achetable: "&cCette famille n'est pas achetable directement (craft ou recompense uniquement)."
   hors-saison: "&cCette famille de Lucky Block n'est disponible que pendant sa periode saisonniere."
   fonds-insuffisants: "&cVous n'avez pas assez d'argent pour cet achat."
