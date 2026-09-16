@@ -82,6 +82,12 @@ import com.mysteriacraft.classes.listeners.ClasseListener;
 import com.mysteriacraft.encheres.EnchereManager;
 import com.mysteriacraft.encheres.EnchereService;
 import com.mysteriacraft.encheres.commands.EnchereCommand;
+import com.mysteriacraft.shop.ShopManager;
+import com.mysteriacraft.shop.ShopService;
+import com.mysteriacraft.shop.commands.ShopCommand;
+import com.mysteriacraft.kit.KitManager;
+import com.mysteriacraft.kit.KitService;
+import com.mysteriacraft.kit.commands.KitCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -158,6 +164,12 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager encheresConfig;
     private EnchereManager enchereManager;
     private EnchereService enchereService;
+    private ConfigManager boutiqueConfig;
+    private ShopManager shopManager;
+    private ShopService shopService;
+    private ConfigManager kitsConfig;
+    private KitManager kitManager;
+    private KitService kitService;
 
     @Override
     public void onEnable() {
@@ -224,6 +236,12 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Module Hotel des Ventes (depend d'economyManager) ----
         setupEncheres();
+
+        // ---- Module Boutique (depend d'economyManager, rewardGiver et customItemManager) ----
+        setupBoutique();
+
+        // ---- Module Kits (depend de rewardGiver) ----
+        setupKits();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -504,6 +522,22 @@ public final class MysteriaCraft extends JavaPlugin {
         this.enchereService = new EnchereService(this, enchereManager, economyManager, messages);
         getCommand("hoteldesventes").setExecutor(
                 new EnchereCommand(this, encheresConfig, enchereManager, enchereService, messages));
+    }
+
+    private void setupBoutique() {
+        this.boutiqueConfig = new ConfigManager(this, "boutique.yml");
+        this.shopManager = new ShopManager(this, boutiqueConfig);
+        this.shopService = new ShopService(economyManager, rewardGiver, customItemManager, messages);
+        getCommand("boutique").setExecutor(new ShopCommand(boutiqueConfig, shopManager, shopService, economyManager, messages));
+    }
+
+    private void setupKits() {
+        this.kitsConfig = new ConfigManager(this, "kits.yml");
+        this.kitManager = new KitManager(this, database, kitsConfig);
+        this.kitService = new KitService(this, kitManager, rewardGiver, messages);
+        KitCommand kitCommand = new KitCommand(this, kitsConfig, kitManager, kitService, messages);
+        getCommand("kit").setExecutor(kitCommand);
+        getCommand("kit").setTabCompleter(kitCommand);
     }
 
     @Override

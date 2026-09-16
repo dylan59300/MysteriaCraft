@@ -116,6 +116,17 @@ commands:
     usage: /<command> [vendre <prix>|mesventes|annuler <id>|reload]
     # Pas de "permission:" ici : vendre/mesventes/annuler doivent rester accessibles a tout joueur.
     # reload est verifie manuellement dans le code (mysteriacraft.encheres.admin).
+  boutique:
+    description: Ouvre le menu de la Boutique (achat/revente avec la monnaie interne)
+    usage: /<command> [reload]
+    # Pas de "permission:" ici : ouvrir la boutique doit rester accessible a tout joueur.
+    # reload est verifie manuellement dans le code (mysteriacraft.boutique.admin).
+  kit:
+    description: Ouvre le menu des kits, ou en recupere un directement
+    usage: /<command> [id-kit|reload]
+    # Pas de "permission:" ici : ouvrir le menu doit rester accessible a tout joueur (chaque kit
+    # peut avoir sa propre permission optionnelle, voir kits.yml). reload est verifie manuellement
+    # dans le code (mysteriacraft.kit.admin).
 
 permissions:
   mysteriacraft.eco.admin:
@@ -172,3 +183,12 @@ permissions:
   mysteriacraft.encheres.admin:
     description: Autorise la gestion admin de l'Hotel des Ventes (reload)
     default: op
+  mysteriacraft.boutique.admin:
+    description: Autorise la gestion admin de la Boutique (reload)
+    default: op
+  mysteriacraft.kit.admin:
+    description: Autorise la gestion admin des Kits (reload)
+    default: op
+  mysteriacraft.kit.vip:
+    description: Autorise la recuperation du Kit VIP (a lier a un rang)
+    default: false
