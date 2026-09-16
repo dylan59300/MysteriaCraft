@@ -9,16 +9,20 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * /luckyblockadmin give <joueur> <famille> [quantite] | simulate <famille> <nombre> | reload
  */
-public class LuckyBlockAdminCommand implements CommandExecutor {
+public class LuckyBlockAdminCommand implements CommandExecutor, TabCompleter {
 
     private final ConfigManager luckyBlocksConfig;
     private final LuckyBlockManager manager;
@@ -64,7 +68,9 @@ public class LuckyBlockAdminCommand implements CommandExecutor {
             }
             LuckyBlockFamily family = manager.getFamily(args[2]);
             if (family == null) {
-                messages.send(sender, "luckyblock.introuvable");
+                Map<String, String> notFoundPlaceholders = new HashMap<>();
+                notFoundPlaceholders.put("ids", joinIds());
+                messages.send(sender, "luckyblock.introuvable", notFoundPlaceholders);
                 return true;
             }
             int quantity = 1;
@@ -102,7 +108,9 @@ public class LuckyBlockAdminCommand implements CommandExecutor {
             }
             LuckyBlockFamily family = manager.getFamily(args[1]);
             if (family == null) {
-                messages.send(sender, "luckyblock.introuvable");
+                Map<String, String> notFoundPlaceholders = new HashMap<>();
+                notFoundPlaceholders.put("ids", joinIds());
+                messages.send(sender, "luckyblock.introuvable", notFoundPlaceholders);
                 return true;
             }
             int count;
@@ -118,5 +126,32 @@ public class LuckyBlockAdminCommand implements CommandExecutor {
 
         messages.send(sender, "luckyblock.admin-usage");
         return true;
+    }
+
+    /** Complete "give"/"simulate" avec la liste des familles de LuckyBlock existantes (voir
+     * luckyblocks.yml), pour que le joueur voie directement en jeu ce qu'il peut se donner. */
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length == 1) {
+            return filterStartsWith(List.of("give", "simulate", "reload"), args[0]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
+            return null; // Bukkit complete automatiquement avec les joueurs en ligne.
+        }
+        if ((args.length == 2 && args[0].equalsIgnoreCase("simulate"))
+                || (args.length == 3 && args[0].equalsIgnoreCase("give"))) {
+            List<String> ids = manager.getFamiliesSorted().stream().map(LuckyBlockFamily::id).toList();
+            return filterStartsWith(ids, args[args.length - 1]);
+        }
+        return new ArrayList<>();
+    }
+
+    private static List<String> filterStartsWith(List<String> options, String prefix) {
+        String lower = prefix.toLowerCase();
+        return options.stream().filter(o -> o.toLowerCase().startsWith(lower)).collect(Collectors.toList());
+    }
+
+    private String joinIds() {
+        return manager.getFamiliesSorted().stream().map(LuckyBlockFamily::id).collect(Collectors.joining(", "));
     }
 }

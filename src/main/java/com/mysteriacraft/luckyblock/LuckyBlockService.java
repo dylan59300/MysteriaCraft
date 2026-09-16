@@ -19,6 +19,7 @@ import org.bukkit.potion.PotionEffectType;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Orchestre la casse d'un Lucky Block : tirage pondere (aucun cooldown, se recasse immediatement)
@@ -191,7 +192,9 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
     public void buy(Player player, String familyId, int quantity) {
         LuckyBlockFamily family = manager.getFamily(familyId);
         if (family == null) {
-            messages.send(player, "luckyblock.introuvable");
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("ids", manager.getFamiliesSorted().stream().map(LuckyBlockFamily::id).collect(Collectors.joining(", ")));
+            messages.send(player, "luckyblock.introuvable", placeholders);
             return;
         }
         if (!family.isPurchasable()) {

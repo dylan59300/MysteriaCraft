@@ -10,17 +10,21 @@ import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * /generateur give <joueur> <fer|or|diamant> [quantite] | reload (admin uniquement)
  * /generateur liste (accessible a tout joueur, liste SES generateurs actifs)
  */
-public class GeneratorCommand implements CommandExecutor {
+public class GeneratorCommand implements CommandExecutor, TabCompleter {
 
     private final ConfigManager generatorsConfig;
     private final GeneratorManager manager;
@@ -117,7 +121,9 @@ public class GeneratorCommand implements CommandExecutor {
         }
         GeneratorManager.GeneratorType type = manager.getType(args[2]);
         if (type == null) {
-            messages.send(sender, "generateur.type-introuvable");
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("ids", joinIds());
+            messages.send(sender, "generateur.type-introuvable", placeholders);
             return true;
         }
         int quantity = 1;
@@ -142,5 +148,31 @@ public class GeneratorCommand implements CommandExecutor {
         placeholders.put("generateur", type.displayName());
         messages.send(sender, "generateur.give-effectue", placeholders);
         return true;
+    }
+
+    /** Complete "give" avec la liste des ids de generateurs existants (voir generateurs.yml), pour
+     * que le joueur voie directement en jeu ce qu'il peut se donner sans avoir a deviner l'id. */
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length == 1) {
+            return filterStartsWith(List.of("liste", "give", "reload"), args[0]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
+            return null; // Bukkit complete automatiquement avec les joueurs en ligne.
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("give")) {
+            List<String> ids = manager.getTypes().stream().map(GeneratorManager.GeneratorType::id).toList();
+            return filterStartsWith(ids, args[2]);
+        }
+        return new ArrayList<>();
+    }
+
+    private static List<String> filterStartsWith(List<String> options, String prefix) {
+        String lower = prefix.toLowerCase();
+        return options.stream().filter(o -> o.toLowerCase().startsWith(lower)).collect(Collectors.toList());
+    }
+
+    private String joinIds() {
+        return manager.getTypes().stream().map(GeneratorManager.GeneratorType::id).collect(Collectors.joining(", "));
     }
 }

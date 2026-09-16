@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 /**
  * Gere le tirage des drops de minerais custom a la casse d'un bloc source, ainsi que la
@@ -177,7 +178,9 @@ public class CustomItemService implements RewardGiver.CustomItemGiveHandler {
     public void sellAll(Player player, String itemId) {
         CustomItemDefinition definition = manager.getItem(itemId);
         if (definition == null) {
-            messages.send(player, "customitem.introuvable");
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("ids", manager.getItemsSorted().stream().map(CustomItemDefinition::id).collect(Collectors.joining(", ")));
+            messages.send(player, "customitem.introuvable", placeholders);
             return;
         }
         if (!definition.isSellable()) {

@@ -11,12 +11,15 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * /customitem give <joueur> <id> [quantite] (admin)
@@ -24,7 +27,7 @@ import java.util.Map;
  * /customitem recettes
  * /customitem reload (admin)
  */
-public class CustomItemCommand implements CommandExecutor {
+public class CustomItemCommand implements CommandExecutor, TabCompleter {
 
     private final ConfigManager customItemsConfig;
     private final CustomItemManager manager;
@@ -92,6 +95,33 @@ public class CustomItemCommand implements CommandExecutor {
         return true;
     }
 
+    /** Complete "give"/"sell" avec la liste des ids d'items custom existants (voir custom_items.yml),
+     * pour que le joueur voie directement en jeu ce qu'il peut se donner sans avoir a deviner l'id. */
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length == 1) {
+            return filterStartsWith(List.of("gui", "give", "sell", "recettes", "reload"), args[0]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
+            return null; // Bukkit complete automatiquement avec les joueurs en ligne.
+        }
+        if ((args.length == 2 && args[0].equalsIgnoreCase("sell"))
+                || (args.length == 3 && args[0].equalsIgnoreCase("give"))) {
+            List<String> ids = manager.getItemsSorted().stream().map(CustomItemDefinition::id).toList();
+            return filterStartsWith(ids, args[args.length - 1]);
+        }
+        return new ArrayList<>();
+    }
+
+    private static List<String> filterStartsWith(List<String> options, String prefix) {
+        String lower = prefix.toLowerCase();
+        return options.stream().filter(o -> o.toLowerCase().startsWith(lower)).collect(Collectors.toList());
+    }
+
+    private String joinIds() {
+        return manager.getItemsSorted().stream().map(CustomItemDefinition::id).collect(Collectors.joining(", "));
+    }
+
     /** Affiche a l'expediteur la forme et les ingredients de chaque item custom craftable. */
     private void sendRecipes(CommandSender sender) {
         List<CustomItemDefinition> craftables = manager.getItemsSorted().stream()
@@ -133,7 +163,9 @@ public class CustomItemCommand implements CommandExecutor {
         }
         CustomItemDefinition definition = manager.getItem(args[2]);
         if (definition == null) {
-            messages.send(sender, "customitem.introuvable");
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("ids", joinIds());
+            messages.send(sender, "customitem.introuvable", placeholders);
             return true;
         }
         int quantity = 1;

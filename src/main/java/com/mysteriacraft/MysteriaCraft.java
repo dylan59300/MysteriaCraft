@@ -304,7 +304,9 @@ public final class MysteriaCraft extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new LuckyBlockListener(luckyBlockManager, luckyBlockService, messages), this);
 
         getCommand("luckyblock").setExecutor(new LuckyBlockCommand(luckyBlockManager, luckyBlockService, economyManager, messages));
-        getCommand("luckyblockadmin").setExecutor(new LuckyBlockAdminCommand(luckyBlocksConfig, luckyBlockManager, luckyBlockService, messages));
+        LuckyBlockAdminCommand luckyBlockAdminCommand = new LuckyBlockAdminCommand(luckyBlocksConfig, luckyBlockManager, luckyBlockService, messages);
+        getCommand("luckyblockadmin").setExecutor(luckyBlockAdminCommand);
+        getCommand("luckyblockadmin").setTabCompleter(luckyBlockAdminCommand);
     }
 
     private void setupCustomItems() {
@@ -316,8 +318,9 @@ public final class MysteriaCraft extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new CustomItemListener(customItemService, customItemManager), this);
 
-        getCommand("customitem").setExecutor(
-                new CustomItemCommand(customItemsConfig, customItemManager, customItemService, messages));
+        CustomItemCommand customItemCommand = new CustomItemCommand(customItemsConfig, customItemManager, customItemService, messages);
+        getCommand("customitem").setExecutor(customItemCommand);
+        getCommand("customitem").setTabCompleter(customItemCommand);
 
         // Machine a Transformation : minerai -> Lucky Block (module luckyblock deja initialise avant celui-ci).
         this.machineManager = new MachineManager(this, database, customItemsConfig);
@@ -362,7 +365,9 @@ public final class MysteriaCraft extends JavaPlugin {
         rewardGiver.setGeneratorGiveHandler(generatorService);
 
         Bukkit.getPluginManager().registerEvents(new GeneratorListener(generatorManager, generatorService, messages), this);
-        getCommand("generateur").setExecutor(new GeneratorCommand(generatorsConfig, generatorManager, economyManager, messages));
+        GeneratorCommand generatorCommand = new GeneratorCommand(generatorsConfig, generatorManager, economyManager, messages);
+        getCommand("generateur").setExecutor(generatorCommand);
+        getCommand("generateur").setTabCompleter(generatorCommand);
 
         // Recalcul du stock accumule + auto-collecte (hopper) + rafraichissement de l'hologramme
         // (frequence configurable, generateurs.yml: tick-secondes).
