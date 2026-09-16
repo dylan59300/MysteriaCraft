@@ -341,42 +341,59 @@ public class MachineService {
     private record MachineLoot(String displayName, ItemStack item) {
     }
 
-    /** Pioche au hasard, a EGALITE de chance, parmi : tous les items custom charges depuis
-     * custom_items.yml qui n'excluent pas ce tirage (voir CustomItemDefinition#excluLootMachine),
-     * tous les types de Generateurs (voir generateurs.yml), la Machine a Transformation elle-meme
-     * et la Machine a Miner (les 2 dernieres uniquement si leurs managers sont deja injectes, voir
-     * setGeneratorManager/setMiningMachineManager). Ne renvoie jamais null : la Machine a
-     * Transformation elle-meme est toujours candidate. */
+    /** Un candidat au tirage pondere : son poids (voir MachineManager#getItemLootWeight et
+     * consorts) et une fabrique paresseuse (n'est appelee QUE pour le candidat tire au sort, pour
+     * ne jamais construire inutilement les ~60 ItemStack a chaque tentative). */
+    private record LootCandidate(int weight, java.util.function.Supplier<MachineLoot> factory) {
+    }
+
+    /** Pioche au hasard, PONDERE par machine-transformation.poids-loot (voir custom_items.yml),
+     * parmi : tous les items custom charges depuis custom_items.yml qui n'excluent pas ce tirage
+     * (voir CustomItemDefinition#excluLootMachine), tous les types de Generateurs (voir
+     * generateurs.yml), la Machine a Transformation elle-meme et la Machine a Miner (les 2
+     * dernieres uniquement si leurs managers sont deja injectes, voir setGeneratorManager/
+     * setMiningMachineManager). Plus un poids est eleve, plus l'entree a de chances de sortir.
+     * Ne renvoie jamais null : la Machine a Transformation elle-meme est toujours candidate. */
     private MachineLoot pickRandomLoot() {
-        List<CustomItemDefinition> items = customItemManager.getItemsSorted().stream()
-                .filter(item -> !item.excluLootMachine())
-                .toList();
-        List<GeneratorManager.GeneratorType> generatorTypes = generatorManager != null
-                ? generatorManager.getTypes() : List.of();
-        boolean includeMiningMachine = miningMachineManager != null;
+        List<LootCandidate> candidates = new ArrayList<>();
 
-        int total = items.size() + generatorTypes.size() + 1 + (includeMiningMachine ? 1 : 0);
-        int index = ThreadLocalRandom.current().nextInt(total);
-
-        if (index < items.size()) {
-            CustomItemDefinition definition = items.get(index);
-            return new MachineLoot(definition.displayName(), customItemManager.createItem(definition));
+        for (CustomItemDefinition definition : customItemManager.getItemsSorted()) {
+            if (definition.excluLootMachine()) {
+                continue;
+            }
+            candidates.add(new LootCandidate(manager.getItemLootWeight(definition.id()),
+                    () -> new MachineLoot(definition.displayName(), customItemManager.createItem(definition))));
         }
-        index -= items.size();
 
-        if (index < generatorTypes.size()) {
-            GeneratorManager.GeneratorType type = generatorTypes.get(index);
-            return new MachineLoot(type.displayName(), generatorManager.createGeneratorItem(type, 1));
+        if (generatorManager != null) {
+            for (GeneratorManager.GeneratorType type : generatorManager.getTypes()) {
+                candidates.add(new LootCandidate(manager.getGeneratorLootWeight(type.id()),
+                        () -> new MachineLoot(type.displayName(), generatorManager.createGeneratorItem(type, 1))));
+            }
         }
-        index -= generatorTypes.size();
 
-        if (index == 0) {
+        candidates.add(new LootCandidate(manager.getMachineLootWeight("transformation"), () -> {
             ItemStack item = manager.createMachineItem(1);
             return new MachineLoot(item.getItemMeta().getDisplayName(), item);
+        }));
+
+        if (miningMachineManager != null) {
+            candidates.add(new LootCandidate(manager.getMachineLootWeight("miniere"), () -> {
+                ItemStack item = miningMachineManager.createMachineItem(1);
+                return new MachineLoot(item.getItemMeta().getDisplayName(), item);
+            }));
         }
 
-        ItemStack item = miningMachineManager.createMachineItem(1);
-        return new MachineLoot(item.getItemMeta().getDisplayName(), item);
+        int totalWeight = candidates.stream().mapToInt(LootCandidate::weight).sum();
+        int roll = ThreadLocalRandom.current().nextInt(totalWeight);
+        int cumulative = 0;
+        for (LootCandidate candidate : candidates) {
+            cumulative += candidate.weight();
+            if (roll < cumulative) {
+                return candidate.factory().get();
+            }
+        }
+        return candidates.get(candidates.size() - 1).factory().get();
     }
 
     private void giveItem(Player player, ItemStack item) {

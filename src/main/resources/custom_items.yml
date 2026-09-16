@@ -120,6 +120,61 @@ machine-transformation:
     item-id: amelioration_machine
     bonus-par-amelioration: 5
     bonus-max: 30
+  # Poids de tirage du loot ALEATOIRE de la machine (obtenu quand le Lucky Block cible n'est PAS
+  # obtenu, voir MachineService#pickRandomLoot) : plus un poids est eleve, plus cette entree a de
+  # chances de sortir parmi TOUS les items custom + TOUS les generateurs + les 2 Machines
+  # elles-memes. poids-defaut s'applique a toute entree ABSENTE des 3 listes ci-dessous (pas besoin
+  # de lister les ~60 entrees possibles : seules celles dont la rarete doit differer du defaut ont
+  # besoin d'une ligne). poids-machines utilise les cles "transformation"/"miniere".
+  poids-loot:
+    poids-defaut: 10
+    poids-items:
+      # Items reward-only (jamais craftables) : les plus rares du pool.
+      jade: 1
+      epee_legendaire_dragon: 1
+      pioche_celeste: 1
+      hache_titan: 1
+      armure_immortelle_casque: 1
+      armure_immortelle_plastron: 1
+      armure_immortelle_jambieres: 1
+      armure_immortelle_bottes: 1
+      # Haut de gamme craftable/reward.
+      carburant_legendaire: 3
+      carburant_illimite: 3
+      kit_mythique: 3
+      epee_du_vide: 3
+      pioche_du_gouffre: 3
+      # Tier intermediaire haut (paladin, tier 3 d'equipement, boosts...).
+      epee_spectrale: 5
+      hache_demolisseur: 5
+      armure_paladin_casque: 5
+      armure_paladin_plastron: 5
+      armure_paladin_jambieres: 5
+      armure_paladin_bottes: 5
+      kit_or: 5
+      amelioration_machine: 5
+      boost_generateur: 5
+      boost_stockage_generateur: 5
+      essence_enchantement: 5
+      carburant_minier_ameliore: 5
+      peridot: 5
+      # Legerement au-dessus du defaut (valeur moyenne-haute).
+      kit_argent: 7
+      epee_guerrier: 7
+      pioche_expert: 7
+    poids-generateurs:
+      fer: 20
+      or: 12
+      diamant: 6
+      legendaire: 1
+      ressource_fer: 20
+      ressource_or: 12
+      ressource_diamant: 5
+      ressource_legendaire: 1
+      ressource_essence: 8
+    poids-machines:
+      transformation: 1
+      miniere: 1
   # ORDRE DE PRIORITE pour l'auto-alimentation : quand plusieurs minerais acceptes sont presents
   # dans le coffre d'entree, celui declare EN PREMIER ici est traite en premier (peu importe sa
   # case dans le coffre). Range ici du plus rare au plus commun pour prioriser les gros gains.

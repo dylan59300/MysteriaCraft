@@ -130,6 +130,14 @@ public class MachineManager {
     /** Nombre d'echanges sans Lucky Block avant garantie (0 = systeme de pity desactive). */
     private int pityThreshold = 0;
 
+    /** Poids de tirage du loot ALEATOIRE de la machine (voir machine-transformation.poids-loot dans
+     * custom_items.yml) : plus le poids est eleve, plus une entree (item custom/generateur/machine)
+     * a de chances de sortir. Toute entree absente de ces maps recoit lootWeightDefault. */
+    private final Map<String, Integer> lootWeightItems = new LinkedHashMap<>();
+    private final Map<String, Integer> lootWeightGenerators = new LinkedHashMap<>();
+    private final Map<String, Integer> lootWeightMachines = new LinkedHashMap<>();
+    private int lootWeightDefault = 10;
+
     private static final BlockFace[] ADJACENT_FACES = {
             BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN
     };
@@ -479,6 +487,9 @@ public class MachineManager {
         acceptedOres.clear();
         fuelTypes.clear();
         tiers.clear();
+        lootWeightItems.clear();
+        lootWeightGenerators.clear();
+        lootWeightMachines.clear();
         ConfigurationSection section = customItemsConfig.get().getConfigurationSection("machine-transformation");
         if (section == null) {
             plugin.getLogger().warning("Section 'machine-transformation' manquante dans custom_items.yml.");
@@ -558,6 +569,14 @@ public class MachineManager {
             fuelBoostDurationSeconds = Math.max(1, boostSection.getLong("duree-secondes", 86400L));
         }
 
+        ConfigurationSection poidsLoot = section.getConfigurationSection("poids-loot");
+        lootWeightDefault = Math.max(1, poidsLoot != null ? poidsLoot.getInt("poids-defaut", 10) : 10);
+        if (poidsLoot != null) {
+            loadLootWeights(poidsLoot.getConfigurationSection("poids-items"), lootWeightItems);
+            loadLootWeights(poidsLoot.getConfigurationSection("poids-generateurs"), lootWeightGenerators);
+            loadLootWeights(poidsLoot.getConfigurationSection("poids-machines"), lootWeightMachines);
+        }
+
         ConfigurationSection ores = section.getConfigurationSection("minerais");
         if (ores != null) {
             for (String materialName : ores.getKeys(false)) {
@@ -572,6 +591,29 @@ public class MachineManager {
         plugin.getLogger().info("Machine a Transformation : " + acceptedOres.size() + " minerai(s) accepte(s), "
                 + tiers.size() + " tier(s), " + fuelTypes.size() + " type(s) de carburant, "
                 + "auto-alimentation " + (autoAlimentation ? "activee" : "desactivee") + ".");
+    }
+
+    private void loadLootWeights(ConfigurationSection section, Map<String, Integer> target) {
+        if (section == null) {
+            return;
+        }
+        for (String id : section.getKeys(false)) {
+            target.put(id.toLowerCase(), Math.max(1, section.getInt(id, lootWeightDefault)));
+        }
+    }
+
+    // ---- Poids de tirage du loot aleatoire (voir machine-transformation.poids-loot) ----
+
+    public int getItemLootWeight(String itemId) {
+        return lootWeightItems.getOrDefault(itemId.toLowerCase(), lootWeightDefault);
+    }
+
+    public int getGeneratorLootWeight(String generatorTypeId) {
+        return lootWeightGenerators.getOrDefault(generatorTypeId.toLowerCase(), lootWeightDefault);
+    }
+
+    public int getMachineLootWeight(String machineId) {
+        return lootWeightMachines.getOrDefault(machineId.toLowerCase(), lootWeightDefault);
     }
 
     // ---- Tiers ----
