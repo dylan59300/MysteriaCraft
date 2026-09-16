@@ -271,15 +271,15 @@ public class GeneratorManager {
                 String requiresGeneratorId = section.contains("generateur-precedent")
                         ? section.getString("generateur-precedent").toLowerCase() : null;
 
-                GeneratorType.ResultType resultType;
+                ResultType resultType;
                 try {
-                    resultType = GeneratorType.ResultType.valueOf(section.getString("type-resultat", "ARGENT").toUpperCase());
+                    resultType = ResultType.valueOf(section.getString("type-resultat", "ARGENT").toUpperCase());
                 } catch (IllegalArgumentException e) {
                     plugin.getLogger().warning("type-resultat invalide pour le generateur '" + id + "', ARGENT utilise.");
-                    resultType = GeneratorType.ResultType.ARGENT;
+                    resultType = ResultType.ARGENT;
                 }
                 Material resultMaterial = null;
-                if (resultType == GeneratorType.ResultType.OBJET) {
+                if (resultType == ResultType.OBJET) {
                     resultMaterial = Material.matchMaterial(section.getString("objet-resultat", "IRON_INGOT"));
                     if (resultMaterial == null) {
                         plugin.getLogger().warning("objet-resultat invalide pour le generateur '" + id + "', IRON_INGOT utilise.");
