@@ -11,11 +11,19 @@
 # en continu au proprietaire (celui qui a pose le bloc) sans avoir a cliquer. Aucune monnaie
 # physique n'existe dans ce plugin : le hopper sert de detecteur, pas de transporteur d'argent.
 #
-# montant : argent genere pour un cycle complet (intervalle-secondes).
+# montant : argent (ou nombre d'objets, voir type-resultat ci-dessous) genere pour un cycle
+#           complet (intervalle-secondes).
 # intervalle-secondes : duree necessaire pour generer "montant" en integralite.
-# stockage-max : plafond d'argent que le generateur peut stocker avant de devoir etre recupere
-#                (par defaut = montant, soit 1 cycle complet ; augmentez pour laisser plus de
-#                marge aux joueurs qui ne repassent pas regulierement).
+# stockage-max : plafond d'argent/objets que le generateur peut stocker avant de devoir etre
+#                recupere (par defaut = montant, soit 1 cycle complet ; augmentez pour laisser
+#                plus de marge aux joueurs qui ne repassent pas regulierement).
+# type-resultat : ARGENT (par defaut, comportement historique credite le solde) ou OBJET (donne
+#                 de VRAIS exemplaires de "objet-resultat" au clic-droit/a la casse ; colle un
+#                 hopper pour les recuperer automatiquement DANS le hopper, comme un generateur de
+#                 minerai classique skyblock). "montant" est alors un nombre d'objets par cycle,
+#                 les fractions de cycle s'accumulent sans jamais rien perdre ni arrondir au
+#                 superieur.
+# objet-resultat : materiau donne par cycle, uniquement si type-resultat: OBJET.
 # obtenable-en-recompense-uniquement : purement informatif (ajoute une ligne de lore) ; n'empeche
 #                                       pas un admin de le donner via /generateur give.
 # recette : ingredients d'un craft shapeless (n'importe quel agencement dans la table), optionnel.
@@ -86,6 +94,60 @@ generateurs:
       - materiel: DIAMOND_BLOCK
         quantite: 2
     obtenable-en-recompense-uniquement: true
+
+  # ---- Generateurs de RESSOURCES (voir type-resultat/objet-resultat ci-dessus) : donnent de
+  # vrais lingots/diamants, pas de l'argent, contrairement aux generateurs "fer/or/diamant"
+  # ci-dessus qui ne font que reprendre leur theme visuel pour de l'argent. Meme principe de
+  # progression en paliers (chaine INDEPENDANTE de celle des generateurs d'argent).
+  ressource_fer:
+    nom: "&7Generateur de Minerai de Fer"
+    bloc: IRON_BLOCK
+    type-resultat: OBJET
+    objet-resultat: IRON_INGOT
+    montant: 8
+    intervalle-secondes: 600     # 10 minutes -> ~48 lingots/heure
+    stockage-max: 128
+    recette:
+      - materiel: IRON_BLOCK
+        quantite: 4
+      - materiel: REDSTONE_BLOCK
+        quantite: 1
+      - materiel: IRON_INGOT
+        quantite: 4
+
+  ressource_or:
+    nom: "&6Generateur de Minerai d'Or"
+    bloc: GOLD_BLOCK
+    type-resultat: OBJET
+    objet-resultat: GOLD_INGOT
+    montant: 4
+    intervalle-secondes: 900     # 15 minutes -> ~16 lingots/heure
+    stockage-max: 64
+    generateur-precedent: ressource_fer
+    recette:
+      - materiel: GOLD_BLOCK
+        quantite: 4
+      - materiel: REDSTONE_BLOCK
+        quantite: 1
+      - materiel: GOLD_INGOT
+        quantite: 4
+
+  ressource_diamant:
+    nom: "&bGenerateur de Diamant"
+    bloc: DIAMOND_BLOCK
+    type-resultat: OBJET
+    objet-resultat: DIAMOND
+    montant: 1
+    intervalle-secondes: 1200    # 20 minutes -> 3 diamants/heure
+    stockage-max: 32
+    generateur-precedent: ressource_or
+    recette:
+      - materiel: DIAMOND_BLOCK
+        quantite: 2
+      - materiel: EMERALD_BLOCK
+        quantite: 1
+      - materiel: REDSTONE_BLOCK
+        quantite: 1
 
 # Frequence (en secondes) a laquelle le stock de chaque generateur pose est recalcule et son
 # hologramme mis a jour, meme sans interaction du joueur (auto-collecte comprise).

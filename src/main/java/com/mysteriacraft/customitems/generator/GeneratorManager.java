@@ -50,19 +50,33 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class GeneratorManager {
 
-    /** Un type de generateur : bloc, argent genere par cycle complet, duree du cycle, plafond de
-     * stockage, et sa recette de craft optionnelle (voir "recette"/"generateur-precedent" dans
-     * generateurs.yml : plusieurs paliers de craft progressifs vers le generateur legendaire). */
+    /** Nature de ce qu'un generateur produit : ARGENT (comportement historique, credite le solde
+     * du proprietaire) ou OBJET (donne des exemplaires reels de "resultMaterial", voir "idee
+     * generateur de fer/or/diamant qui genere du fer/or/diamant"). */
+    public enum ResultType {
+        ARGENT,
+        OBJET
+    }
+
+    /** Un type de generateur : bloc, quantite generee par cycle complet (argent OU objets selon
+     * resultType), duree du cycle, plafond de stockage, et sa recette de craft optionnelle (voir
+     * "recette"/"generateur-precedent" dans generateurs.yml : plusieurs paliers de craft
+     * progressifs vers le generateur legendaire). */
     public record GeneratorType(String id, String displayName, Material block, double amount,
                                  long intervalSeconds, double storageMax, boolean rewardOnly,
-                                 List<RecipeIngredient> recipe, String requiresGeneratorId) {
-        /** Argent genere par seconde reelle (avant bonus d'amelioration). */
+                                 List<RecipeIngredient> recipe, String requiresGeneratorId,
+                                 ResultType resultType, Material resultMaterial) {
+        /** Quantite generee par seconde reelle (avant bonus d'amelioration). */
         public double ratePerSecond() {
             return intervalSeconds > 0 ? amount / intervalSeconds : 0.0;
         }
 
         public boolean isCraftable() {
             return !recipe.isEmpty();
+        }
+
+        public boolean producesItems() {
+            return resultType == ResultType.OBJET;
         }
     }
 
@@ -257,9 +271,25 @@ public class GeneratorManager {
                 String requiresGeneratorId = section.contains("generateur-precedent")
                         ? section.getString("generateur-precedent").toLowerCase() : null;
 
+                GeneratorType.ResultType resultType;
+                try {
+                    resultType = GeneratorType.ResultType.valueOf(section.getString("type-resultat", "ARGENT").toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    plugin.getLogger().warning("type-resultat invalide pour le generateur '" + id + "', ARGENT utilise.");
+                    resultType = GeneratorType.ResultType.ARGENT;
+                }
+                Material resultMaterial = null;
+                if (resultType == GeneratorType.ResultType.OBJET) {
+                    resultMaterial = Material.matchMaterial(section.getString("objet-resultat", "IRON_INGOT"));
+                    if (resultMaterial == null) {
+                        plugin.getLogger().warning("objet-resultat invalide pour le generateur '" + id + "', IRON_INGOT utilise.");
+                        resultMaterial = Material.IRON_INGOT;
+                    }
+                }
+
                 types.put(id.toLowerCase(), new GeneratorType(
                         id.toLowerCase(), displayName, block, amount, intervalSeconds, storageMax, rewardOnly,
-                        recipe, requiresGeneratorId));
+                        recipe, requiresGeneratorId, resultType, resultMaterial));
             }
         }
 
@@ -397,13 +427,25 @@ public class GeneratorManager {
         if (meta != null) {
             meta.setDisplayName(MessageManager.color(type.displayName()));
             double perHour = type.ratePerSecond() * 3600;
-            List<String> lore = new ArrayList<>(List.of(
-                    MessageManager.color("&7Genere de l'argent automatiquement,"),
-                    MessageManager.color("&7meme hors-ligne."),
-                    MessageManager.color("&7Rythme : &e~" + NUMBER_FORMAT.format(perHour) + "&7/heure"),
-                    MessageManager.color("&7Stockage max : &e" + NUMBER_FORMAT.format(type.storageMax())),
-                    MessageManager.color("&7Clic-droit pour recuperer l'argent stocke.")
-            ));
+            List<String> lore;
+            if (type.producesItems()) {
+                String materialName = type.resultMaterial().name().replace('_', ' ');
+                lore = new ArrayList<>(List.of(
+                        MessageManager.color("&7Genere automatiquement des &f" + materialName + "&7,"),
+                        MessageManager.color("&7meme hors-ligne."),
+                        MessageManager.color("&7Rythme : &e~" + NUMBER_FORMAT.format(perHour) + "&7/heure"),
+                        MessageManager.color("&7Stockage max : &e" + NUMBER_FORMAT.format(type.storageMax())),
+                        MessageManager.color("&7Clic-droit pour recuperer les objets stockes.")
+                ));
+            } else {
+                lore = new ArrayList<>(List.of(
+                        MessageManager.color("&7Genere de l'argent automatiquement,"),
+                        MessageManager.color("&7meme hors-ligne."),
+                        MessageManager.color("&7Rythme : &e~" + NUMBER_FORMAT.format(perHour) + "&7/heure"),
+                        MessageManager.color("&7Stockage max : &e" + NUMBER_FORMAT.format(type.storageMax())),
+                        MessageManager.color("&7Clic-droit pour recuperer l'argent stocke.")
+                ));
+            }
             if (type.rewardOnly()) {
                 lore.add(MessageManager.color("&5Uniquement obtenable en recompense"));
                 lore.add(MessageManager.color("&5(battlepass, quete, luckyblock)."));
@@ -558,6 +600,20 @@ public class GeneratorManager {
         }
         setStored(block, 0.0);
         return stored;
+    }
+
+    /** Recalcule le stock (accrue) puis n'en retire que la partie ENTIERE (un generateur OBJET ne
+     * peut donner que des exemplaires complets) : la partie fractionnaire reste accumulee pour le
+     * prochain cycle, rien n'est jamais perdu ni arrondi au superieur. Renvoie le nombre entier
+     * d'exemplaires recuperes (0 si moins d'un exemplaire complet n'est encore accumule). */
+    public int collectWholeUnits(Block block) {
+        double stored = accrue(block);
+        int whole = (int) Math.floor(stored);
+        if (whole <= 0) {
+            return 0;
+        }
+        setStored(block, stored - whole);
+        return whole;
     }
 
     // ---- Hologramme d'etat (ArmorStand invisible affichant le stock accumule) ----

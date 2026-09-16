@@ -91,8 +91,11 @@ public class GeneratorCommand implements CommandExecutor {
             found++;
             String coords = location.getWorld() != null ? location.getWorld().getName() : "?";
             coords += " " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ();
+            String storedText = type.producesItems()
+                    ? (int) Math.floor(stored) + " &7/ &a" + (int) type.storageMax()
+                    : economyManager.format(stored) + " &7/ &a" + economyManager.format(type.storageMax());
             sender.sendMessage(MessageManager.color("&e" + type.displayName() + " &7- " + coords
-                    + " &7- &a" + economyManager.format(stored) + " &7/ &a" + economyManager.format(type.storageMax())));
+                    + " &7- &a" + storedText));
         }
 
         if (found == 0) {

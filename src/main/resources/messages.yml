@@ -338,9 +338,9 @@ machine-miniere:
   limite-atteinte: "&cVous avez deja &e{max} &cMachines a Miner actives (limite atteinte). Recuperez-en une ailleurs pour en poser une nouvelle."
 
 generateur:
-  usage: "&cUsage : /generateur <liste|give <joueur> <fer|or|diamant> [quantite]|reload>"
+  usage: "&cUsage : /generateur <liste|give <joueur> <type> [quantite]|reload>"
   reload: "&aLa configuration des generateurs a ete rechargee."
-  type-introuvable: "&cCe type de generateur n'existe pas (fer, or, diamant ou legendaire)."
+  type-introuvable: "&cCe type de generateur n'existe pas (fer, or, diamant, legendaire, ressource_fer, ressource_or, ressource_diamant)."
   type-invalide: "&cErreur : le type de ce generateur n'existe plus dans la config (verifiez generateurs.yml)."
   give-effectue: "&a{joueur} a recu &e{quantite}x {generateur}&a."
   recupere: "&a&lArgent recupere ! &a+&e{montant} &adepuis votre {generateur}&a."
@@ -348,6 +348,8 @@ generateur:
   recupere-a-la-casse: "&a&lVotre generateur avait de l'argent en stock : &a+&e{montant} &arecupere automatiquement."
   recupere-a-la-casse-taxe: "&a&lVotre generateur avait de l'argent en stock : &a+&e{montant} &arecupere automatiquement &7(&c{taxe}% de taxe deduite&7)."
   rien-a-recuperer: "&7Votre {generateur} n'a pas encore genere d'argent a recuperer. Revenez plus tard !"
+  recupere-objets: "&a&lObjets recuperes ! &a+&e{quantite}x {objet} &adepuis votre {generateur}&a."
+  recupere-objets-a-la-casse: "&a&lVotre generateur avait des objets en stock : &a+&e{quantite}x {objet} &arecupere automatiquement."
   boost-effectue: "&d&lGenerateur booste ! &7Rythme : &e+{bonus}% &7(&e{bonus-total}%&7 cumule, jusqu'a &e{bonus-max}%&7)."
   boost-max: "&cCe generateur a deja atteint son bonus de rythme maximum."
   limite-atteinte: "&cVous avez deja &e{max} &cgenerateurs actifs (limite atteinte). Recuperez-en un ailleurs pour en poser un nouveau."
