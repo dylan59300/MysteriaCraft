@@ -119,6 +119,28 @@ import com.mysteriacraft.runes.listeners.RuneListener;
 import com.mysteriacraft.marchenoir.MarcheNoirManager;
 import com.mysteriacraft.marchenoir.MarcheNoirService;
 import com.mysteriacraft.marchenoir.commands.MarcheNoirCommand;
+import com.mysteriacraft.pets.dressage.PetTrainingManager;
+import com.mysteriacraft.pets.dressage.commands.DressageCommand;
+import com.mysteriacraft.pets.dressage.listeners.PetTrainingListener;
+import com.mysteriacraft.talents.TalentManager;
+import com.mysteriacraft.talents.TalentService;
+import com.mysteriacraft.talents.commands.TalentCommand;
+import com.mysteriacraft.talents.listeners.TalentListener;
+import com.mysteriacraft.metiers.MetierManager;
+import com.mysteriacraft.metiers.MetierService;
+import com.mysteriacraft.metiers.commands.MetierCommand;
+import com.mysteriacraft.metiers.listeners.MetierListener;
+import com.mysteriacraft.hybride.HybridGeneratorManager;
+import com.mysteriacraft.hybride.HybridGeneratorService;
+import com.mysteriacraft.hybride.commands.HybridGeneratorCommand;
+import com.mysteriacraft.hybride.listeners.HybridGeneratorListener;
+import com.mysteriacraft.mobscustom.MobManager;
+import com.mysteriacraft.mobscustom.commands.MobCommand;
+import com.mysteriacraft.mobscustom.listeners.MobListener;
+import com.mysteriacraft.etabli.EtabliManager;
+import com.mysteriacraft.etabli.EtabliService;
+import com.mysteriacraft.etabli.commands.EtabliCommand;
+import com.mysteriacraft.etabli.listeners.EtabliListener;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -227,6 +249,22 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager marcheNoirConfig;
     private MarcheNoirManager marcheNoirManager;
     private MarcheNoirService marcheNoirService;
+    private ConfigManager dressageConfig;
+    private PetTrainingManager petTrainingManager;
+    private ConfigManager talentsConfig;
+    private TalentManager talentManager;
+    private TalentService talentService;
+    private ConfigManager metiersConfig;
+    private MetierManager metierManager;
+    private MetierService metierService;
+    private ConfigManager hybrideConfig;
+    private HybridGeneratorManager hybridGeneratorManager;
+    private HybridGeneratorService hybridGeneratorService;
+    private ConfigManager mobsCustomConfig;
+    private MobManager mobManager;
+    private ConfigManager etabliConfig;
+    private EtabliManager etabliManager;
+    private EtabliService etabliService;
 
     @Override
     public void onEnable() {
@@ -297,8 +335,11 @@ public final class MysteriaCraft extends JavaPlugin {
         // ---- Module Prestige (depend d'economyManager) ----
         setupRanks();
 
-        // ---- Module Boutique (depend d'economyManager, rewardGiver, customItemManager et
-        // rankManager pour le bonus de vente) ----
+        // ---- Module Talents (depend du rewardGiver indirectement via ShopService) ----
+        setupTalents();
+
+        // ---- Module Boutique (depend d'economyManager, rewardGiver, customItemManager,
+        // rankManager ET talentManager pour le bonus de vente cumulatif) ----
         setupBoutique();
 
         // ---- Module Kits (depend de rewardGiver) ----
@@ -330,6 +371,21 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Marche Noir (depend d'economyManager et rewardGiver) ----
         setupMarcheNoir();
+
+        // ---- Dressage (depend de petService, deja initialise par setupPets()) ----
+        setupDressage();
+
+        // ---- Metiers (independant) ----
+        setupMetiers();
+
+        // ---- Generateur Hybride (module standalone, independant de GeneratorManager) ----
+        setupHybridGenerator();
+
+        // ---- Mobs Custom (depend de rewardGiver) ----
+        setupMobsCustom();
+
+        // ---- Etabli Ameliore (depend de customItemManager, rewardGiver et metierService) ----
+        setupEtabli();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -619,10 +675,18 @@ public final class MysteriaCraft extends JavaPlugin {
         getCommand("prestige").setExecutor(new RankCommand(rankService, messages));
     }
 
+    private void setupTalents() {
+        this.talentsConfig = new ConfigManager(this, "talents.yml");
+        this.talentManager = new TalentManager(this, database, talentsConfig);
+        this.talentService = new TalentService(this, talentManager, messages);
+        Bukkit.getPluginManager().registerEvents(new TalentListener(talentService), this);
+        getCommand("talents").setExecutor(new TalentCommand(this, talentsConfig, talentManager, talentService, messages));
+    }
+
     private void setupBoutique() {
         this.boutiqueConfig = new ConfigManager(this, "boutique.yml");
         this.shopManager = new ShopManager(this, database, boutiqueConfig);
-        this.shopService = new ShopService(economyManager, rewardGiver, customItemManager, rankManager, messages);
+        this.shopService = new ShopService(economyManager, rewardGiver, customItemManager, rankManager, talentManager, messages);
         getCommand("boutique").setExecutor(new ShopCommand(this, boutiqueConfig, shopManager, shopService, economyManager, messages));
     }
 
@@ -699,6 +763,55 @@ public final class MysteriaCraft extends JavaPlugin {
         this.marcheNoirService = new MarcheNoirService(marcheNoirManager, economyManager, rewardGiver, messages);
         getCommand("marchenoir").setExecutor(
                 new MarcheNoirCommand(marcheNoirConfig, marcheNoirManager, marcheNoirService, economyManager, messages));
+    }
+
+    private void setupDressage() {
+        this.dressageConfig = new ConfigManager(this, "dressage.yml");
+        this.petTrainingManager = new PetTrainingManager(this, database, dressageConfig);
+        petService.setTrainingManager(petTrainingManager);
+        Bukkit.getPluginManager().registerEvents(new PetTrainingListener(this, petTrainingManager, petService, messages), this);
+        getCommand("dressage").setExecutor(new DressageCommand(this, petTrainingManager, messages));
+    }
+
+    private void setupMetiers() {
+        this.metiersConfig = new ConfigManager(this, "metiers.yml");
+        this.metierManager = new MetierManager(this, database, metiersConfig);
+        this.metierService = new MetierService(this, metierManager, economyManager, messages);
+        Bukkit.getPluginManager().registerEvents(new MetierListener(this, metierService), this);
+        MetierCommand metierCommand = new MetierCommand(metiersConfig, metierManager, metierService, messages);
+        getCommand("metier").setExecutor(metierCommand);
+        getCommand("metier").setTabCompleter(metierCommand);
+    }
+
+    private void setupHybridGenerator() {
+        this.hybrideConfig = new ConfigManager(this, "hybride_generateur.yml");
+        this.hybridGeneratorManager = new HybridGeneratorManager(this, database, hybrideConfig);
+        this.hybridGeneratorService = new HybridGeneratorService(hybridGeneratorManager, customItemManager, messages);
+        Bukkit.getPluginManager().registerEvents(new HybridGeneratorListener(hybridGeneratorManager, hybridGeneratorService), this);
+        HybridGeneratorCommand hybridCommand = new HybridGeneratorCommand(hybrideConfig, hybridGeneratorManager, messages);
+        getCommand("generateurhybride").setExecutor(hybridCommand);
+        getCommand("generateurhybride").setTabCompleter(hybridCommand);
+
+        Bukkit.getScheduler().runTaskTimer(this, hybridGeneratorService::tickGenerators,
+                20L * hybrideConfig.get().getInt("tick-secondes", 5), 20L * hybrideConfig.get().getInt("tick-secondes", 5));
+    }
+
+    private void setupMobsCustom() {
+        this.mobsCustomConfig = new ConfigManager(this, "mobs_custom.yml");
+        this.mobManager = new MobManager(this, mobsCustomConfig);
+        Bukkit.getPluginManager().registerEvents(new MobListener(mobManager, rewardGiver), this);
+        MobCommand mobCommand = new MobCommand(mobsCustomConfig, mobManager, messages);
+        getCommand("mobcustom").setExecutor(mobCommand);
+        getCommand("mobcustom").setTabCompleter(mobCommand);
+    }
+
+    private void setupEtabli() {
+        this.etabliConfig = new ConfigManager(this, "etabli.yml");
+        this.etabliManager = new EtabliManager(this, database, etabliConfig);
+        this.etabliService = new EtabliService(this, etabliManager, customItemManager, rewardGiver, metierService, messages);
+        Bukkit.getPluginManager().registerEvents(
+                new EtabliListener(this, etabliManager, etabliService, customItemManager, messages), this);
+        getCommand("etabli").setExecutor(new EtabliCommand(etabliConfig, etabliManager, messages));
     }
 
     @Override

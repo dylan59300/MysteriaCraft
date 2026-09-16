@@ -3,6 +3,7 @@ package com.mysteriacraft.pets;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.core.reward.RewardGiver;
 import com.mysteriacraft.economy.EconomyManager;
+import com.mysteriacraft.pets.dressage.PetTrainingManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
@@ -45,11 +46,20 @@ public class PetService implements RewardGiver.PetUnlockHandler {
     private final Map<UUID, BukkitTask> followTasks = new ConcurrentHashMap<>();
     private final Map<UUID, PetDefinition> activeDefinitions = new ConcurrentHashMap<>();
 
+    /** Branche apres coup (voir MysteriaCraft#onEnable) pour eviter une dependance circulaire :
+     * le Dressage a besoin de PetService pour rafraichir les bonus, PetService a besoin du
+     * Dressage pour connaitre le bonus supplementaire accorde par l'entrainement. */
+    private PetTrainingManager trainingManager;
+
     public PetService(Plugin plugin, PetManager petManager, EconomyManager economyManager, MessageManager messages) {
         this.plugin = plugin;
         this.petManager = petManager;
         this.economyManager = economyManager;
         this.messages = messages;
+    }
+
+    public void setTrainingManager(PetTrainingManager trainingManager) {
+        this.trainingManager = trainingManager;
     }
 
     public void buy(Player player, String petId) {
@@ -153,8 +163,9 @@ public class PetService implements RewardGiver.PetUnlockHandler {
         messages.send(player, "pets.invoque", placeholders);
     }
 
-    /** Applique le bonus de degats du pet actif au JOUEUR (attribut GENERIC_ATTACK_DAMAGE),
-     * en remplacant tout modificateur precedent (changement de pet). */
+    /** Applique le bonus de degats du pet actif au JOUEUR (attribut GENERIC_ATTACK_DAMAGE), plus
+     * le bonus de Dressage accumule (voir PetTrainingManager), en remplacant tout modificateur
+     * precedent (changement de pet ou nouveau niveau de dressage). */
     private void applyDegatsBonus(Player player, PetDefinition pet) {
         AttributeInstance attribute = player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
         if (attribute == null) {
@@ -163,9 +174,10 @@ public class PetService implements RewardGiver.PetUnlockHandler {
         attribute.getModifiers().stream()
                 .filter(modifier -> modifier.getUniqueId().equals(DEGATS_MODIFIER_UUID))
                 .forEach(attribute::removeModifier);
-        if (pet.degatsBonus() > 0) {
+        double total = pet.degatsBonus() + (trainingManager != null ? trainingManager.getBonusDegats(player.getUniqueId()) : 0);
+        if (total > 0) {
             attribute.addModifier(new AttributeModifier(DEGATS_MODIFIER_UUID, "mysteriacraft-pet-degats",
-                    pet.degatsBonus(), AttributeModifier.Operation.ADD_NUMBER));
+                    total, AttributeModifier.Operation.ADD_NUMBER));
         }
     }
 
@@ -179,10 +191,24 @@ public class PetService implements RewardGiver.PetUnlockHandler {
                 .forEach(attribute::removeModifier);
     }
 
-    /** Chance d'esquive (%) accordee par le pet actif de ce joueur, 0 si aucun pet actif. */
+    /** Chance d'esquive (%) accordee par le pet actif de ce joueur (bonus de Dressage inclus), 0
+     * si aucun pet actif. */
     public double getEsquivePourcent(UUID uuid) {
         PetDefinition pet = activeDefinitions.get(uuid);
-        return pet != null ? pet.esquivePourcent() : 0;
+        if (pet == null) {
+            return 0;
+        }
+        double bonus = trainingManager != null ? trainingManager.getBonusEsquive(uuid) : 0;
+        return pet.esquivePourcent() + bonus;
+    }
+
+    /** A appeler par le Dressage des qu'un joueur gagne un niveau, pour reappliquer immediatement
+     * le bonus de degats mis a jour sur son pet actif (sans effet si aucun pet actif). */
+    public void refreshTrainingBonus(Player player) {
+        PetDefinition pet = activeDefinitions.get(player.getUniqueId());
+        if (pet != null) {
+            applyDegatsBonus(player, pet);
+        }
     }
 
     private void startFollowTask(Player player, LivingEntity petEntity) {

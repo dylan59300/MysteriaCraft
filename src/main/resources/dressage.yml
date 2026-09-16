@@ -1,0 +1,12 @@
+# =========================================
+#   MysteriaCraft - Configuration du Dressage
+# =========================================
+# Chaque kill effectue AVEC un pet actif (voir /pets) donne de l'xp de dressage au joueur
+# (independant du pet choisi : garde sa progression meme en changeant de pet). Chaque niveau
+# accorde un bonus permanent de degats et d'esquive, ajoute a celui du pet actif. /dressage affiche
+# votre progression.
+xp-par-kill: 10
+xp-par-niveau: 100
+niveau-max: 20
+bonus-degats-par-niveau: 0.2
+bonus-esquive-par-niveau: 0.5

@@ -7,6 +7,7 @@ import com.mysteriacraft.core.reward.RewardType;
 import com.mysteriacraft.customitems.CustomItemManager;
 import com.mysteriacraft.economy.EconomyManager;
 import com.mysteriacraft.rank.RankManager;
+import com.mysteriacraft.talents.TalentManager;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -25,14 +26,16 @@ public class ShopService {
     private final RewardGiver rewardGiver;
     private final CustomItemManager customItemManager;
     private final RankManager rankManager;
+    private final TalentManager talentManager;
     private final MessageManager messages;
 
     public ShopService(EconomyManager economyManager, RewardGiver rewardGiver, CustomItemManager customItemManager,
-                        RankManager rankManager, MessageManager messages) {
+                        RankManager rankManager, TalentManager talentManager, MessageManager messages) {
         this.economyManager = economyManager;
         this.rewardGiver = rewardGiver;
         this.customItemManager = customItemManager;
         this.rankManager = rankManager;
+        this.talentManager = talentManager;
         this.messages = messages;
     }
 
@@ -67,7 +70,8 @@ public class ShopService {
             return;
         }
 
-        double bonusPercent = rankManager.getBonusVentePourcent(player.getUniqueId());
+        double bonusPercent = rankManager.getBonusVentePourcent(player.getUniqueId())
+                + talentManager.getBonusVentePourcent(player.getUniqueId());
         double total = amount * item.sellPrice() * (1.0 + bonusPercent / 100.0);
         player.getInventory().setItemInMainHand(null);
         economyManager.deposit(player.getUniqueId(), total);

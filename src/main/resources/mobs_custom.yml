@@ -1,0 +1,42 @@
+# =========================================
+#   MysteriaCraft - Configuration des Mobs Custom
+# =========================================
+# /mobcustom spawn <id> [nombre] (admin) fait apparaitre un mob custom : un mob vanilla (type
+# configurable) avec un nom, une vie et des degats personnalises, qui donne une loot table DEDIEE
+# (n'importe quel type de Reward, voir les autres configs) au joueur qui le tue.
+mobs:
+  gobelin_pillard:
+    nom: "&2&lGobelin Pillard"
+    type: ZOMBIE
+    vie-max: 40
+    degats: 5
+    loot:
+      - type: ECONOMIE
+        montant: 100
+      - type: ITEM
+        materiel: EMERALD
+        quantite: 2
+
+  squelette_glacial:
+    nom: "&b&lSquelette Glacial"
+    type: STRAY
+    vie-max: 60
+    degats: 6
+    loot:
+      - type: ECONOMIE
+        montant: 200
+      - type: OBJET_CUSTOM
+        item-id: saphir
+        quantite: 1
+
+  golem_dechu:
+    nom: "&4&lGolem Dechu"
+    type: IRON_GOLEM
+    vie-max: 150
+    degats: 12
+    loot:
+      - type: ECONOMIE
+        montant: 500
+      - type: GENERATEUR
+        type-id: fer
+        quantite: 1

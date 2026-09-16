@@ -1,0 +1,35 @@
+# =========================================
+#   MysteriaCraft - Configuration des Metiers
+# =========================================
+# /metier choisir <id> : choisit un metier (reinitialise la progression si different de l'actuel).
+# /metier : affiche votre metier et niveau actuels.
+#
+# Chaque metier (sous "metiers") :
+#   nom / description : affiches dans les messages.
+#   xp-par-niveau      : xp necessaire par niveau.
+#   niveau-max         : niveau maximum atteignable.
+#   valeur-par-niveau  : bonus par niveau, interprete differemment selon le metier :
+#                        - pecheur   : % de chance ET montant (en argent) du bonus a chaque prise.
+#                        - forgeron  : % de chance de ne pas consommer un ingredient a l'Etabli.
+#                        - alchimiste: % de chance de recuperer la potion consommee.
+metiers:
+  pecheur:
+    nom: "&bPecheur"
+    description: "Chance croissante de bonus en argent a chaque prise."
+    xp-par-niveau: 50
+    niveau-max: 20
+    valeur-par-niveau: 2.0
+
+  forgeron:
+    nom: "&7Forgeron"
+    description: "Chance croissante de ne pas consommer un ingredient a l'Etabli."
+    xp-par-niveau: 50
+    niveau-max: 20
+    valeur-par-niveau: 2.0
+
+  alchimiste:
+    nom: "&dAlchimiste"
+    description: "Chance croissante de recuperer une potion apres l'avoir bue."
+    xp-par-niveau: 50
+    niveau-max: 20
+    valeur-par-niveau: 2.0

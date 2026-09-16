@@ -650,6 +650,50 @@ items:
         P: GOLDEN_APPLE
         G: GOLD_INGOT
 
+  amulette_forgeron:
+    nom: "&6&lAmulette du Forgeron"
+    lore:
+      - "&7Une amulette ancienne, forgee"
+      - "&7selon un savoir oublie."
+    item-de-base: GOLDEN_HELMET
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 200
+    obtenable-en-recompense-uniquement: true
+
+  parchemin_amulette_forgeron:
+    nom: "&e&lParchemin : Amulette du Forgeron"
+    lore:
+      - "&7Utilisez-le sur l'Etabli pour"
+      - "&7decouvrir cette recette secrete."
+    item-de-base: PAPER
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    obtenable-en-recompense-uniquement: true
+
+  collier_alchimiste:
+    nom: "&d&lCollier de l'Alchimiste"
+    lore:
+      - "&7Un collier impregne d'une"
+      - "&7magie ancienne."
+    item-de-base: GOLDEN_CHESTPLATE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 200
+    obtenable-en-recompense-uniquement: true
+
+  parchemin_collier_alchimiste:
+    nom: "&e&lParchemin : Collier de l'Alchimiste"
+    lore:
+      - "&7Utilisez-le sur l'Etabli pour"
+      - "&7decouvrir cette recette secrete."
+    item-de-base: PAPER
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    obtenable-en-recompense-uniquement: true
+
   grappin:
     nom: "&b&lGrappin"
     lore:

@@ -166,6 +166,31 @@ commands:
     usage: /<command> [reload]
     # Pas de "permission:" ici : ouvrir le menu doit rester accessible a tout joueur. reload est
     # verifie manuellement dans le code (mysteriacraft.marchenoir.admin).
+  dressage:
+    description: Affiche le niveau de dressage de votre pet actif et ses bonus
+    usage: /<command>
+  talents:
+    description: Ouvre l'arbre de talents (points gagnes par kill)
+    usage: /<command> [reload]
+    # Pas de "permission:" ici : ouvrir l'arbre doit rester accessible a tout joueur. reload est
+    # verifie manuellement dans le code (mysteriacraft.talents.admin).
+  metier:
+    description: Affiche ou choisit votre metier (pecheur/forgeron/alchimiste)
+    usage: /<command> [choisir <id>|reload]
+    # Pas de "permission:" ici : choisir doit rester accessible a tout joueur. reload est verifie
+    # manuellement dans le code (mysteriacraft.metier.admin).
+  generateurhybride:
+    description: Donne/recharge un Generateur Hybride (admin)
+    usage: /<command> <give <joueur> <type> [quantite]|reload>
+    permission: mysteriacraft.generateurhybride.admin
+  mobcustom:
+    description: Fait apparaitre un mob custom, ou recharge sa configuration (admin)
+    usage: /<command> <spawn <id> [nombre]|reload>
+    permission: mysteriacraft.mobcustom.admin
+  etabli:
+    description: Recharge la configuration de l'Etabli Ameliore (admin)
+    usage: /<command> reload
+    permission: mysteriacraft.etabli.admin
 
 permissions:
   mysteriacraft.eco.admin:
@@ -245,4 +270,19 @@ permissions:
     default: op
   mysteriacraft.marchenoir.admin:
     description: Autorise la gestion admin du Marche Noir (reload)
+    default: op
+  mysteriacraft.talents.admin:
+    description: Autorise la gestion admin des Talents (reload)
+    default: op
+  mysteriacraft.metier.admin:
+    description: Autorise la gestion admin des Metiers (reload)
+    default: op
+  mysteriacraft.generateurhybride.admin:
+    description: Autorise la gestion admin des Generateurs Hybrides (give, reload)
+    default: op
+  mysteriacraft.mobcustom.admin:
+    description: Autorise la gestion admin des Mobs Custom (spawn, reload)
+    default: op
+  mysteriacraft.etabli.admin:
+    description: Autorise la gestion admin de l'Etabli Ameliore (reload)
     default: op

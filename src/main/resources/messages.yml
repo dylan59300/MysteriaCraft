@@ -520,6 +520,62 @@ marchenoir:
   gui-prix: "&7Prix : &e{prix}"
   gui-clic-acheter: "&eClic gauche pour acheter"
 
+dressage:
+  niveau-suivant: "&d&lVotre pet monte de niveau ! &aNiveau de dressage : &e{niveau}"
+  info: "&6&lDressage &7- Niveau : &e{niveau} &7| Bonus degats : &e+{degats} &7| Bonus esquive : &e+{esquive}%"
+
+talents:
+  titre-gui: "&8Arbre de Talents"
+  introuvable: "&cCe talent n'existe pas."
+  deblocage-impossible: "&cImpossible de debloquer ce talent (prerequis manquant ou points insuffisants)."
+  debloque: "&d&lTalent debloque ! &a{talent}"
+  reload: "&aLes talents ont ete recharges."
+  gui-points: "&e&lPoints de talent disponibles"
+  gui-debloque: "&a&lDebloque"
+  gui-prerequis: "&cRequiert d'abord : &e{prerequis}"
+  gui-cout: "&7Cout : &e{cout} &7point(s)"
+  gui-clic-debloquer: "&eCliquez pour debloquer"
+  gui-points-insuffisants: "&cPoints de talent insuffisants"
+
+metier:
+  introuvable: "&cCe metier n'existe pas."
+  choisi: "&a&lMetier choisi : &e{metier}&a. Votre progression a ete reinitialisee."
+  aucun: "&7Vous n'avez choisi aucun metier. Utilisez &e/metier choisir <id>"
+  info: "&6&lMetier : &e{metier} &7- Niveau &e{niveau}"
+  pecheur-bonus: "&b&lBonus du Pecheur ! &a+{montant}"
+  reload: "&aLes metiers ont ete recharges."
+
+generateurhybride:
+  usage: "&cUsage : /generateurhybride <give <joueur> <type> [quantite]|reload>"
+  type-invalide: "&cCe generateur hybride n'est plus configure."
+  type-introuvable: "&cType de generateur hybride introuvable. &7Types valides : &e{ids}"
+  rien-a-recuperer: "&cRien a recuperer pour le moment."
+  recupere: "&aVous avez recupere : &e{objets}&a."
+  give-effectue: "&a{joueur} a recu &e{quantite}x {type}&a."
+  reload: "&aLes generateurs hybrides ont ete recharges."
+
+mobcustom:
+  usage: "&cUsage : /mobcustom <spawn <id> [nombre]|reload>"
+  introuvable: "&cCe mob custom n'existe pas. &7Ids valides : &e{ids}"
+  spawn-effectue: "&aVous avez fait apparaitre &e{nombre}x {mob}&a."
+  reload: "&aLes mobs custom ont ete recharges."
+
+etabli:
+  titre-gui: "&8Etabli - Recettes Secretes"
+  parchemin-invalide: "&cTenez un Parchemin valide en main pour decouvrir sa recette."
+  deja-debloquee: "&6Vous connaissez deja cette recette."
+  decouverte: "&d&l*** Recette decouverte ! *** &aVous pouvez desormais fabriquer : &e{recette}"
+  recette-introuvable: "&cCette recette n'existe pas."
+  non-debloquee: "&cVous ne connaissez pas encore cette recette."
+  ingredients-manquants: "&cIl vous manque des ingredients pour cette recette."
+  craft-reussi: "&a&lRecette fabriquee ! &e{recette}"
+  craft-reussi-forgeron: "&a&lRecette fabriquee ! &e{recette} &7(bonus Forgeron : un ingredient economise)"
+  reload: "&aL'Etabli a ete recharge."
+  gui-verrouillee: "&c&l??? Recette non decouverte ???"
+  gui-trouver-parchemin: "&7Trouvez le Parchemin correspondant"
+  gui-ingredients: "&6&lIngredients requis :"
+  gui-clic-craft: "&eCliquez pour fabriquer"
+
 kit:
   reload: "&aLes kits ont ete recharges."
   introuvable: "&cCe kit n'existe pas. &7Kits valides : &e{ids}"

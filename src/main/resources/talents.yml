@@ -1,0 +1,91 @@
+# =========================================
+#   MysteriaCraft - Configuration de l'Arbre de Talents
+# =========================================
+# Chaque kill donne 1 point de talent (independant de tout autre systeme). /talents ouvre l'arbre
+# et permet de depenser ces points pour debloquer des noeuds, chacun accordant un bonus PERMANENT.
+#
+# Chaque noeud (sous "noeuds") :
+#   nom / description : affiches dans le menu.
+#   icone              : materiau vanilla utilise comme icone.
+#   cout-points        : points de talent requis pour le debloquer.
+#   prerequis          : id d'un AUTRE noeud qui doit deja etre debloque (absent = aucun).
+#   effet.type         : BONUS_DEGATS (attribut degats), BONUS_VENTE (% sur les ventes Boutique,
+#                        s'ajoute au bonus de Prestige), BONUS_VITESSE_MINAGE (niveau de Haste
+#                        permanent, cumulatif), BONUS_VIE_MAX (attribut vie maximum).
+#   effet.valeur       : montant du bonus.
+noeuds:
+  degats_1:
+    nom: "&cForce I"
+    description: "+1 degats d'attaque"
+    icone: IRON_SWORD
+    cout-points: 3
+    effet:
+      type: BONUS_DEGATS
+      valeur: 1.0
+
+  degats_2:
+    nom: "&cForce II"
+    description: "+1.5 degats d'attaque supplementaires"
+    icone: DIAMOND_SWORD
+    cout-points: 6
+    prerequis: degats_1
+    effet:
+      type: BONUS_DEGATS
+      valeur: 1.5
+
+  vente_1:
+    nom: "&6Commerce I"
+    description: "+5% sur les ventes a la Boutique"
+    icone: GOLD_INGOT
+    cout-points: 4
+    effet:
+      type: BONUS_VENTE
+      valeur: 5
+
+  vente_2:
+    nom: "&6Commerce II"
+    description: "+10% supplementaires sur les ventes a la Boutique"
+    icone: GOLD_BLOCK
+    cout-points: 8
+    prerequis: vente_1
+    effet:
+      type: BONUS_VENTE
+      valeur: 10
+
+  minage_1:
+    nom: "&bMineur I"
+    description: "Haste I permanente"
+    icone: IRON_PICKAXE
+    cout-points: 4
+    effet:
+      type: BONUS_VITESSE_MINAGE
+      valeur: 1
+
+  minage_2:
+    nom: "&bMineur II"
+    description: "Haste II permanente"
+    icone: DIAMOND_PICKAXE
+    cout-points: 7
+    prerequis: minage_1
+    effet:
+      type: BONUS_VITESSE_MINAGE
+      valeur: 1
+
+  vie_1:
+    nom: "&aRobustesse I"
+    description: "+2 coeurs de vie maximum"
+    icone: APPLE
+    cout-points: 3
+    effet:
+      type: BONUS_VIE_MAX
+      valeur: 4.0
+
+  vie_2:
+    nom: "&aRobustesse II"
+    description: "+2 coeurs de vie maximum supplementaires"
+    icone: GOLDEN_APPLE
+    cout-points: 6
+    prerequis: vie_1
+    effet:
+      type: BONUS_VIE_MAX
+      valeur: 4.0
