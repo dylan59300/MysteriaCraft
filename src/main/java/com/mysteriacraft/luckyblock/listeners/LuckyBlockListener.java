@@ -106,13 +106,17 @@ public class LuckyBlockListener implements Listener {
     }
 
     /** Kit de connexion (voir luckyblocks.yml: kit-connexion) : donne "quantite" exemplaires de
-     * CHAQUE famille de Lucky Block actuellement active a chaque connexion du joueur. */
+     * CHAQUE famille de Lucky Block actuellement active, au maximum UNE FOIS PAR JOUR par joueur
+     * (voir LuckyBlockManager#hasReceivedJoinKitToday). Une reconnexion le meme jour ne redonne rien. */
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         if (!manager.isJoinKitEnabled() || manager.getJoinKitQuantity() <= 0) {
             return;
         }
         Player player = event.getPlayer();
+        if (manager.hasReceivedJoinKitToday(player.getUniqueId())) {
+            return;
+        }
         int quantity = manager.getJoinKitQuantity();
         for (LuckyBlockFamily family : manager.getFamiliesSorted()) {
             ItemStack item = manager.createItem(family, quantity);
@@ -121,6 +125,8 @@ public class LuckyBlockListener implements Listener {
                 leftovers.values().forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
             }
         }
+        manager.markJoinKitReceivedToday(player.getUniqueId());
+
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("quantite", String.valueOf(quantity));
         messages.send(player, "luckyblock.kit-connexion", placeholders);

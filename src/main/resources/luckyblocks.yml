@@ -34,7 +34,8 @@ pity-seuil: 40
 #
 # kit-connexion : si actif, donne "quantite" exemplaires de CHAQUE famille de Lucky Block
 #                 ACTUELLEMENT active (les familles saisonnieres hors periode sont ignorees, voir
-#                 actif-du/actif-au) a un joueur a CHAQUE connexion (pas seulement la premiere).
+#                 actif-du/actif-au) a un joueur, AU MAXIMUM UNE FOIS PAR JOUR (des reconnexions le
+#                 meme jour ne redonnent rien ; le compteur se reinitialise a minuit).
 #                 actif: false desactive completement le systeme.
 kit-connexion:
   actif: true

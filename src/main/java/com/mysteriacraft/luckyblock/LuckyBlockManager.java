@@ -24,6 +24,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -92,6 +93,7 @@ public class LuckyBlockManager {
         this.luckyBlocksConfig = luckyBlocksConfig;
         this.familyKey = new NamespacedKey(plugin, "luckyblock-famille");
         createBlocksTable();
+        createJoinKitTable();
         loadPlacedBlocks();
         loadFamilies();
         registerRecipes();
@@ -168,6 +170,52 @@ public class LuckyBlockManager {
                 plugin.getLogger().severe("Erreur suppression Lucky Block pose : " + e.getMessage());
             }
         });
+    }
+
+    // ---- Kit de connexion (voir luckyblocks.yml: kit-connexion) : limite a 1 fois par jour ----
+
+    private void createJoinKitTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS luckyblock_kit_connexion (" +
+                "uuid TEXT NOT NULL PRIMARY KEY, " +
+                "derniere_date TEXT NOT NULL" +
+                ");";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur creation table 'luckyblock_kit_connexion' : " + e.getMessage());
+        }
+    }
+
+    /** true si ce joueur a deja recu le kit de connexion aujourd'hui (voir onJoin dans LuckyBlockListener). */
+    public boolean hasReceivedJoinKitToday(UUID playerId) {
+        String select = "SELECT derniere_date FROM luckyblock_kit_connexion WHERE uuid = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, playerId.toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return LocalDate.now().toString().equals(rs.getString("derniere_date"));
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture kit de connexion pour " + playerId + " : " + e.getMessage());
+        }
+        return false;
+    }
+
+    /** Marque ce joueur comme ayant recu le kit de connexion aujourd'hui. */
+    public void markJoinKitReceivedToday(UUID playerId) {
+        String upsert = "INSERT INTO luckyblock_kit_connexion (uuid, derniere_date) VALUES (?, ?) " +
+                "ON CONFLICT(uuid) DO UPDATE SET derniere_date = excluded.derniere_date;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(upsert)) {
+            statement.setString(1, playerId.toString());
+            statement.setString(2, LocalDate.now().toString());
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur sauvegarde kit de connexion pour " + playerId + " : " + e.getMessage());
+        }
     }
 
     /** Cle de position (bloc entier, sans decimales) utilisee pour indexer placedBlocks. */
