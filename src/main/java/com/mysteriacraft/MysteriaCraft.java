@@ -335,6 +335,9 @@ public final class MysteriaCraft extends JavaPlugin {
         this.miningMachineConfig = new ConfigManager(this, "mining_machine.yml");
         this.miningMachineManager = new MiningMachineManager(this, database, miningMachineConfig);
         this.miningMachineService = new MiningMachineService(this, miningMachineManager, customItemManager, messages);
+        // Injecte apres-coup (setter) : la Machine a Miner n'existe pas encore quand machineService
+        // est construit plus haut dans cette meme methode (voir aussi setupGenerators pour generatorManager).
+        machineService.setMiningMachineManager(miningMachineManager);
         Bukkit.getPluginManager().registerEvents(
                 new MiningMachineListener(miningMachineManager, miningMachineService, messages), this);
         getCommand("machineminiere").setExecutor(
@@ -363,6 +366,9 @@ public final class MysteriaCraft extends JavaPlugin {
         this.generatorManager = new GeneratorManager(this, database, generatorsConfig, customItemManager);
         this.generatorService = new GeneratorService(generatorManager, customItemManager, economyManager, messages);
         rewardGiver.setGeneratorGiveHandler(generatorService);
+        // Injecte apres-coup (setter) : le module Generateurs n'existe pas encore quand machineService
+        // est construit dans setupCustomItems() (appelee avant setupGenerators()).
+        machineService.setGeneratorManager(generatorManager);
 
         Bukkit.getPluginManager().registerEvents(new GeneratorListener(generatorManager, generatorService, messages), this);
         GeneratorCommand generatorCommand = new GeneratorCommand(generatorsConfig, generatorManager, economyManager, messages);

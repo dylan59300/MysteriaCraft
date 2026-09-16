@@ -3,6 +3,8 @@ package com.mysteriacraft.customitems.machine;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.customitems.CustomItemDefinition;
 import com.mysteriacraft.customitems.CustomItemManager;
+import com.mysteriacraft.customitems.generator.GeneratorManager;
+import com.mysteriacraft.customitems.miningmachine.MiningMachineManager;
 import com.mysteriacraft.luckyblock.LuckyBlockFamily;
 import com.mysteriacraft.luckyblock.LuckyBlockManager;
 import com.mysteriacraft.quests.QuestService;
@@ -54,6 +56,12 @@ public class MachineService {
     private final QuestService questService;
     private final MessageManager messages;
 
+    /** Injectes apres coup (setters, voir MysteriaCraft#setupCustomItems/setupGenerators) : ces
+     * modules n'existent pas encore au moment ou MachineService est construit. Peuvent rester null
+     * un court instant au demarrage ; pickRandomLoot() les ignore tant qu'ils ne sont pas definis. */
+    private GeneratorManager generatorManager;
+    private MiningMachineManager miningMachineManager;
+
     /** Tache d'actionbar en cours par joueur, pour eviter d'en empiler plusieurs en parallele. */
     private final Map<UUID, BukkitTask> cooldownActionbarTasks = new ConcurrentHashMap<>();
 
@@ -65,6 +73,14 @@ public class MachineService {
         this.luckyBlockManager = luckyBlockManager;
         this.questService = questService;
         this.messages = messages;
+    }
+
+    public void setGeneratorManager(GeneratorManager generatorManager) {
+        this.generatorManager = generatorManager;
+    }
+
+    public void setMiningMachineManager(MiningMachineManager miningMachineManager) {
+        this.miningMachineManager = miningMachineManager;
     }
 
     public void handleInteract(Player player, Block machineBlock) {
@@ -290,60 +306,77 @@ public class MachineService {
 
             questService.registerProgress(player, QuestType.MACHINE_TRANSFORM, family.id(), 1);
 
-            // "Double loot" actif (voir /machine doubleloot) : ajoute aussi un item custom bonus.
+            // "Double loot" actif (voir /machine doubleloot) : ajoute aussi une recompense bonus.
             if (doubleLoot) {
-                CustomItemDefinition bonus = pickRandomCustomItem();
-                if (bonus != null) {
-                    giveItem(player, customItemManager.createItem(bonus));
-                    Map<String, String> bonusPlaceholders = new HashMap<>();
-                    bonusPlaceholders.put("item", bonus.displayName());
-                    messages.send(player, "machine.doubleloot-bonus-item", bonusPlaceholders);
-                }
+                MachineLoot bonus = pickRandomLoot();
+                giveItem(player, bonus.item());
+                Map<String, String> bonusPlaceholders = new HashMap<>();
+                bonusPlaceholders.put("item", bonus.displayName());
+                messages.send(player, "machine.doubleloot-bonus-item", bonusPlaceholders);
             }
         } else {
             manager.resetStreak(machineBlock);
 
-            CustomItemDefinition itemDefinition = pickRandomCustomItem();
-            if (itemDefinition == null) {
-                // Aucun item custom charge (config vide) : on retombe quand meme sur le Lucky Block
-                // pour ne jamais rien perdre.
-                giveItem(player, luckyBlockManager.createItem(family));
-                effectLocation.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, effectLocation, 25, 0.4, 0.4, 0.4);
-                player.playSound(effectLocation, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.3f);
-                Map<String, String> placeholders = new HashMap<>();
-                placeholders.put("caisse", family.displayName());
-                messages.send(player, "machine.reussite", placeholders);
-                questService.registerProgress(player, QuestType.MACHINE_TRANSFORM, family.id(), 1);
-            } else {
-                giveItem(player, customItemManager.createItem(itemDefinition));
-                effectLocation.getWorld().spawnParticle(Particle.END_ROD, effectLocation, 20, 0.4, 0.4, 0.4);
-                player.playSound(effectLocation, Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1f);
-                Map<String, String> placeholders = new HashMap<>();
-                placeholders.put("item", itemDefinition.displayName());
-                messages.send(player, "machine.reussite-item", placeholders);
+            MachineLoot loot = pickRandomLoot();
+            giveItem(player, loot.item());
+            effectLocation.getWorld().spawnParticle(Particle.END_ROD, effectLocation, 20, 0.4, 0.4, 0.4);
+            player.playSound(effectLocation, Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1f);
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("item", loot.displayName());
+            messages.send(player, "machine.reussite-item", placeholders);
 
-                // "Double loot" actif : ajoute aussi le Lucky Block cible en bonus.
-                if (doubleLoot) {
-                    giveItem(player, luckyBlockManager.createItem(family));
-                    Map<String, String> bonusPlaceholders = new HashMap<>();
-                    bonusPlaceholders.put("caisse", family.displayName());
-                    messages.send(player, "machine.doubleloot-bonus-luckyblock", bonusPlaceholders);
-                }
+            // "Double loot" actif : ajoute aussi le Lucky Block cible en bonus.
+            if (doubleLoot) {
+                giveItem(player, luckyBlockManager.createItem(family));
+                Map<String, String> bonusPlaceholders = new HashMap<>();
+                bonusPlaceholders.put("caisse", family.displayName());
+                messages.send(player, "machine.doubleloot-bonus-luckyblock", bonusPlaceholders);
             }
         }
         updateHologram(machineBlock);
     }
 
-    /** Pioche un item custom au hasard parmi TOUS ceux charges depuis custom_items.yml qui
-     * n'excluent pas ce tirage (voir CustomItemDefinition#excluLootMachine), ou null si aucun. */
-    private CustomItemDefinition pickRandomCustomItem() {
+    /** Une recompense "objet aleatoire" possible de la Machine : soit un item custom, soit un
+     * generateur, soit l'une des 2 Machines elles-memes (voir pickRandomLoot). */
+    private record MachineLoot(String displayName, ItemStack item) {
+    }
+
+    /** Pioche au hasard, a EGALITE de chance, parmi : tous les items custom charges depuis
+     * custom_items.yml qui n'excluent pas ce tirage (voir CustomItemDefinition#excluLootMachine),
+     * tous les types de Generateurs (voir generateurs.yml), la Machine a Transformation elle-meme
+     * et la Machine a Miner (les 2 dernieres uniquement si leurs managers sont deja injectes, voir
+     * setGeneratorManager/setMiningMachineManager). Ne renvoie jamais null : la Machine a
+     * Transformation elle-meme est toujours candidate. */
+    private MachineLoot pickRandomLoot() {
         List<CustomItemDefinition> items = customItemManager.getItemsSorted().stream()
                 .filter(item -> !item.excluLootMachine())
                 .toList();
-        if (items.isEmpty()) {
-            return null;
+        List<GeneratorManager.GeneratorType> generatorTypes = generatorManager != null
+                ? generatorManager.getTypes() : List.of();
+        boolean includeMiningMachine = miningMachineManager != null;
+
+        int total = items.size() + generatorTypes.size() + 1 + (includeMiningMachine ? 1 : 0);
+        int index = ThreadLocalRandom.current().nextInt(total);
+
+        if (index < items.size()) {
+            CustomItemDefinition definition = items.get(index);
+            return new MachineLoot(definition.displayName(), customItemManager.createItem(definition));
         }
-        return items.get(ThreadLocalRandom.current().nextInt(items.size()));
+        index -= items.size();
+
+        if (index < generatorTypes.size()) {
+            GeneratorManager.GeneratorType type = generatorTypes.get(index);
+            return new MachineLoot(type.displayName(), generatorManager.createGeneratorItem(type, 1));
+        }
+        index -= generatorTypes.size();
+
+        if (index == 0) {
+            ItemStack item = manager.createMachineItem(1);
+            return new MachineLoot(item.getItemMeta().getDisplayName(), item);
+        }
+
+        ItemStack item = miningMachineManager.createMachineItem(1);
+        return new MachineLoot(item.getItemMeta().getDisplayName(), item);
     }
 
     private void giveItem(Player player, ItemStack item) {
@@ -390,11 +423,9 @@ public class MachineService {
                 luckyBlockCount++;
                 giveItem(admin, luckyBlockManager.createItem(family));
             } else {
-                CustomItemDefinition definition = pickRandomCustomItem();
-                ItemStack reward = definition != null
-                        ? customItemManager.createItem(definition) : luckyBlockManager.createItem(family);
-                giveItem(admin, reward);
-                itemTally.merge(definition != null ? definition.displayName() : family.displayName(), 1, Integer::sum);
+                MachineLoot loot = pickRandomLoot();
+                giveItem(admin, loot.item());
+                itemTally.merge(loot.displayName(), 1, Integer::sum);
             }
         }
 
@@ -518,19 +549,14 @@ public class MachineService {
             playAutoFeedEffects(effectLocation, false);
 
             if (doubleLoot) {
-                CustomItemDefinition bonus = pickRandomCustomItem();
-                if (bonus != null) {
-                    outputReward(outputInventory, containers, customItemManager.createItem(bonus));
-                }
+                outputReward(outputInventory, containers, pickRandomLoot().item());
             }
         } else {
             manager.resetStreak(machineBlock);
 
-            CustomItemDefinition itemDefinition = pickRandomCustomItem();
-            ItemStack reward = itemDefinition != null
-                    ? customItemManager.createItem(itemDefinition) : luckyBlockManager.createItem(family);
-            outputReward(outputInventory, containers, reward);
-            playAutoFeedEffects(effectLocation, itemDefinition != null);
+            MachineLoot loot = pickRandomLoot();
+            outputReward(outputInventory, containers, loot.item());
+            playAutoFeedEffects(effectLocation, true);
 
             if (doubleLoot) {
                 outputReward(outputInventory, containers, luckyBlockManager.createItem(family));
