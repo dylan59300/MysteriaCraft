@@ -4,6 +4,8 @@ import com.mysteriacraft.core.RecipeIngredient;
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.core.storage.Database;
+import com.mysteriacraft.customitems.CustomItemDefinition;
+import com.mysteriacraft.customitems.CustomItemManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -61,11 +63,17 @@ public class GeneratorManager {
     /** Un type de generateur : bloc, quantite generee par cycle complet (argent OU objets selon
      * resultType), duree du cycle, plafond de stockage, et sa recette de craft optionnelle (voir
      * "recette"/"generateur-precedent" dans generateurs.yml : plusieurs paliers de craft
-     * progressifs vers le generateur legendaire). */
+     * progressifs vers le generateur legendaire).
+     *
+     * @param resultMaterial materiau vanilla donne par cycle (OBJET), ignore si resultCustomItemId
+     *                       est defini.
+     * @param resultCustomItemId si defini (OBJET), le generateur donne cet item CUSTOM (voir
+     *                           custom_items.yml) au lieu d'un materiau vanilla, ex: un generateur
+     *                           d'essence d'enchantement pour la Table d'Enchantement Custom. */
     public record GeneratorType(String id, String displayName, Material block, double amount,
                                  long intervalSeconds, double storageMax, boolean rewardOnly,
                                  List<RecipeIngredient> recipe, String requiresGeneratorId,
-                                 ResultType resultType, Material resultMaterial) {
+                                 ResultType resultType, Material resultMaterial, String resultCustomItemId) {
         /** Quantite generee par seconde reelle (avant bonus d'amelioration). */
         public double ratePerSecond() {
             return intervalSeconds > 0 ? amount / intervalSeconds : 0.0;
@@ -78,6 +86,10 @@ public class GeneratorManager {
         public boolean producesItems() {
             return resultType == ResultType.OBJET;
         }
+
+        public boolean producesCustomItem() {
+            return resultType == ResultType.OBJET && resultCustomItemId != null;
+        }
     }
 
     /** Etat persiste d'un generateur pose, indexe par position. */
@@ -87,12 +99,14 @@ public class GeneratorManager {
         double stock;
         long lastTickMillis;
         double bonusPercent;
+        double storageBonusPercent;
         UUID hologramUuid;
     }
 
     private final Plugin plugin;
     private final Database database;
     private final ConfigManager generatorsConfig;
+    private final CustomItemManager customItemManager;
     private final NamespacedKey generatorKey;
     private final NamespacedKey typeKey;
     private static final String RECIPE_KEY_PREFIX = "generateur-";
@@ -107,16 +121,21 @@ public class GeneratorManager {
     private String upgradeItemId = "boost_generateur";
     private double bonusPerUpgradePercent = 10;
     private double bonusMaxPercent = 50;
+    private String storageUpgradeItemId = "boost_stockage_generateur";
+    private double storageBonusPerUpgradePercent = 20;
+    private double storageBonusMaxPercent = 100;
 
     private static final DecimalFormat NUMBER_FORMAT = new DecimalFormat("#,##0");
     private static final BlockFace[] ADJACENT_FACES = {
             BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN
     };
 
-    public GeneratorManager(Plugin plugin, Database database, ConfigManager generatorsConfig) {
+    public GeneratorManager(Plugin plugin, Database database, ConfigManager generatorsConfig,
+                             CustomItemManager customItemManager) {
         this.plugin = plugin;
         this.database = database;
         this.generatorsConfig = generatorsConfig;
+        this.customItemManager = customItemManager;
         this.generatorKey = new NamespacedKey(plugin, "generateur");
         this.typeKey = new NamespacedKey(plugin, "generateur-type");
         createTable();
@@ -137,6 +156,7 @@ public class GeneratorManager {
                 "dernier_tick INTEGER NOT NULL DEFAULT 0, " +
                 "bonus_rythme REAL NOT NULL DEFAULT 0, " +
                 "hologramme_uuid TEXT, " +
+                "bonus_stockage REAL NOT NULL DEFAULT 0, " +
                 "PRIMARY KEY (monde, x, y, z)" +
                 ");";
         Connection connection = database.getConnection();
@@ -145,12 +165,20 @@ public class GeneratorManager {
         } catch (SQLException e) {
             plugin.getLogger().severe("Erreur creation table 'generateurs' : " + e.getMessage());
         }
+        // Migration : une base creee AVANT l'ajout de l'amelioration de stockage n'a pas cette
+        // colonne (CREATE TABLE IF NOT EXISTS ne la rajoute pas toute seule).
+        try (PreparedStatement statement = connection.prepareStatement(
+                "ALTER TABLE generateurs ADD COLUMN bonus_stockage REAL NOT NULL DEFAULT 0;")) {
+            statement.executeUpdate();
+        } catch (SQLException ignored) {
+            // Colonne deja presente : rien a faire.
+        }
     }
 
     private void loadGenerators() {
         generators.clear();
         String select = "SELECT monde, x, y, z, type_id, proprietaire, stock, dernier_tick, "
-                + "bonus_rythme, hologramme_uuid FROM generateurs;";
+                + "bonus_rythme, hologramme_uuid, bonus_stockage FROM generateurs;";
         Connection connection = database.getConnection();
         try (PreparedStatement statement = connection.prepareStatement(select);
              ResultSet rs = statement.executeQuery()) {
@@ -173,6 +201,7 @@ public class GeneratorManager {
                 state.stock = rs.getDouble("stock");
                 state.lastTickMillis = rs.getLong("dernier_tick");
                 state.bonusPercent = rs.getDouble("bonus_rythme");
+                state.storageBonusPercent = rs.getDouble("bonus_stockage");
                 String hologramRaw = rs.getString("hologramme_uuid");
                 if (hologramRaw != null) {
                     try {
@@ -192,11 +221,11 @@ public class GeneratorManager {
     private void persistAsync(Location location, GeneratorState state) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             String upsert = "INSERT INTO generateurs (monde, x, y, z, type_id, proprietaire, stock, "
-                    + "dernier_tick, bonus_rythme, hologramme_uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    + "dernier_tick, bonus_rythme, hologramme_uuid, bonus_stockage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                     + "ON CONFLICT(monde, x, y, z) DO UPDATE SET type_id = excluded.type_id, "
                     + "proprietaire = excluded.proprietaire, stock = excluded.stock, "
                     + "dernier_tick = excluded.dernier_tick, bonus_rythme = excluded.bonus_rythme, "
-                    + "hologramme_uuid = excluded.hologramme_uuid;";
+                    + "hologramme_uuid = excluded.hologramme_uuid, bonus_stockage = excluded.bonus_stockage;";
             Connection connection = database.getConnection();
             try (PreparedStatement statement = connection.prepareStatement(upsert)) {
                 statement.setString(1, location.getWorld().getName());
@@ -209,6 +238,7 @@ public class GeneratorManager {
                 statement.setLong(8, state.lastTickMillis);
                 statement.setDouble(9, state.bonusPercent);
                 statement.setString(10, state.hologramUuid != null ? state.hologramUuid.toString() : null);
+                statement.setDouble(11, state.storageBonusPercent);
                 statement.executeUpdate();
             } catch (SQLException e) {
                 plugin.getLogger().severe("Erreur sauvegarde generateur : " + e.getMessage());
@@ -279,17 +309,22 @@ public class GeneratorManager {
                     resultType = ResultType.ARGENT;
                 }
                 Material resultMaterial = null;
+                String resultCustomItemId = null;
                 if (resultType == ResultType.OBJET) {
-                    resultMaterial = Material.matchMaterial(section.getString("objet-resultat", "IRON_INGOT"));
-                    if (resultMaterial == null) {
-                        plugin.getLogger().warning("objet-resultat invalide pour le generateur '" + id + "', IRON_INGOT utilise.");
-                        resultMaterial = Material.IRON_INGOT;
+                    if (section.contains("objet-resultat-custom")) {
+                        resultCustomItemId = section.getString("objet-resultat-custom").toLowerCase();
+                    } else {
+                        resultMaterial = Material.matchMaterial(section.getString("objet-resultat", "IRON_INGOT"));
+                        if (resultMaterial == null) {
+                            plugin.getLogger().warning("objet-resultat invalide pour le generateur '" + id + "', IRON_INGOT utilise.");
+                            resultMaterial = Material.IRON_INGOT;
+                        }
                     }
                 }
 
                 types.put(id.toLowerCase(), new GeneratorType(
                         id.toLowerCase(), displayName, block, amount, intervalSeconds, storageMax, rewardOnly,
-                        recipe, requiresGeneratorId, resultType, resultMaterial));
+                        recipe, requiresGeneratorId, resultType, resultMaterial, resultCustomItemId));
             }
         }
 
@@ -302,6 +337,13 @@ public class GeneratorManager {
             upgradeItemId = amelioration.getString("item-id", "boost_generateur").toLowerCase();
             bonusPerUpgradePercent = amelioration.getDouble("bonus-par-amelioration", 10.0);
             bonusMaxPercent = amelioration.getDouble("bonus-max", 50.0);
+        }
+
+        ConfigurationSection ameliorationStockage = generatorsConfig.get().getConfigurationSection("amelioration-stockage");
+        if (ameliorationStockage != null) {
+            storageUpgradeItemId = ameliorationStockage.getString("item-id", "boost_stockage_generateur").toLowerCase();
+            storageBonusPerUpgradePercent = ameliorationStockage.getDouble("bonus-par-amelioration", 20.0);
+            storageBonusMaxPercent = ameliorationStockage.getDouble("bonus-max", 100.0);
         }
 
         plugin.getLogger().info("Generateurs d'argent : " + types.size() + " type(s) charge(s), tick toutes les "
@@ -417,6 +459,47 @@ public class GeneratorManager {
         return type.ratePerSecond() * (1.0 + getBonusPercent(block) / 100.0);
     }
 
+    // ---- Amelioration de stockage (bonus incremental de plafond par generateur) ----
+
+    public String getStorageUpgradeItemId() {
+        return storageUpgradeItemId;
+    }
+
+    public double getStorageBonusPerUpgradePercent() {
+        return storageBonusPerUpgradePercent;
+    }
+
+    public double getStorageBonusMaxPercent() {
+        return storageBonusMaxPercent;
+    }
+
+    public double getStorageBonusPercent(Block block) {
+        GeneratorState state = generators.get(blockKey(block));
+        return state == null ? 0.0 : state.storageBonusPercent;
+    }
+
+    /** Ajoute du bonus de stockage (plafonne a bonus-max). Renvoie le nouveau total (0 si ce bloc
+     * n'est pas/plus un generateur connu). */
+    public double addStorageBonusPercent(Block block, double amount) {
+        Location key = blockKey(block);
+        GeneratorState state = generators.get(key);
+        if (state == null) {
+            return 0.0;
+        }
+        state.storageBonusPercent = Math.min(storageBonusMaxPercent, state.storageBonusPercent + amount);
+        persistAsync(key, state);
+        return state.storageBonusPercent;
+    }
+
+    /** Plafond de stockage effectif pour CE bloc, bonus d'amelioration de stockage inclus. */
+    public double getEffectiveStorageMax(Block block) {
+        GeneratorType type = getBlockType(block);
+        if (type == null) {
+            return 0.0;
+        }
+        return type.storageMax() * (1.0 + getStorageBonusPercent(block) / 100.0);
+    }
+
     public ItemStack createGeneratorItem(GeneratorType type) {
         return createGeneratorItem(type, 1);
     }
@@ -429,7 +512,13 @@ public class GeneratorManager {
             double perHour = type.ratePerSecond() * 3600;
             List<String> lore;
             if (type.producesItems()) {
-                String materialName = type.resultMaterial().name().replace('_', ' ');
+                String materialName;
+                if (type.producesCustomItem()) {
+                    CustomItemDefinition customDefinition = customItemManager.getItem(type.resultCustomItemId());
+                    materialName = customDefinition != null ? customDefinition.displayName() : type.resultCustomItemId();
+                } else {
+                    materialName = type.resultMaterial().name().replace('_', ' ');
+                }
                 lore = new ArrayList<>(List.of(
                         MessageManager.color("&7Genere automatiquement des &f" + materialName + "&7,"),
                         MessageManager.color("&7meme hors-ligne."),
@@ -586,7 +675,7 @@ public class GeneratorManager {
         long now = System.currentTimeMillis();
         double elapsedSeconds = Math.max(0, (now - state.lastTickMillis) / 1000.0);
 
-        state.stock = Math.min(type.storageMax(), state.stock + elapsedSeconds * getEffectiveRatePerSecond(block));
+        state.stock = Math.min(getEffectiveStorageMax(block), state.stock + elapsedSeconds * getEffectiveRatePerSecond(block));
         state.lastTickMillis = now;
         persistAsync(key, state);
         return state.stock;

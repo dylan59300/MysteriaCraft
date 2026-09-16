@@ -418,6 +418,27 @@ items:
         G: GOLD_INGOT
         D: DIAMOND
 
+  boost_stockage_generateur:
+    nom: "&b&lBoost de Stockage de Generateur"
+    lore:
+      - "&7Clic-droit sur un generateur pour"
+      - "&7augmenter durablement son plafond"
+      - "&7de stockage."
+    item-de-base: ENDER_CHEST
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : 4 lingots de fer + 4 lingots d'or autour d'une coquille d'ender.
+    recette:
+      forme:
+        - "FGF"
+        - "GEG"
+        - "FGF"
+      ingredients:
+        F: IRON_INGOT
+        G: GOLD_INGOT
+        E: ENDER_EYE
+
   # Objet consommable (clic-droit accroupi, en main principale, avec l'item full-custom abime en
   # main secondaire) qui repare a 100% la durabilite-custom d'un item full-custom. Voir
   # CustomItemService#repairItem / CustomItemListener#onInteract.

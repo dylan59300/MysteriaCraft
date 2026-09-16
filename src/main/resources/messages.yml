@@ -352,6 +352,8 @@ generateur:
   recupere-objets-a-la-casse: "&a&lVotre generateur avait des objets en stock : &a+&e{quantite}x {objet} &arecupere automatiquement."
   boost-effectue: "&d&lGenerateur booste ! &7Rythme : &e+{bonus}% &7(&e{bonus-total}%&7 cumule, jusqu'a &e{bonus-max}%&7)."
   boost-max: "&cCe generateur a deja atteint son bonus de rythme maximum."
+  boost-stockage-effectue: "&b&lStockage augmente ! &7+&e{bonus}% &7(&e{bonus-total}%&7 cumule, jusqu'a &e{bonus-max}%&7)."
+  boost-stockage-max: "&cCe generateur a deja atteint son bonus de stockage maximum."
   limite-atteinte: "&cVous avez deja &e{max} &cgenerateurs actifs (limite atteinte). Recuperez-en un ailleurs pour en poser un nouveau."
   liste-titre: "&6&l=== Vos generateurs actifs ==="
   liste-vide: "&7Aucun generateur actif trouve (suivi reinitialise a chaque redemarrage du serveur)."

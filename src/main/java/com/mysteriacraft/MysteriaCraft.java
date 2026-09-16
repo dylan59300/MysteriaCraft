@@ -357,7 +357,7 @@ public final class MysteriaCraft extends JavaPlugin {
 
     private void setupGenerators() {
         this.generatorsConfig = new ConfigManager(this, "generateurs.yml");
-        this.generatorManager = new GeneratorManager(this, database, generatorsConfig);
+        this.generatorManager = new GeneratorManager(this, database, generatorsConfig, customItemManager);
         this.generatorService = new GeneratorService(generatorManager, customItemManager, economyManager, messages);
         rewardGiver.setGeneratorGiveHandler(generatorService);
 

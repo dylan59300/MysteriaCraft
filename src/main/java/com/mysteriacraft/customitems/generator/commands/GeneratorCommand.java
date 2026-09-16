@@ -88,12 +88,13 @@ public class GeneratorCommand implements CommandExecutor {
                 continue;
             }
             double stored = manager.accrue(block);
+            double effectiveStorageMax = manager.getEffectiveStorageMax(block);
             found++;
             String coords = location.getWorld() != null ? location.getWorld().getName() : "?";
             coords += " " + location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ();
             String storedText = type.producesItems()
-                    ? (int) Math.floor(stored) + " &7/ &a" + (int) type.storageMax()
-                    : economyManager.format(stored) + " &7/ &a" + economyManager.format(type.storageMax());
+                    ? (int) Math.floor(stored) + " &7/ &a" + (int) effectiveStorageMax
+                    : economyManager.format(stored) + " &7/ &a" + economyManager.format(effectiveStorageMax);
             sender.sendMessage(MessageManager.color("&e" + type.displayName() + " &7- " + coords
                     + " &7- &a" + storedText));
         }

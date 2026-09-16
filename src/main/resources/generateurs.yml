@@ -23,7 +23,9 @@
 #                 minerai classique skyblock). "montant" est alors un nombre d'objets par cycle,
 #                 les fractions de cycle s'accumulent sans jamais rien perdre ni arrondir au
 #                 superieur.
-# objet-resultat : materiau donne par cycle, uniquement si type-resultat: OBJET.
+# objet-resultat : materiau VANILLA donne par cycle, uniquement si type-resultat: OBJET.
+# objet-resultat-custom : id d'un item CUSTOM (voir custom_items.yml) donne a la place d'un
+#                         materiau vanilla, si defini (prioritaire sur objet-resultat).
 # obtenable-en-recompense-uniquement : purement informatif (ajoute une ligne de lore) ; n'empeche
 #                                       pas un admin de le donner via /generateur give.
 # recette : ingredients d'un craft shapeless (n'importe quel agencement dans la table), optionnel.
@@ -149,6 +151,44 @@ generateurs:
       - materiel: REDSTONE_BLOCK
         quantite: 1
 
+  # Palier ultime de la chaine de ressources : tres lent, mais donne de la netherite brute.
+  ressource_legendaire:
+    nom: "&5&lGenerateur de Netherite"
+    bloc: NETHERITE_BLOCK
+    type-resultat: OBJET
+    objet-resultat: NETHERITE_SCRAP
+    montant: 1
+    intervalle-secondes: 3600    # 1 heure -> 1 eclat de netherite/heure
+    stockage-max: 8
+    generateur-precedent: ressource_diamant
+    recette:
+      - materiel: NETHERITE_BLOCK
+        quantite: 1
+      - materiel: NETHER_STAR
+        quantite: 1
+      - materiel: DIAMOND_BLOCK
+        quantite: 2
+    obtenable-en-recompense-uniquement: true
+
+  # Genere directement un item CUSTOM (voir objet-resultat-custom) plutot qu'un materiau vanilla :
+  # ici, l'essence utilisee comme catalyseur de la Table d'Enchantement Custom (idee "lien avec la
+  # table d'enchantement"). Independant de la chaine de ressources ci-dessus.
+  ressource_essence:
+    nom: "&d&lGenerateur d'Essence d'Enchantement"
+    bloc: LAPIS_BLOCK
+    type-resultat: OBJET
+    objet-resultat-custom: essence_enchantement
+    montant: 1
+    intervalle-secondes: 1800    # 30 minutes -> 2 essences/heure
+    stockage-max: 8
+    recette:
+      - materiel: LAPIS_BLOCK
+        quantite: 4
+      - materiel: EXPERIENCE_BOTTLE
+        quantite: 8
+      - materiel: NETHER_STAR
+        quantite: 1
+
 # Frequence (en secondes) a laquelle le stock de chaque generateur pose est recalcule et son
 # hologramme mis a jour, meme sans interaction du joueur (auto-collecte comprise).
 tick-secondes: 5
@@ -169,3 +209,11 @@ amelioration:
   item-id: boost_generateur
   bonus-par-amelioration: 10
   bonus-max: 50
+
+# Amelioration de stockage : objet custom consommable qui augmente durablement le PLAFOND de
+# stockage d'UN generateur precis (independant du type de base et du bonus de rythme ci-dessus),
+# jusqu'a bonus-max.
+amelioration-stockage:
+  item-id: boost_stockage_generateur
+  bonus-par-amelioration: 20
+  bonus-max: 100

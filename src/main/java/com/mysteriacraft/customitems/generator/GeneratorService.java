@@ -59,6 +59,10 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
             upgrade(player, block, inHand);
             return;
         }
+        if (customItemId != null && customItemId.equalsIgnoreCase(manager.getStorageUpgradeItemId())) {
+            upgradeStorage(player, block, inHand);
+            return;
+        }
 
         if (type.producesItems()) {
             collectItems(player, block, type);
@@ -104,13 +108,13 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
             return;
         }
 
-        ItemStack drop = new ItemStack(type.resultMaterial(), whole);
+        ItemStack drop = createResultItem(type, whole);
         Map<Integer, ItemStack> leftovers = player.getInventory().addItem(drop);
         leftovers.values().forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
 
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("quantite", String.valueOf(whole));
-        placeholders.put("objet", type.resultMaterial().name().replace('_', ' '));
+        placeholders.put("objet", resultDisplayName(type));
         placeholders.put("generateur", type.displayName());
         messages.send(player, "generateur.recupere-objets", placeholders);
 
@@ -118,6 +122,28 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
         loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 20, 0.4, 0.4, 0.4);
         player.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
         updateHologram(block);
+    }
+
+    /** Fabrique l'ItemStack effectivement donne par un generateur OBJET : un item CUSTOM si
+     * "objet-resultat-custom" est configure, sinon le materiau vanilla "objet-resultat". */
+    private ItemStack createResultItem(GeneratorManager.GeneratorType type, int amount) {
+        if (type.producesCustomItem()) {
+            var definition = customItemManager.getItem(type.resultCustomItemId());
+            if (definition != null) {
+                return customItemManager.createItem(definition, amount);
+            }
+        }
+        return new ItemStack(type.resultMaterial(), amount);
+    }
+
+    private String resultDisplayName(GeneratorManager.GeneratorType type) {
+        if (type.producesCustomItem()) {
+            var definition = customItemManager.getItem(type.resultCustomItemId());
+            if (definition != null) {
+                return definition.displayName();
+            }
+        }
+        return type.resultMaterial().name().replace('_', ' ');
     }
 
     private void upgrade(Player player, Block block, ItemStack boostItem) {
@@ -144,6 +170,30 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
         updateHologram(block);
     }
 
+    private void upgradeStorage(Player player, Block block, ItemStack boostItem) {
+        double currentBonus = manager.getStorageBonusPercent(block);
+        if (currentBonus >= manager.getStorageBonusMaxPercent()) {
+            messages.send(player, "generateur.boost-stockage-max");
+            return;
+        }
+
+        int remaining = boostItem.getAmount() - 1;
+        player.getInventory().setItemInMainHand(remaining > 0 ? withAmount(boostItem, remaining) : null);
+
+        double newBonus = manager.addStorageBonusPercent(block, manager.getStorageBonusPerUpgradePercent());
+
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("bonus", formatPercent(manager.getStorageBonusPerUpgradePercent()));
+        placeholders.put("bonus-total", formatPercent(newBonus));
+        placeholders.put("bonus-max", formatPercent(manager.getStorageBonusMaxPercent()));
+        messages.send(player, "generateur.boost-stockage-effectue", placeholders);
+
+        Location loc = block.getLocation().add(0.5, 1.0, 0.5);
+        loc.getWorld().spawnParticle(Particle.END_ROD, loc, 20, 0.3, 0.5, 0.3, 0.02);
+        player.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.6f);
+        updateHologram(block);
+    }
+
     /** A appeler quand un generateur est casse : recupere automatiquement son stock pour le joueur
      * qui l'a casse (rien n'est perdu), avant que le bloc ne tombe en item. */
     public void collectOnBreak(Player breaker, Block block) {
@@ -156,12 +206,12 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
             if (whole <= 0) {
                 return;
             }
-            ItemStack drop = new ItemStack(type.resultMaterial(), whole);
+            ItemStack drop = createResultItem(type, whole);
             Map<Integer, ItemStack> leftovers = breaker.getInventory().addItem(drop);
             leftovers.values().forEach(leftover -> breaker.getWorld().dropItemNaturally(breaker.getLocation(), leftover));
             Map<String, String> placeholders = new HashMap<>();
             placeholders.put("quantite", String.valueOf(whole));
-            placeholders.put("objet", type.resultMaterial().name().replace('_', ' '));
+            placeholders.put("objet", resultDisplayName(type));
             messages.send(breaker, "generateur.recupere-objets-a-la-casse", placeholders);
             return;
         }
@@ -235,7 +285,7 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
             if (whole <= 0) {
                 return;
             }
-            Map<Integer, ItemStack> leftovers = hopper.getInventory().addItem(new ItemStack(type.resultMaterial(), whole));
+            Map<Integer, ItemStack> leftovers = hopper.getInventory().addItem(createResultItem(type, whole));
             if (!leftovers.isEmpty()) {
                 // Le hopper n'a pas pu tout accepter : remet le reste dans le stock du generateur.
                 int refused = leftovers.values().stream().mapToInt(ItemStack::getAmount).sum();
@@ -273,21 +323,24 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
         }
 
         double stored = manager.getStored(block);
+        double effectiveStorageMax = manager.getEffectiveStorageMax(block);
         int segments = 10;
-        double progress = type.storageMax() > 0 ? Math.min(1.0, stored / type.storageMax()) : 1.0;
+        double progress = effectiveStorageMax > 0 ? Math.min(1.0, stored / effectiveStorageMax) : 1.0;
         int filled = Math.max(0, Math.min(segments, (int) Math.round(progress * segments)));
         boolean full = filled >= segments;
 
         String bar = "&f[" + (full ? "&a" : "&e") + "■".repeat(filled) + "&7" + "□".repeat(segments - filled) + "&f]";
         double bonus = manager.getBonusPercent(block);
         String bonusSuffix = bonus > 0 ? " &7(&d+" + formatPercent(bonus) + "&7)" : "";
+        double storageBonus = manager.getStorageBonusPercent(block);
+        String storageBonusSuffix = storageBonus > 0 ? " &7(&b+" + formatPercent(storageBonus) + "&7 stock)" : "";
         String autoSuffix = manager.getAdjacentHopper(block) != null ? " &7| &b[AUTO]" : "";
 
         String storedText = type.producesItems()
-                ? String.valueOf((int) Math.floor(stored)) + " &7/ &a" + (int) type.storageMax()
-                : economyManager.format(stored) + " &7/ &a" + economyManager.format(type.storageMax());
+                ? String.valueOf((int) Math.floor(stored)) + " &7/ &a" + (int) effectiveStorageMax
+                : economyManager.format(stored) + " &7/ &a" + economyManager.format(effectiveStorageMax);
 
-        String text = type.displayName() + bonusSuffix + " &7| " + bar + " &7| &a" + storedText + autoSuffix;
+        String text = type.displayName() + bonusSuffix + storageBonusSuffix + " &7| " + bar + " &7| &a" + storedText + autoSuffix;
         stand.setCustomName(MessageManager.color(text));
     }
 
