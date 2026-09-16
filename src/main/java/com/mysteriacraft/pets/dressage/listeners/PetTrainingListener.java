@@ -32,7 +32,8 @@ public class PetTrainingListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onEntityDeath(EntityDeathEvent event) {
-        if (!(event.getEntity().getKiller() instanceof Player player)) {
+        Player player = event.getEntity().getKiller();
+        if (player == null) {
             return;
         }
         if (!petService.hasActivePet(player.getUniqueId())) {

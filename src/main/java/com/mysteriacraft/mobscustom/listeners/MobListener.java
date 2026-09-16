@@ -21,7 +21,8 @@ public class MobListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onDeath(EntityDeathEvent event) {
         String mobId = manager.getMobId(event.getEntity());
-        if (mobId == null || !(event.getEntity().getKiller() instanceof Player killer)) {
+        Player killer = event.getEntity().getKiller();
+        if (mobId == null || killer == null) {
             return;
         }
         MobManager.MobDefinition definition = manager.getMob(mobId);
