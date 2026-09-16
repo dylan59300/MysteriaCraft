@@ -56,6 +56,78 @@ marchands:
           type-id: fer
           quantite: 1
 
+      or_rapide:
+        cout: 12
+        limite-periode: SEMAINE
+        limite-quantite: 3
+        recompense:
+          type: GENERATEUR
+          type-id: or
+          quantite: 1
+
+      diamant_rapide:
+        cout: 25
+        limite-periode: SEMAINE
+        limite-quantite: 2
+        recompense:
+          type: GENERATEUR
+          type-id: diamant
+          quantite: 1
+
+      legendaire_rapide:
+        cout: 60
+        limite-periode: SEMAINE
+        limite-quantite: 1
+        recompense:
+          type: GENERATEUR
+          type-id: legendaire
+          quantite: 1
+
+      generateur_ressource_fer:
+        cout: 6
+        limite-periode: JOUR
+        limite-quantite: 3
+        recompense:
+          type: GENERATEUR
+          type-id: ressource_fer
+          quantite: 1
+
+      generateur_ressource_or:
+        cout: 15
+        limite-periode: JOUR
+        limite-quantite: 2
+        recompense:
+          type: GENERATEUR
+          type-id: ressource_or
+          quantite: 1
+
+      generateur_ressource_diamant:
+        cout: 30
+        limite-periode: SEMAINE
+        limite-quantite: 2
+        recompense:
+          type: GENERATEUR
+          type-id: ressource_diamant
+          quantite: 1
+
+      generateur_ressource_legendaire:
+        cout: 70
+        limite-periode: SEMAINE
+        limite-quantite: 1
+        recompense:
+          type: GENERATEUR
+          type-id: ressource_legendaire
+          quantite: 1
+
+      generateur_ressource_essence:
+        cout: 20
+        limite-periode: JOUR
+        limite-quantite: 2
+        recompense:
+          type: GENERATEUR
+          type-id: ressource_essence
+          quantite: 1
+
       carburant_ameliore_lot:
         cout: 8
         limite-periode: JOUR

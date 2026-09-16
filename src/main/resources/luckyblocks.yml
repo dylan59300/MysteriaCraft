@@ -201,6 +201,12 @@ familles:
         recompense:
           type: ECONOMIE
           montant: 250
+      - type: BON
+        chance: 15
+        recompense:
+          type: GENERATEUR
+          type-id: fer
+          quantite: 1
 
   rare:
     nom: "&b&lLucky Block Rare"
@@ -233,6 +239,18 @@ familles:
         recompense:
           type: ECONOMIE
           montant: 1000
+      - type: BON
+        chance: 18
+        recompense:
+          type: GENERATEUR
+          type-id: or
+          quantite: 1
+      - type: BON
+        chance: 15
+        recompense:
+          type: GENERATEUR
+          type-id: ressource_fer
+          quantite: 1
 
   epique:
     nom: "&5&lLucky Block Epique"
@@ -278,6 +296,24 @@ familles:
         recompense:
           type: OBJET_CUSTOM
           item-id: armure_paladin_bottes
+          quantite: 1
+      - type: BON
+        chance: 15
+        recompense:
+          type: GENERATEUR
+          type-id: diamant
+          quantite: 1
+      - type: BON
+        chance: 15
+        recompense:
+          type: GENERATEUR
+          type-id: ressource_or
+          quantite: 1
+      - type: BON
+        chance: 10
+        recompense:
+          type: MACHINE
+          machine-id: miniere
           quantite: 1
 
   legendaire:
@@ -342,6 +378,33 @@ familles:
         recompense:
           type: OBJET_CUSTOM
           item-id: armure_immortelle_casque
+          quantite: 1
+      - type: BON
+        chance: 20
+        pity: true
+        recompense:
+          type: GENERATEUR
+          type-id: ressource_diamant
+          quantite: 1
+      - type: BON
+        chance: 10
+        pity: true
+        recompense:
+          type: GENERATEUR
+          type-id: ressource_legendaire
+          quantite: 1
+      - type: BON
+        chance: 15
+        recompense:
+          type: GENERATEUR
+          type-id: ressource_essence
+          quantite: 1
+      - type: BON
+        chance: 15
+        pity: true
+        recompense:
+          type: MACHINE
+          machine-id: transformation
           quantite: 1
 
   # Exemple de famille SAISONNIERE (voir actif-du/actif-au ci-dessus) : disponible seulement du
