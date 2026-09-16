@@ -21,11 +21,19 @@
 # max-generateurs-par-joueur : 0 = illimite. Limitation connue : le comptage ne suit que les
 #                               generateurs vus depuis le dernier demarrage du plugin (comme les
 #                               autres effets ambiants de MysteriaCraft).
+# carburant-max : plafond de base de carburant qu'un generateur peut stocker (le surplus de
+#                 ravitaillement au-dela de ce plafond est perdu), augmentable via
+#                 amelioration-stockage ci-dessous.
+# amelioration : objet custom consommable qui augmente durablement le RYTHME de production (reduit
+#                intervalle-secondes) d'UN generateur precis, jusqu'a bonus-max.
+# amelioration-stockage : objet custom consommable qui augmente durablement le PLAFOND de carburant
+#                          (carburant-max) d'UN generateur precis, jusqu'a bonus-max.
 generateur-luckyblock:
   bloc: BEACON
   intervalle-secondes: 300
   famille-craft: commune
   max-generateurs-par-joueur: 3
+  carburant-max: 500
   carburants:
     carburant_generateur_lb:
       production: 1
@@ -38,3 +46,11 @@ generateur-luckyblock:
       quantite: 4
     - materiel: RABBIT_FOOT
       quantite: 2
+  amelioration:
+    item-id: boost_generateur_lb
+    bonus-par-amelioration: 10
+    bonus-max: 50
+  amelioration-stockage:
+    item-id: boost_stockage_generateur_lb
+    bonus-par-amelioration: 20
+    bonus-max: 100

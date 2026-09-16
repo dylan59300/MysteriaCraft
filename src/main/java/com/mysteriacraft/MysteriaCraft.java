@@ -40,6 +40,7 @@ import com.mysteriacraft.luckyblock.generator.LuckyBlockGeneratorManager;
 import com.mysteriacraft.luckyblock.generator.LuckyBlockGeneratorService;
 import com.mysteriacraft.luckyblock.generator.commands.LuckyBlockGeneratorCommand;
 import com.mysteriacraft.luckyblock.generator.listeners.LuckyBlockGeneratorListener;
+import com.mysteriacraft.dashboard.commands.MesMachinesCommand;
 import com.mysteriacraft.customitems.CustomItemManager;
 import com.mysteriacraft.customitems.CustomItemService;
 import com.mysteriacraft.customitems.commands.CustomItemCommand;
@@ -201,6 +202,10 @@ public final class MysteriaCraft extends JavaPlugin {
         // ---- Module Generateur de Lucky Block (depend de luckyBlockManager + customItemManager,
         // tous les deux deja initialises ci-dessus) ----
         setupLuckyBlockGenerator();
+
+        // ---- Module Dashboard ("/mesmachines" : recapitulatif de tous les generateurs/machines
+        // possedes par le joueur, depend de tous les modules ci-dessus) ----
+        setupDashboard();
 
         // ---- Module Guide ----
         setupGuide();
@@ -431,6 +436,11 @@ public final class MysteriaCraft extends JavaPlugin {
         // Injecte apres-coup (setter) : le module Generateur de Lucky Block n'existe pas encore
         // quand machineService est construit dans setupCustomItems() (appelee avant celle-ci).
         machineService.setLuckyBlockGeneratorManager(luckyBlockGeneratorManager);
+    }
+
+    private void setupDashboard() {
+        getCommand("mesmachines").setExecutor(new MesMachinesCommand(
+                generatorManager, luckyBlockGeneratorManager, miningMachineManager, economyManager, messages));
     }
 
     private void setupGuide() {

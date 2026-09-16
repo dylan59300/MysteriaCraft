@@ -56,6 +56,8 @@ public class LuckyBlockGeneratorManager {
         int fuel;
         long lastTickMillis;
         UUID hologramUuid;
+        double bonusRythme;
+        double bonusStockage;
     }
 
     private final Plugin plugin;
@@ -74,6 +76,14 @@ public class LuckyBlockGeneratorManager {
     private String craftFamilyId = "commune";
     private int maxPerPlayer = 3;
     private List<RecipeIngredient> recipe = new ArrayList<>();
+
+    private int fuelMax = 500;
+    private String rateBonusItemId = "boost_generateur_lb";
+    private double rateBonusPerUpgrade = 10.0;
+    private double rateBonusMax = 50.0;
+    private String storageBonusItemId = "boost_stockage_generateur_lb";
+    private double storageBonusPerUpgrade = 20.0;
+    private double storageBonusMax = 100.0;
 
     public LuckyBlockGeneratorManager(Plugin plugin, Database database, ConfigManager configManager,
                                        LuckyBlockManager luckyBlockManager) {
@@ -101,6 +111,8 @@ public class LuckyBlockGeneratorManager {
                 "carburant INTEGER NOT NULL DEFAULT 0, " +
                 "derniere_maj INTEGER NOT NULL DEFAULT 0, " +
                 "hologramme_uuid TEXT, " +
+                "bonus_rythme REAL NOT NULL DEFAULT 0, " +
+                "bonus_stockage REAL NOT NULL DEFAULT 0, " +
                 "PRIMARY KEY (monde, x, y, z)" +
                 ");";
         Connection connection = database.getConnection();
@@ -109,12 +121,25 @@ public class LuckyBlockGeneratorManager {
         } catch (SQLException e) {
             plugin.getLogger().severe("Erreur creation table 'generateurs_luckyblock' : " + e.getMessage());
         }
+        // Migration : une base creee AVANT l'ajout des bonus n'a pas ces colonnes.
+        try (PreparedStatement s1 = connection.prepareStatement(
+                "ALTER TABLE generateurs_luckyblock ADD COLUMN bonus_rythme REAL NOT NULL DEFAULT 0;")) {
+            s1.executeUpdate();
+        } catch (SQLException ignored) {
+            // Colonne deja presente : rien a faire.
+        }
+        try (PreparedStatement s2 = connection.prepareStatement(
+                "ALTER TABLE generateurs_luckyblock ADD COLUMN bonus_stockage REAL NOT NULL DEFAULT 0;")) {
+            s2.executeUpdate();
+        } catch (SQLException ignored) {
+            // Colonne deja presente : rien a faire.
+        }
     }
 
     private void loadGenerators() {
         generators.clear();
         String select = "SELECT monde, x, y, z, proprietaire, famille_id, carburant, derniere_maj, "
-                + "hologramme_uuid FROM generateurs_luckyblock;";
+                + "hologramme_uuid, bonus_rythme, bonus_stockage FROM generateurs_luckyblock;";
         Connection connection = database.getConnection();
         try (PreparedStatement statement = connection.prepareStatement(select);
              ResultSet rs = statement.executeQuery()) {
@@ -144,6 +169,8 @@ public class LuckyBlockGeneratorManager {
                         // UUID corrompu : l'hologramme sera simplement recree au besoin.
                     }
                 }
+                state.bonusRythme = rs.getDouble("bonus_rythme");
+                state.bonusStockage = rs.getDouble("bonus_stockage");
                 generators.put(location, state);
             }
         } catch (SQLException e) {
@@ -155,10 +182,12 @@ public class LuckyBlockGeneratorManager {
     private void persistAsync(Location location, GeneratorState state) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             String upsert = "INSERT INTO generateurs_luckyblock (monde, x, y, z, proprietaire, famille_id, "
-                    + "carburant, derniere_maj, hologramme_uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    + "carburant, derniere_maj, hologramme_uuid, bonus_rythme, bonus_stockage) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                     + "ON CONFLICT(monde, x, y, z) DO UPDATE SET proprietaire = excluded.proprietaire, "
                     + "famille_id = excluded.famille_id, carburant = excluded.carburant, "
-                    + "derniere_maj = excluded.derniere_maj, hologramme_uuid = excluded.hologramme_uuid;";
+                    + "derniere_maj = excluded.derniere_maj, hologramme_uuid = excluded.hologramme_uuid, "
+                    + "bonus_rythme = excluded.bonus_rythme, bonus_stockage = excluded.bonus_stockage;";
             Connection connection = database.getConnection();
             try (PreparedStatement statement = connection.prepareStatement(upsert)) {
                 statement.setString(1, location.getWorld().getName());
@@ -170,6 +199,8 @@ public class LuckyBlockGeneratorManager {
                 statement.setInt(7, state.fuel);
                 statement.setLong(8, state.lastTickMillis);
                 statement.setString(9, state.hologramUuid != null ? state.hologramUuid.toString() : null);
+                statement.setDouble(10, state.bonusRythme);
+                statement.setDouble(11, state.bonusStockage);
                 statement.executeUpdate();
             } catch (SQLException e) {
                 plugin.getLogger().severe("Erreur sauvegarde generateur de Lucky Block : " + e.getMessage());
@@ -237,6 +268,22 @@ public class LuckyBlockGeneratorManager {
             recipe.add(new RecipeIngredient(ingredientMaterial, Math.max(1, amount)));
         }
 
+        fuelMax = Math.max(1, section.getInt("carburant-max", 500));
+
+        ConfigurationSection amelioration = section.getConfigurationSection("amelioration");
+        if (amelioration != null) {
+            rateBonusItemId = amelioration.getString("item-id", "boost_generateur_lb").toLowerCase();
+            rateBonusPerUpgrade = Math.max(0, amelioration.getDouble("bonus-par-amelioration", 10.0));
+            rateBonusMax = Math.max(0, amelioration.getDouble("bonus-max", 50.0));
+        }
+
+        ConfigurationSection ameliorationStockage = section.getConfigurationSection("amelioration-stockage");
+        if (ameliorationStockage != null) {
+            storageBonusItemId = ameliorationStockage.getString("item-id", "boost_stockage_generateur_lb").toLowerCase();
+            storageBonusPerUpgrade = Math.max(0, ameliorationStockage.getDouble("bonus-par-amelioration", 20.0));
+            storageBonusMax = Math.max(0, ameliorationStockage.getDouble("bonus-max", 100.0));
+        }
+
         plugin.getLogger().info("Generateur de Lucky Block : " + fuelTypes.size() + " type(s) de carburant, "
                 + "intervalle " + intervalSeconds + "s, famille de craft '" + craftFamilyId + "'.");
     }
@@ -251,6 +298,74 @@ public class LuckyBlockGeneratorManager {
 
     public FuelType getFuelType(String itemId) {
         return itemId == null ? null : fuelTypes.get(itemId.toLowerCase());
+    }
+
+    // ---- Amelioration de rythme (voir generateur-luckyblock.amelioration) ----
+
+    public String getRateBonusItemId() {
+        return rateBonusItemId;
+    }
+
+    public double getRateBonusMax() {
+        return rateBonusMax;
+    }
+
+    public double getBonusRythme(Block block) {
+        GeneratorState state = generators.get(blockKey(block));
+        return state == null ? 0 : state.bonusRythme;
+    }
+
+    /** Ajoute le bonus de rythme (plafonne a bonus-max). Renvoie le nouveau total. */
+    public double addBonusRythme(Block block, double amount) {
+        Location key = blockKey(block);
+        GeneratorState state = generators.get(key);
+        if (state == null) {
+            return 0;
+        }
+        state.bonusRythme = Math.min(rateBonusMax, state.bonusRythme + amount);
+        persistAsync(key, state);
+        return state.bonusRythme;
+    }
+
+    /** Intervalle EFFECTIF entre 2 productions (rythme de base reduit par le bonus de rythme
+     * accumule), jamais en dessous d'1 seconde. */
+    public long getEffectiveIntervalSeconds(Block block) {
+        double bonus = getBonusRythme(block);
+        return Math.max(1, Math.round(intervalSeconds * (1 - bonus / 100.0)));
+    }
+
+    // ---- Amelioration de stockage de carburant (voir generateur-luckyblock.amelioration-stockage) ----
+
+    public String getStorageBonusItemId() {
+        return storageBonusItemId;
+    }
+
+    public double getStorageBonusMax() {
+        return storageBonusMax;
+    }
+
+    public double getBonusStockage(Block block) {
+        GeneratorState state = generators.get(blockKey(block));
+        return state == null ? 0 : state.bonusStockage;
+    }
+
+    /** Ajoute le bonus de stockage de carburant (plafonne a bonus-max). Renvoie le nouveau total. */
+    public double addBonusStockage(Block block, double amount) {
+        Location key = blockKey(block);
+        GeneratorState state = generators.get(key);
+        if (state == null) {
+            return 0;
+        }
+        state.bonusStockage = Math.min(storageBonusMax, state.bonusStockage + amount);
+        persistAsync(key, state);
+        return state.bonusStockage;
+    }
+
+    /** Plafond EFFECTIF de carburant stockable (plafond de base augmente par le bonus de stockage
+     * accumule). */
+    public int getEffectiveFuelMax(Block block) {
+        double bonus = getBonusStockage(block);
+        return (int) Math.round(fuelMax * (1 + bonus / 100.0));
     }
 
     // ---- Item / marquage du bloc ----
@@ -416,20 +531,25 @@ public class LuckyBlockGeneratorManager {
         return state == null ? 0 : state.fuel;
     }
 
-    /** Ajoute du carburant (en Lucky Blocks producibles). Redemarre le compte a rebours de
-     * production si le generateur etait a court de carburant, pour ne pas produire instantanement
-     * tout le temps ecoule pendant qu'il etait vide. */
-    public void refuel(Block block, int amount) {
+    /** Ajoute du carburant (en Lucky Blocks producibles), plafonne a getEffectiveFuelMax(block) (le
+     * surplus est perdu). Redemarre le compte a rebours de production si le generateur etait a
+     * court de carburant, pour ne pas produire instantanement tout le temps ecoule pendant qu'il
+     * etait vide. Renvoie la quantite REELLEMENT ajoutee (peut etre inferieure a "amount" si le
+     * plafond a ete atteint). */
+    public int refuel(Block block, int amount) {
         Location key = blockKey(block);
         GeneratorState state = generators.get(key);
         if (state == null) {
-            return;
+            return 0;
         }
         if (state.fuel <= 0) {
             state.lastTickMillis = System.currentTimeMillis();
         }
-        state.fuel += amount;
+        int max = getEffectiveFuelMax(block);
+        int added = Math.max(0, Math.min(amount, max - state.fuel));
+        state.fuel += added;
         persistAsync(key, state);
+        return added;
     }
 
     /**
@@ -446,15 +566,16 @@ public class LuckyBlockGeneratorManager {
         if (state == null || state.fuel <= 0) {
             return 0;
         }
+        long effectiveInterval = getEffectiveIntervalSeconds(block);
         long now = System.currentTimeMillis();
         long elapsedSeconds = (now - state.lastTickMillis) / 1000L;
-        long cycles = elapsedSeconds / intervalSeconds;
+        long cycles = elapsedSeconds / effectiveInterval;
         if (cycles <= 0) {
             return 0;
         }
         int produced = (int) Math.min(cycles, state.fuel);
         state.fuel -= produced;
-        state.lastTickMillis += produced * intervalSeconds * 1000L;
+        state.lastTickMillis += produced * effectiveInterval * 1000L;
         persistAsync(key, state);
         return produced;
     }

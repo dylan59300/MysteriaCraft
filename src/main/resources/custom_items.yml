@@ -157,6 +157,8 @@ machine-transformation:
       amelioration_machine: 5
       boost_generateur: 5
       boost_stockage_generateur: 5
+      boost_generateur_lb: 5
+      boost_stockage_generateur_lb: 5
       essence_enchantement: 5
       carburant_minier_ameliore: 5
       peridot: 5
@@ -1166,6 +1168,48 @@ items:
         N: NETHER_STAR
         E: ENDER_PEARL
         O: ENDER_EYE
+
+  boost_generateur_lb:
+    nom: "&d&lBoost de Generateur de Lucky Block"
+    lore:
+      - "&7Clic-droit sur un Generateur de Lucky"
+      - "&7Block pour augmenter durablement son"
+      - "&7rythme de production."
+    item-de-base: PRISMARINE_SHARD
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : eclats de prismarine + lingots d'or autour d'un diamant.
+    recette:
+      forme:
+        - "PGP"
+        - "GDG"
+        - "PGP"
+      ingredients:
+        P: PRISMARINE_SHARD
+        G: GOLD_INGOT
+        D: DIAMOND
+
+  boost_stockage_generateur_lb:
+    nom: "&b&lBoost de Stockage de Generateur de Lucky Block"
+    lore:
+      - "&7Clic-droit sur un Generateur de Lucky"
+      - "&7Block pour augmenter durablement son"
+      - "&7plafond de carburant stockable."
+    item-de-base: PRISMARINE_CRYSTALS
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    # Craftable a l'etabli : cristaux de prismarine + lingots de fer autour d'une coquille d'ender.
+    recette:
+      forme:
+        - "CFC"
+        - "FEF"
+        - "CFC"
+      ingredients:
+        C: PRISMARINE_CRYSTALS
+        F: IRON_INGOT
+        E: ENDER_CHEST
 
   oeuf_pnj_forgeron:
     nom: "&7&lOeuf du PNJ Forgeron"

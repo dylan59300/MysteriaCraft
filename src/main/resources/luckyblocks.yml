@@ -244,6 +244,12 @@ familles:
         chance: 12
         recompense:
           type: OBJET_CUSTOM
+          item-id: carburant_generateur_lb
+          quantite: 6
+      - type: BON
+        chance: 12
+        recompense:
+          type: OBJET_CUSTOM
           item-id: kit_reparation
           quantite: 2
       - type: BON
@@ -362,6 +368,12 @@ familles:
           type: OBJET_CUSTOM
           item-id: carburant_ameliore
           quantite: 6
+      - type: BON
+        chance: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: carburant_generateur_lb_ameliore
+          quantite: 3
       - type: BON
         chance: 12
         recompense:
@@ -515,6 +527,18 @@ familles:
         recompense:
           type: OBJET_CUSTOM
           item-id: boost_stockage_generateur
+          quantite: 1
+      - type: BON
+        chance: 8
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: boost_generateur_lb
+          quantite: 1
+      - type: BON
+        chance: 8
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: boost_stockage_generateur_lb
           quantite: 1
       - type: BON
         chance: 12

@@ -375,9 +375,17 @@ generateurlb:
   liste-vide: "&7Aucun Generateur de Lucky Block actif trouve (suivi reinitialise a chaque redemarrage du serveur)."
   give-effectue: "&a{joueur} a recu &e{quantite}x Generateur de Lucky Block &7[{famille}&7]&a."
   carburant-invalide: "&cCet objet ne peut pas etre utilise comme carburant pour ce generateur."
-  ravitaille: "&a&lGenerateur ravitaille ! &7+&e{production} &7production(s) &7(total : &e{total}&7)."
-  statut: "&d&lGenerateur de Lucky Block &7[{famille}&7] &7- &e{carburant} &7carburant restant &7(1 production toutes les &e{intervalle}s&7)."
+  ravitaille: "&a&lGenerateur ravitaille ! &7+&e{production} &7production(s) &7(total : &e{total}&7/&e{max}&7)."
+  ravitaille-plafonne: "&a&lGenerateur ravitaille ! &7+&e{production} &7production(s) &7(total : &e{total}&7/&e{max}&7, &csurplus perdu, plafond atteint&7)."
+  statut: "&d&lGenerateur de Lucky Block &7[{famille}&7] &7- &e{carburant}&7/&e{max} &7carburant &7(1 production toutes les &e{intervalle}s&7)."
   limite-atteinte: "&cVous avez deja atteint la limite de Generateurs de Lucky Block que vous pouvez poser."
+  boost-rythme-effectue: "&d&lGenerateur booste ! &7Rythme : &e+{bonus}% &7(nouvel intervalle : &e{intervalle}s&7)."
+  boost-rythme-max: "&cCe generateur a deja atteint son bonus de rythme maximum."
+  boost-stockage-effectue: "&b&lStockage de carburant augmente ! &7+&e{bonus}% &7(nouveau plafond : &e{max}&7)."
+  boost-stockage-max: "&cCe generateur a deja atteint son bonus de stockage maximum."
+
+dashboard:
+  titre-gui: "&8Mes generateurs et machines"
 
 guide:
   titre-gui: "&8Guide du serveur"

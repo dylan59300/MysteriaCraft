@@ -116,6 +116,11 @@ paliers:
       type: MACHINE
       machine-id: transformation
       quantite: 1
+  - niveau: 2500
+    recompense:
+      type: GENERATEUR_LUCKYBLOCK
+      famille: rare
+      quantite: 1
 
 defis:
   - id: premier_bloc

@@ -87,6 +87,17 @@ sujets:
       - "&7Craftable en plusieurs paliers :"
       - "&7fer -> or -> diamant -> legendaire."
 
+  generateur-luckyblock:
+    nom: "&d&lGenerateur de Lucky Block"
+    icone: BEACON
+    lore:
+      - "&7/generateurlb liste &7- vos generateurs"
+      - "&7Produit automatiquement un Lucky Block"
+      - "&7de sa famille toutes les X secondes,"
+      - "&7tant qu'il a du carburant."
+      - "&7Collez un coffre a cote pour recuperer"
+      - "&7les Lucky Blocks automatiquement."
+
   customitem:
     nom: "&e&lItems Custom"
     icone: DIAMOND_SWORD

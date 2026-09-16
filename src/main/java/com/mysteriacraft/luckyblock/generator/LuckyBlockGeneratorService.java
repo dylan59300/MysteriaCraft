@@ -51,6 +51,16 @@ public class LuckyBlockGeneratorService {
         }
 
         String customItemId = customItemManager.getCustomItemId(inHand);
+
+        if (customItemId != null && customItemId.equalsIgnoreCase(manager.getRateBonusItemId())) {
+            upgradeRate(player, generatorBlock, inHand);
+            return;
+        }
+        if (customItemId != null && customItemId.equalsIgnoreCase(manager.getStorageBonusItemId())) {
+            upgradeStorage(player, generatorBlock, inHand);
+            return;
+        }
+
         LuckyBlockGeneratorManager.FuelType fuelType = manager.getFuelType(customItemId);
         if (fuelType == null) {
             messages.send(player, "generateurlb.carburant-invalide");
@@ -59,16 +69,59 @@ public class LuckyBlockGeneratorService {
 
         int remaining = inHand.getAmount() - 1;
         player.getInventory().setItemInMainHand(remaining > 0 ? withAmount(inHand, remaining) : null);
-        manager.refuel(generatorBlock, fuelType.production());
+        int added = manager.refuel(generatorBlock, fuelType.production());
 
         Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("production", String.valueOf(fuelType.production()));
+        placeholders.put("production", String.valueOf(added));
         placeholders.put("total", String.valueOf(manager.getFuel(generatorBlock)));
-        messages.send(player, "generateurlb.ravitaille", placeholders);
+        placeholders.put("max", String.valueOf(manager.getEffectiveFuelMax(generatorBlock)));
+        messages.send(player, added < fuelType.production() ? "generateurlb.ravitaille-plafonne" : "generateurlb.ravitaille", placeholders);
 
         Location loc = generatorBlock.getLocation().add(0.5, 1.0, 0.5);
         loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 15, 0.4, 0.4, 0.4);
         player.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 0.6f, 1.5f);
+        updateHologram(generatorBlock);
+    }
+
+    private void upgradeRate(Player player, Block generatorBlock, ItemStack boostItem) {
+        double currentBonus = manager.getBonusRythme(generatorBlock);
+        if (currentBonus >= manager.getRateBonusMax()) {
+            messages.send(player, "generateurlb.boost-rythme-max");
+            return;
+        }
+        int remaining = boostItem.getAmount() - 1;
+        player.getInventory().setItemInMainHand(remaining > 0 ? withAmount(boostItem, remaining) : null);
+
+        double newBonus = manager.addBonusRythme(generatorBlock, 10.0);
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("bonus", formatBonus(newBonus));
+        placeholders.put("intervalle", String.valueOf(manager.getEffectiveIntervalSeconds(generatorBlock)));
+        messages.send(player, "generateurlb.boost-rythme-effectue", placeholders);
+
+        Location loc = generatorBlock.getLocation().add(0.5, 1.0, 0.5);
+        loc.getWorld().spawnParticle(Particle.END_ROD, loc, 20, 0.3, 0.5, 0.3, 0.02);
+        player.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.6f);
+        updateHologram(generatorBlock);
+    }
+
+    private void upgradeStorage(Player player, Block generatorBlock, ItemStack boostItem) {
+        double currentBonus = manager.getBonusStockage(generatorBlock);
+        if (currentBonus >= manager.getStorageBonusMax()) {
+            messages.send(player, "generateurlb.boost-stockage-max");
+            return;
+        }
+        int remaining = boostItem.getAmount() - 1;
+        player.getInventory().setItemInMainHand(remaining > 0 ? withAmount(boostItem, remaining) : null);
+
+        double newBonus = manager.addBonusStockage(generatorBlock, 20.0);
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("bonus", formatBonus(newBonus));
+        placeholders.put("max", String.valueOf(manager.getEffectiveFuelMax(generatorBlock)));
+        messages.send(player, "generateurlb.boost-stockage-effectue", placeholders);
+
+        Location loc = generatorBlock.getLocation().add(0.5, 1.0, 0.5);
+        loc.getWorld().spawnParticle(Particle.END_ROD, loc, 20, 0.3, 0.5, 0.3, 0.02);
+        player.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.6f);
         updateHologram(generatorBlock);
     }
 
@@ -77,8 +130,13 @@ public class LuckyBlockGeneratorService {
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("famille", family != null ? family.displayName() : "?");
         placeholders.put("carburant", String.valueOf(manager.getFuel(generatorBlock)));
-        placeholders.put("intervalle", String.valueOf(manager.getIntervalSeconds()));
+        placeholders.put("max", String.valueOf(manager.getEffectiveFuelMax(generatorBlock)));
+        placeholders.put("intervalle", String.valueOf(manager.getEffectiveIntervalSeconds(generatorBlock)));
         messages.send(player, "generateurlb.statut", placeholders);
+    }
+
+    private String formatBonus(double bonus) {
+        return bonus == Math.floor(bonus) ? String.valueOf((int) bonus) : String.valueOf(bonus);
     }
 
     /** Appele periodiquement (voir MysteriaCraft) pour tous les generateurs actifs : produit les

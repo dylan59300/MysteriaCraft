@@ -108,6 +108,9 @@ commands:
     usage: /<command> [choisir <id>|reload]
     # Pas de "permission:" ici : le choix doit rester accessible a tout joueur.
     # reload est verifie manuellement dans le code (mysteriacraft.classes.admin).
+  mesmachines:
+    description: Ouvre un menu recapitulatif de tous vos generateurs/machines actifs
+    usage: /<command>
   hoteldesventes:
     description: Achete/vend des objets entre joueurs a prix fixe
     usage: /<command> [vendre <prix>|mesventes|annuler <id>|reload]
