@@ -64,10 +64,16 @@ public class MarchandService {
         String fidelite = "CREATE TABLE IF NOT EXISTS marchand_fidelite (" +
                 "uuid TEXT NOT NULL, marchand_id TEXT NOT NULL, total INTEGER NOT NULL DEFAULT 0, " +
                 "PRIMARY KEY (uuid, marchand_id));";
+        String rachats = "CREATE TABLE IF NOT EXISTS marchand_rachats_periode (" +
+                "uuid TEXT NOT NULL, marchand_id TEXT NOT NULL, rachat_id TEXT NOT NULL, " +
+                "periode_cle TEXT NOT NULL, compte INTEGER NOT NULL DEFAULT 0, " +
+                "PRIMARY KEY (uuid, marchand_id, rachat_id, periode_cle));";
         try (PreparedStatement s1 = connection.prepareStatement(achats);
-             PreparedStatement s2 = connection.prepareStatement(fidelite)) {
+             PreparedStatement s2 = connection.prepareStatement(fidelite);
+             PreparedStatement s3 = connection.prepareStatement(rachats)) {
             s1.executeUpdate();
             s2.executeUpdate();
+            s3.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().severe("Erreur creation tables marchand : " + e.getMessage());
         }
@@ -277,5 +283,83 @@ public class MarchandService {
         placeholders.put("recompense", offer.displayName());
         placeholders.put("cout", String.valueOf(effectiveCost));
         messages.send(player, "marchand.echange-reussi", placeholders);
+    }
+
+    // ---- Rachat (sens inverse : le joueur vend des ressources contre une recompense) ----
+
+    /** Nombre de rachats DEJA effectues de ce rachat par ce joueur sur la periode courante (0 si
+     * le rachat n'est pas limite). */
+    public int countRachatsThisPeriod(UUID uuid, MarchandDefinition definition, MarchandRachat rachat) {
+        if (!rachat.isLimited()) {
+            return 0;
+        }
+        String periodeCle = currentPeriodKey(rachat.limitePeriode());
+        String sql = "SELECT compte FROM marchand_rachats_periode WHERE uuid = ? AND marchand_id = ? AND rachat_id = ? AND periode_cle = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, definition.id());
+            statement.setString(3, rachat.id());
+            statement.setString(4, periodeCle);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("compte");
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture rachats marchand pour " + uuid + " : " + e.getMessage());
+        }
+        return 0;
+    }
+
+    private void incrementRachatsThisPeriod(UUID uuid, MarchandDefinition definition, MarchandRachat rachat) {
+        String periodeCle = currentPeriodKey(rachat.limitePeriode());
+        String upsert = "INSERT INTO marchand_rachats_periode (uuid, marchand_id, rachat_id, periode_cle, compte) VALUES (?, ?, ?, ?, 1) " +
+                "ON CONFLICT(uuid, marchand_id, rachat_id, periode_cle) DO UPDATE SET compte = compte + 1;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(upsert)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, definition.id());
+            statement.setString(3, rachat.id());
+            statement.setString(4, periodeCle);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur mise a jour rachats marchand pour " + uuid + " : " + e.getMessage());
+        }
+    }
+
+    /** Vend "quantite" exemplaires de "materiel" contre la recompense du rachat : verifie la
+     * limite de periode et la presence des objets dans l'inventaire, puis les retire et donne la
+     * recompense via RewardGiver. */
+    public void rachat(Player player, MarchandDefinition definition, MarchandRachat rachat) {
+        if (rachat.recompense() == null) {
+            messages.send(player, "marchand.offre-invalide");
+            return;
+        }
+        if (rachat.isLimited() && countRachatsThisPeriod(player.getUniqueId(), definition, rachat) >= rachat.limiteQuantite()) {
+            messages.send(player, "marchand.limite-atteinte");
+            return;
+        }
+
+        ItemStack required = new ItemStack(rachat.materiel(), rachat.quantite());
+        if (!player.getInventory().containsAtLeast(required, rachat.quantite())) {
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("quantite", String.valueOf(rachat.quantite()));
+            placeholders.put("materiel", rachat.materiel().name().replace('_', ' ').toLowerCase());
+            messages.send(player, "marchand.objets-insuffisants", placeholders);
+            return;
+        }
+
+        player.getInventory().removeItem(required);
+        if (rachat.isLimited()) {
+            incrementRachatsThisPeriod(player.getUniqueId(), definition, rachat);
+        }
+        rewardGiver.give(player, rachat.recompense());
+
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("quantite", String.valueOf(rachat.quantite()));
+        placeholders.put("materiel", rachat.materiel().name().replace('_', ' ').toLowerCase());
+        placeholders.put("recompense", rachat.recompense().displayName());
+        messages.send(player, "marchand.rachat-reussi", placeholders);
     }
 }

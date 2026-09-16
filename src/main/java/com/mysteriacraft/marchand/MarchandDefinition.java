@@ -24,13 +24,23 @@ public record MarchandDefinition(
         int fideliteSeuil,
         double fideliteReductionPourcent,
         double fideliteReductionMaxPourcent,
-        List<MarchandOffer> offres
+        List<MarchandOffer> offres,
+        List<MarchandRachat> rachats
 ) {
 
     public MarchandOffer getOffer(String offerId) {
         for (MarchandOffer offer : offres) {
             if (offer.id().equalsIgnoreCase(offerId)) {
                 return offer;
+            }
+        }
+        return null;
+    }
+
+    public MarchandRachat getRachat(String rachatId) {
+        for (MarchandRachat rachat : rachats) {
+            if (rachat.id().equalsIgnoreCase(rachatId)) {
+                return rachat;
             }
         }
         return null;

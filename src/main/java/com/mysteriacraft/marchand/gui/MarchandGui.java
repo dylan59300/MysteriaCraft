@@ -30,6 +30,7 @@ public class MarchandGui extends Menu {
     private static final int[] OFFER_SLOTS = {10, 11, 12, 13, 14, 15, 16};
     private static final int PREVIOUS_SLOT = 18;
     private static final int NEXT_SLOT = 26;
+    private static final int RACHATS_SLOT = 22;
 
     private final MarchandDefinition definition;
     private final MarchandService service;
@@ -92,6 +93,10 @@ public class MarchandGui extends Menu {
             inventory.setItem(NEXT_SLOT, new ItemBuilder(Material.ARROW)
                     .name(messages.raw("general.gui-page-suivante")).build());
         }
+        if (!definition.rachats().isEmpty()) {
+            inventory.setItem(RACHATS_SLOT, new ItemBuilder(Material.HOPPER)
+                    .name(messages.raw("marchand.gui-vendre-ressources")).build());
+        }
     }
 
     private ItemStack buildOfferItem(MarchandOffer offer, int pieces) {
@@ -146,6 +151,10 @@ public class MarchandGui extends Menu {
         if (slot == NEXT_SLOT && page < maxPage() - 1) {
             page++;
             render();
+            return;
+        }
+        if (slot == RACHATS_SLOT && !definition.rachats().isEmpty() && event.getWhoClicked() instanceof Player player) {
+            new MarchandRachatsGui(player, definition, service, messages).open();
             return;
         }
 

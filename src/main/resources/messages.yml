@@ -281,6 +281,15 @@ marchand:
   gui-limite-atteinte: "&c&lLimite atteinte pour cette periode"
   gui-cliquer-echanger: "&eCliquez pour echanger"
   gui-pieces-insuffisantes: "&c&lPieces insuffisantes"
+  titre-gui-rachats: "&8{nom} - Vendre"
+  gui-vendre-ressources: "&b&lVendre des ressources"
+  gui-retour: "&7« Retour"
+  gui-vous-possedez: "&7Vous possedez : &e{quantite}&7/&e{requis}"
+  gui-recompense: "&7Recompense : &e{recompense}"
+  gui-cliquer-vendre: "&eCliquez pour vendre"
+  gui-objets-insuffisants: "&c&lObjets insuffisants"
+  objets-insuffisants: "&cIl vous manque &e{quantite}x {materiel} &cpour ce rachat."
+  rachat-reussi: "&a&lVente reussie ! &7Vous avez donne &e{quantite}x {materiel} &7et recu : &e{recompense}"
 
 machine:
   usage: "&cUsage : /machine <give <joueur> [quantite]|preset|reload|stats|info|doubleloot <secondes>|simulate <minerai> <nombre>>"

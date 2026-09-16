@@ -24,6 +24,11 @@
 #            (n'importe quel type de Reward : ITEM, ECONOMIE, OBJET_CUSTOM, GENERATEUR, MACHINE,
 #            AGRANDISSEMENT_ILE, TITRE_CHAT...). limite-periode (JOUR/SEMAINE/absent) + limite-
 #            quantite : nombre maximum d'achats de CETTE offre par joueur sur la periode donnee.
+#   rachats : le SENS INVERSE des offres (accessible via le bouton "Vendre des ressources" du menu
+#             du marchand) : le joueur donne "quantite" exemplaires de "materiel" (materiau
+#             vanilla) et recoit en echange la "recompense", pour ecouler un surplus de ressources
+#             (ex : les lingots/gemmes produits par les Generateurs de Ressources, voir
+#             generateurs.yml). Memes regles de limite-periode/limite-quantite que les offres.
 
 drop-passif:
   item-id: piece_echange
@@ -101,6 +106,35 @@ marchands:
         recompense:
           type: ECONOMIE
           montant: 500
+
+    # Rachat du surplus des Generateurs de Ressources (voir generateurs.yml : ressource_fer,
+    # ressource_or, ressource_diamant) contre des pieces d'echange.
+    rachats:
+      vendre_fer:
+        materiel: IRON_INGOT
+        quantite: 16
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: piece_echange
+          quantite: 1
+
+      vendre_or:
+        materiel: GOLD_INGOT
+        quantite: 8
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: piece_echange
+          quantite: 1
+
+      vendre_diamant:
+        materiel: DIAMOND
+        quantite: 2
+        limite-periode: JOUR
+        limite-quantite: 10
+        recompense:
+          type: OBJET_CUSTOM
+          item-id: piece_echange
+          quantite: 1
 
   # Deuxieme marchand (voir "idee #1") : specialise equipement/objets custom, propose TOUJOURS
   # toutes ses offres (pas de rotation), invoque via un item custom distinct.

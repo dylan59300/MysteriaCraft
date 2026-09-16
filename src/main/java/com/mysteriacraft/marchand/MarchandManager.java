@@ -99,8 +99,24 @@ public class MarchandManager {
             }
         }
 
+        List<MarchandRachat> rachats = new ArrayList<>();
+        ConfigurationSection rachatsSection = section.getConfigurationSection("rachats");
+        if (rachatsSection != null) {
+            for (String rachatId : rachatsSection.getKeys(false)) {
+                ConfigurationSection rachatSection = rachatsSection.getConfigurationSection(rachatId);
+                if (rachatSection == null) {
+                    continue;
+                }
+                try {
+                    rachats.add(parseRachat(rachatId, rachatSection));
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Erreur chargement rachat '" + rachatId + "' du marchand '" + id + "' : " + e.getMessage());
+                }
+            }
+        }
+
         return new MarchandDefinition(id.toLowerCase(), oeufItemId, pieceItemId, npcName, offresActivesParJour,
-                fideliteSeuil, fideliteReductionPourcent, fideliteReductionMaxPourcent, offres);
+                fideliteSeuil, fideliteReductionPourcent, fideliteReductionMaxPourcent, offres, rachats);
     }
 
     private MarchandOffer parseOffer(String id, ConfigurationSection section) {
@@ -114,6 +130,24 @@ public class MarchandManager {
         ItemStack icon = recompense != null ? recompense.displayIcon() : new ItemBuilder(Material.PAPER).name(id).build();
 
         return new MarchandOffer(id, cout, limitePeriode, limiteQuantite, recompense, displayName, icon);
+    }
+
+    private MarchandRachat parseRachat(String id, ConfigurationSection section) {
+        Material materiel = Material.matchMaterial(section.getString("materiel", "IRON_INGOT"));
+        if (materiel == null) {
+            materiel = Material.IRON_INGOT;
+        }
+        int quantite = Math.max(1, section.getInt("quantite", 1));
+        MarchandOffer.LimitePeriode limitePeriode = MarchandOffer.LimitePeriode.fromString(
+                section.contains("limite-periode") ? section.getString("limite-periode") : null);
+        int limiteQuantite = Math.max(0, section.getInt("limite-quantite", 0));
+        Reward recompense = RewardParser.parse(section.getConfigurationSection("recompense"));
+
+        String materielNom = materiel.name().replace('_', ' ').toLowerCase();
+        String displayName = section.getString("nom", "&fVendre " + quantite + "x " + materielNom);
+        ItemStack icon = new ItemBuilder(materiel, Math.min(quantite, 64)).name(displayName).build();
+
+        return new MarchandRachat(id, materiel, quantite, limitePeriode, limiteQuantite, recompense, displayName, icon);
     }
 
     public List<MarchandDefinition> getMarchands() {
