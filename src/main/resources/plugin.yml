@@ -6,6 +6,9 @@ author: dylan59300
 description: Plugin serveur - Economie, BattlePass, Quetes, Pets, LuckyBlock, Custom Items
 
 commands:
+  admin:
+    description: Ouvre le panel admin unifie (reload/editeurs de tous les modules)
+    usage: /<command>
   balance:
     description: Affiche votre solde ou celui d'un joueur
     usage: /<command> [joueur]
@@ -193,6 +196,9 @@ commands:
     permission: mysteriacraft.etabli.admin
 
 permissions:
+  mysteriacraft.admin:
+    description: Autorise l'acces au panel admin unifie (/admin)
+    default: op
   mysteriacraft.eco.admin:
     description: Autorise la gestion admin de l'economie
     default: op

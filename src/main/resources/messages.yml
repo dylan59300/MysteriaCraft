@@ -12,6 +12,17 @@ general:
   gui-page-precedente: "&a&l<- Page precedente"
   gui-retour: "&e&l<- Retour"
 
+admin:
+  titre-panel: "&8&lPanel Admin - MysteriaCraft"
+  titre-module: "&8Panel Admin - {module}"
+  module-lore-recharger: "&7Recharger la configuration"
+  module-lore-editeur: "&7Ouvrir l'editeur en jeu"
+  recharger-nom: "&a&lRecharger la configuration"
+  recharger-lore: "&7Cliquez pour recharger ce module"
+  editeur-nom: "&6&lOuvrir l'editeur en jeu"
+  editeur-lore: "&7Cliquez pour ouvrir l'editeur de ce module"
+  retour: "&7Retour a la liste des modules"
+
 economie:
   solde-personnel: "&7Votre solde : &a{montant}"
   solde-autre: "&7Solde de &e{joueur} &7: &a{montant}"

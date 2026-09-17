@@ -1,5 +1,6 @@
 package com.mysteriacraft;
 
+import com.mysteriacraft.admin.commands.AdminCommand;
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.core.storage.Database;
@@ -403,6 +404,10 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Etabli Ameliore (depend de customItemManager, rewardGiver et metierService) ----
         setupEtabli();
+
+        // ---- Panel admin unifie (/admin, voir AdminRegistry) : independant, ne fait que
+        // dispatcher les commandes deja enregistrees par les setup*() precedents. ----
+        getCommand("admin").setExecutor(new AdminCommand(messages));
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
