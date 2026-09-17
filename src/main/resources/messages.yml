@@ -530,6 +530,8 @@ boutique:
   panier-vider-nom: "&c&lVider le panier"
   panier-valide: "&aPanier valide ! &e{achete} &aarticle(s) achete(s) pour &e{montant}&a."
   panier-valide-partiel: "&6Panier partiellement valide (fonds ou stock insuffisants) : &e{achete}&6/&e{demande} &6article(s) achete(s) pour &e{montant}&6."
+  hors-saison: "&cCet article n'est plus disponible actuellement (edition limitee)."
+  gui-edition-limitee: "&d★ Edition limitee (du {du} au {au})"
 
 prestige:
   info: "&6&lPrestige &7- Niveau actuel : &e{niveau} &7(&e{bonus}%&7 bonus de vente). &7Prochain : &e{nom-suivant} &7pour &e{cout} &7(&e{bonus-suivant}%&7 bonus). Tapez &e/prestige confirmer"

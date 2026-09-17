@@ -77,7 +77,7 @@ public class ShopItemsGui extends Menu {
     }
 
     private int maxPage() {
-        return Math.max(1, (int) Math.ceil(category.items().size() / (double) ITEM_SLOTS.length));
+        return Math.max(1, (int) Math.ceil(manager.getVisibleItems(category).size() / (double) ITEM_SLOTS.length));
     }
 
     private void render() {
@@ -88,7 +88,7 @@ public class ShopItemsGui extends Menu {
             inventory.setItem(i, border);
         }
 
-        List<ShopManager.ShopItem> items = category.items();
+        List<ShopManager.ShopItem> items = manager.getVisibleItems(category);
         int firstIndex = page * ITEM_SLOTS.length;
         for (int i = 0; i < ITEM_SLOTS.length; i++) {
             int index = firstIndex + i;
@@ -119,6 +119,9 @@ public class ShopItemsGui extends Menu {
 
         List<String> lore = new ArrayList<>();
         List<String> badges = new ArrayList<>();
+        if (item.isEditionLimitee()) {
+            badges.add(replace(replace(messages.raw("boutique.gui-edition-limitee"), "du", item.actifDu()), "au", item.actifAu()));
+        }
         if (item.isPurchasable()) {
             List<String> toutesLesCles = manager.getAllItemKeysSorted();
             double reduction = promotionManager.getReductionAutomatiquePourcent(viewer, item.categoryId(), item.id(), toutesLesCles);

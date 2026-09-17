@@ -106,7 +106,7 @@ public class ShopCommand implements CommandExecutor {
                 return true;
             }
             ShopManager.ShopCategory categorieResultats = new ShopManager.ShopCategory(
-                    "recherche", messages.raw("boutique.recherche-titre"), Material.COMPASS, resultats);
+                    "recherche", messages.raw("boutique.recherche-titre"), Material.COMPASS, resultats, null, null);
             new ShopItemsGui(plugin, player, categorieResultats, manager, service, economyManager, promotionManager, stockManager, messages).open();
             return true;
         }

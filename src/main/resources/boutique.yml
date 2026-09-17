@@ -24,6 +24,11 @@
 #                 absent/0 sur "stock-max" = stock ILLIMITE (comportement par defaut). Si defini,
 #                 l'article ne peut etre achete que "stock-max" fois avant de se reapprovisionner
 #                 tout seul de "reappro-quantite" toutes les "reappro-intervalle-minutes".
+#   actif-du, actif-au (voir "editions saisonnieres", meme format "MM-jj" que les autres modules) :
+#                 optionnels, absents = toujours disponible. Si definis, l'article n'apparait dans
+#                 le menu et n'est achetable que durant cette fenetre (peut chevaucher le nouvel an,
+#                 ex: "12-15" -> "01-05"). Une categorie entiere peut aussi avoir actif-du/actif-au
+#                 (voir "halloween" ci-dessous) pour la rendre saisonniere en bloc.
 
 categories:
   blocs:
@@ -110,3 +115,32 @@ categories:
           quantite: 4
           nom: "Steak cuit x4"
         prix-achat: 20
+
+      # Exemple d'article saisonnier individuel (dans une categorie non-saisonniere) : n'apparait/
+      # n'est achetable que du 20 decembre au 26 decembre, meme si la categorie "nourriture" reste
+      # ouverte toute l'annee.
+      biscuit_de_noel:
+        recompense:
+          type: ITEM
+          materiel: COOKIE
+          quantite: 8
+          nom: "Biscuits de Noel x8"
+        prix-achat: 40
+        actif-du: "12-20"
+        actif-au: "12-26"
+
+  # Exemple de categorie saisonniere (voir la doc en tete de fichier) : n'apparait dans le menu et
+  # n'est achetable que du 25 octobre au 2 novembre.
+  halloween:
+    nom: "&6🎃 Boutique d'Halloween"
+    icone: JACK_O_LANTERN
+    actif-du: "10-25"
+    actif-au: "11-02"
+    items:
+      citrouille_sculptee:
+        recompense:
+          type: ITEM
+          materiel: JACK_O_LANTERN
+          quantite: 1
+          nom: "Citrouille sculptee"
+        prix-achat: 100

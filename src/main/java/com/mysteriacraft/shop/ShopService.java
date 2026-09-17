@@ -79,6 +79,13 @@ public class ShopService {
             }
             return -1;
         }
+        ShopManager.ShopCategory categorieParente = shopManager.getCategory(item.categoryId());
+        if (!item.isActiveNow() || categorieParente == null || !categorieParente.isActiveNow()) {
+            if (notifier) {
+                messages.send(player, "boutique.hors-saison");
+            }
+            return -1;
+        }
         if (item.hasStockLimite() && stockManager.getStockRestant(item) <= 0) {
             if (notifier) {
                 Map<String, String> ruptureMessage = new HashMap<>();

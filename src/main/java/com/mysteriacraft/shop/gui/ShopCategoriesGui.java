@@ -17,7 +17,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +63,7 @@ public class ShopCategoriesGui extends Menu {
         MenuHolder holder = new MenuHolder(this);
         this.inventory = Bukkit.createInventory(holder, SIZE, MessageManager.color(messages.raw("boutique.titre-categories")));
         holder.setInventory(inventory);
-        this.categories = new ArrayList<>(manager.getCategoriesSorted());
+        this.categories = manager.getVisibleCategories();
         render();
         return inventory;
     }
@@ -167,7 +166,7 @@ public class ShopCategoriesGui extends Menu {
                     return;
                 }
                 ShopManager.ShopCategory favoritesCategory = new ShopManager.ShopCategory(
-                        "favoris", messages.raw("boutique.gui-favoris"), Material.NETHER_STAR, favorites);
+                        "favoris", messages.raw("boutique.gui-favoris"), Material.NETHER_STAR, favorites, null, null);
                 new ShopItemsGui(plugin, player, favoritesCategory, manager, service, economyManager, promotionManager, stockManager, messages).open();
             });
         });

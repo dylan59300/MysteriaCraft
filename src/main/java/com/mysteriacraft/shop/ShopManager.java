@@ -1,5 +1,6 @@
 package com.mysteriacraft.shop;
 
+import com.mysteriacraft.core.SeasonalWindow;
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.reward.Reward;
 import com.mysteriacraft.core.reward.RewardParser;
@@ -36,10 +37,12 @@ public class ShopManager {
      * est affiche dans la categorie virtuelle "Favoris" (voir getFavorites), pour que
      * basculer un favori depuis cet ecran cible la bonne cle.
      * stockMax <= 0 signifie un stock ILLIMITE (comportement par defaut, voir StockManager) ;
-     * sinon l'article se reapprovisionne de "reapproQuantite" toutes les "reapproIntervalleMinutes". */
+     * sinon l'article se reapprovisionne de "reapproQuantite" toutes les "reapproIntervalleMinutes".
+     * actifDu/actifAu (voir "idee : editions saisonnieres") : optionnels (format "MM-jj", voir
+     * SeasonalWindow), absents = toujours disponible (comportement par defaut). */
     public record ShopItem(String id, String categoryId, String displayName, ItemStack icon, Reward reward,
                             double buyPrice, double sellPrice, int stockMax, int reapproIntervalleMinutes,
-                            int reapproQuantite) {
+                            int reapproQuantite, String actifDu, String actifAu) {
 
         public boolean isPurchasable() {
             return buyPrice > 0;
@@ -52,10 +55,24 @@ public class ShopManager {
         public boolean hasStockLimite() {
             return stockMax > 0;
         }
+
+        public boolean isEditionLimitee() {
+            return actifDu != null && actifAu != null;
+        }
+
+        public boolean isActiveNow() {
+            return SeasonalWindow.isActiveNow(actifDu, actifAu);
+        }
     }
 
-    /** Une categorie de boutique regroupant plusieurs articles. */
-    public record ShopCategory(String id, String displayName, Material icon, List<ShopItem> items) {
+    /** Une categorie de boutique regroupant plusieurs articles. actifDu/actifAu : optionnels,
+     * memes regles qu'un article (voir ShopItem), rend TOUTE la categorie saisonniere. */
+    public record ShopCategory(String id, String displayName, Material icon, List<ShopItem> items,
+                                String actifDu, String actifAu) {
+
+        public boolean isActiveNow() {
+            return SeasonalWindow.isActiveNow(actifDu, actifAu);
+        }
     }
 
     private final Plugin plugin;
@@ -134,29 +151,66 @@ public class ShopManager {
                 int stockMax = Math.max(0, itemSection.getInt("stock-max", 0));
                 int reapproIntervalleMinutes = Math.max(1, itemSection.getInt("reappro-intervalle-minutes", 60));
                 int reapproQuantite = Math.max(1, itemSection.getInt("reappro-quantite", 1));
+                String actifDu = itemSection.getString("actif-du");
+                String actifAu = itemSection.getString("actif-au");
                 items.add(new ShopItem(itemId.toLowerCase(), categoryId.toLowerCase(), reward.displayName(),
                         reward.displayIcon(), reward, buyPrice, sellPrice, stockMax, reapproIntervalleMinutes,
-                        reapproQuantite));
+                        reapproQuantite, actifDu, actifAu));
             }
         }
-        return new ShopCategory(categoryId.toLowerCase(), displayName, icon, items);
+        String categorieActifDu = section.getString("actif-du");
+        String categorieActifAu = section.getString("actif-au");
+        return new ShopCategory(categoryId.toLowerCase(), displayName, icon, items, categorieActifDu, categorieActifAu);
     }
 
     public Collection<ShopCategory> getCategoriesSorted() {
         return categories.values();
     }
 
+    /** Categories actuellement actives (voir "editions saisonnieres"), dans l'ordre de chargement.
+     * Utilise par le menu principal de la Boutique : une categorie hors-saison n'y apparait pas. */
+    public List<ShopCategory> getVisibleCategories() {
+        List<ShopCategory> visibles = new ArrayList<>();
+        for (ShopCategory category : categories.values()) {
+            if (category.isActiveNow()) {
+                visibles.add(category);
+            }
+        }
+        return visibles;
+    }
+
+    /** Articles actuellement actifs de cette categorie (voir "editions saisonnieres"). Si la
+     * categorie elle-meme est hors-saison, aucun article n'est renvoye. */
+    public List<ShopItem> getVisibleItems(ShopCategory category) {
+        List<ShopItem> visibles = new ArrayList<>();
+        if (category == null || !category.isActiveNow()) {
+            return visibles;
+        }
+        for (ShopItem item : category.items()) {
+            if (item.isActiveNow()) {
+                visibles.add(item);
+            }
+        }
+        return visibles;
+    }
+
     public ShopCategory getCategory(String id) {
         return id == null ? null : categories.get(id.toLowerCase());
     }
 
-    /** Toutes les cles "categorie:item" de la boutique, dans un ordre stable (celui du chargement
-     * de la config) : utilise par PromotionManager pour tirer un article du jour deterministe. */
+    /** Toutes les cles "categorie:item" ACTUELLEMENT VISIBLES de la boutique, dans un ordre stable
+     * (celui du chargement de la config) : utilise par PromotionManager pour tirer un article du
+     * jour deterministe (un article hors-saison ne peut jamais etre tire). */
     public List<String> getAllItemKeysSorted() {
         List<String> keys = new ArrayList<>();
         for (ShopCategory category : categories.values()) {
+            if (!category.isActiveNow()) {
+                continue;
+            }
             for (ShopItem item : category.items()) {
-                keys.add(category.id() + ":" + item.id());
+                if (item.isActiveNow()) {
+                    keys.add(category.id() + ":" + item.id());
+                }
             }
         }
         return keys;
@@ -168,7 +222,7 @@ public class ShopManager {
         List<ShopItem> resultats = new ArrayList<>();
         String recherche = texte.toLowerCase();
         for (ShopCategory category : categories.values()) {
-            for (ShopItem item : category.items()) {
+            for (ShopItem item : getVisibleItems(category)) {
                 if (item.displayName().toLowerCase().contains(recherche)) {
                     resultats.add(item);
                 }
@@ -253,7 +307,7 @@ public class ShopManager {
                     }
                     ShopCategory category = getCategory(parts[0]);
                     ShopItem item = getItem(category, parts[1]);
-                    if (item != null) {
+                    if (item != null && category.isActiveNow() && item.isActiveNow()) {
                         favorites.add(item);
                     }
                 }
