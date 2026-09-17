@@ -3,6 +3,7 @@ package com.mysteriacraft.shop.commands;
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.economy.EconomyManager;
+import com.mysteriacraft.shop.LoyaltyManager;
 import com.mysteriacraft.shop.PromotionManager;
 import com.mysteriacraft.shop.ShopManager;
 import com.mysteriacraft.shop.ShopService;
@@ -25,21 +26,25 @@ public class ShopCommand implements CommandExecutor {
     private final Plugin plugin;
     private final ConfigManager shopConfig;
     private final ConfigManager promotionsConfig;
+    private final ConfigManager fideliteConfig;
     private final ShopManager manager;
     private final ShopService service;
     private final PromotionManager promotionManager;
+    private final LoyaltyManager loyaltyManager;
     private final EconomyManager economyManager;
     private final MessageManager messages;
 
-    public ShopCommand(Plugin plugin, ConfigManager shopConfig, ConfigManager promotionsConfig, ShopManager manager,
-                        ShopService service, PromotionManager promotionManager, EconomyManager economyManager,
-                        MessageManager messages) {
+    public ShopCommand(Plugin plugin, ConfigManager shopConfig, ConfigManager promotionsConfig, ConfigManager fideliteConfig,
+                        ShopManager manager, ShopService service, PromotionManager promotionManager,
+                        LoyaltyManager loyaltyManager, EconomyManager economyManager, MessageManager messages) {
         this.plugin = plugin;
         this.shopConfig = shopConfig;
         this.promotionsConfig = promotionsConfig;
+        this.fideliteConfig = fideliteConfig;
         this.manager = manager;
         this.service = service;
         this.promotionManager = promotionManager;
+        this.loyaltyManager = loyaltyManager;
         this.economyManager = economyManager;
         this.messages = messages;
     }
@@ -53,8 +58,10 @@ public class ShopCommand implements CommandExecutor {
             }
             shopConfig.reload();
             promotionsConfig.reload();
+            fideliteConfig.reload();
             manager.loadCategories();
             promotionManager.loadCodes();
+            loyaltyManager.loadConfig();
             messages.send(sender, "boutique.reload");
             return true;
         }
@@ -71,6 +78,11 @@ public class ShopCommand implements CommandExecutor {
 
         if (args.length > 0 && args[0].equalsIgnoreCase("jetons")) {
             service.afficherJetons(player);
+            return true;
+        }
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("fidelite")) {
+            service.afficherFidelite(player);
             return true;
         }
 

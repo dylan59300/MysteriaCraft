@@ -38,13 +38,15 @@ public class PromotionManager {
     private final Plugin plugin;
     private final Database database;
     private final ConfigManager promotionsConfig;
+    private final LoyaltyManager loyaltyManager;
     private final Map<String, PromoCode> codes = new LinkedHashMap<>();
     private final Map<UUID, String> codeActifParJoueur = new LinkedHashMap<>();
 
-    public PromotionManager(Plugin plugin, Database database, ConfigManager promotionsConfig) {
+    public PromotionManager(Plugin plugin, Database database, ConfigManager promotionsConfig, LoyaltyManager loyaltyManager) {
         this.plugin = plugin;
         this.database = database;
         this.promotionsConfig = promotionsConfig;
+        this.loyaltyManager = loyaltyManager;
         createTables();
         loadCodes();
     }
@@ -255,6 +257,7 @@ public class PromotionManager {
             total += getReductionAnniversairePourcent();
         }
         total += getReductionVipPourcent(player);
+        total += loyaltyManager.getReductionPourcent(player.getUniqueId());
         return Math.min(total, getReductionMaxPourcent());
     }
 }

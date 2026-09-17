@@ -88,6 +88,7 @@ import com.mysteriacraft.encheres.EnchereService;
 import com.mysteriacraft.encheres.commands.EnchereCommand;
 import com.mysteriacraft.shop.ShopManager;
 import com.mysteriacraft.shop.PromotionManager;
+import com.mysteriacraft.shop.LoyaltyManager;
 import com.mysteriacraft.shop.TokenManager;
 import com.mysteriacraft.shop.ShopService;
 import com.mysteriacraft.shop.commands.ShopCommand;
@@ -226,10 +227,12 @@ public final class MysteriaCraft extends JavaPlugin {
     private EnchereService enchereService;
     private ConfigManager boutiqueConfig;
     private ConfigManager promotionsConfig;
+    private ConfigManager fideliteConfig;
     private ShopManager shopManager;
     private ShopService shopService;
     private PromotionManager promotionManager;
     private TokenManager tokenManager;
+    private LoyaltyManager loyaltyManager;
     private ConfigManager kitsConfig;
     private KitManager kitManager;
     private KitService kitService;
@@ -705,13 +708,15 @@ public final class MysteriaCraft extends JavaPlugin {
     private void setupBoutique() {
         this.boutiqueConfig = new ConfigManager(this, "boutique.yml");
         this.promotionsConfig = new ConfigManager(this, "promotions.yml");
+        this.fideliteConfig = new ConfigManager(this, "fidelite.yml");
         this.shopManager = new ShopManager(this, database, boutiqueConfig);
-        this.promotionManager = new PromotionManager(this, database, promotionsConfig);
+        this.loyaltyManager = new LoyaltyManager(this, database, fideliteConfig);
+        this.promotionManager = new PromotionManager(this, database, promotionsConfig, loyaltyManager);
         this.tokenManager = new TokenManager(this, database, promotionsConfig);
         this.shopService = new ShopService(shopManager, economyManager, rewardGiver, customItemManager, rankManager,
-                talentManager, promotionManager, tokenManager, messages);
-        getCommand("boutique").setExecutor(new ShopCommand(this, boutiqueConfig, promotionsConfig, shopManager,
-                shopService, promotionManager, economyManager, messages));
+                talentManager, promotionManager, tokenManager, loyaltyManager, messages);
+        getCommand("boutique").setExecutor(new ShopCommand(this, boutiqueConfig, promotionsConfig, fideliteConfig,
+                shopManager, shopService, promotionManager, loyaltyManager, economyManager, messages));
     }
 
     private void setupKits() {

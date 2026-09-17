@@ -33,11 +33,13 @@ public class ShopService {
     private final TalentManager talentManager;
     private final PromotionManager promotionManager;
     private final TokenManager tokenManager;
+    private final LoyaltyManager loyaltyManager;
     private final MessageManager messages;
 
     public ShopService(ShopManager shopManager, EconomyManager economyManager, RewardGiver rewardGiver,
                         CustomItemManager customItemManager, RankManager rankManager, TalentManager talentManager,
-                        PromotionManager promotionManager, TokenManager tokenManager, MessageManager messages) {
+                        PromotionManager promotionManager, TokenManager tokenManager, LoyaltyManager loyaltyManager,
+                        MessageManager messages) {
         this.shopManager = shopManager;
         this.economyManager = economyManager;
         this.rewardGiver = rewardGiver;
@@ -46,6 +48,7 @@ public class ShopService {
         this.talentManager = talentManager;
         this.promotionManager = promotionManager;
         this.tokenManager = tokenManager;
+        this.loyaltyManager = loyaltyManager;
         this.messages = messages;
     }
 
@@ -77,6 +80,10 @@ public class ShopService {
         if (jetonsGagnes > 0) {
             tokenManager.addJetons(player.getUniqueId(), jetonsGagnes);
         }
+
+        int ancienPoints = loyaltyManager.getPoints(player.getUniqueId());
+        int nouveauxPoints = loyaltyManager.addPointsForPurchase(player.getUniqueId(), prixFinal);
+        awardNewLoyaltyTiersIfAny(player, ancienPoints, nouveauxPoints);
 
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("item", item.displayName());
@@ -166,6 +173,48 @@ public class ShopService {
         placeholders.put("jetons", String.valueOf(nombreJetons));
         placeholders.put("argent", economyManager.format(montant));
         messages.send(player, "boutique.conversion-vers-argent", placeholders);
+    }
+
+    /** Donne le(s) coffre-cadeau de chaque niveau de fidelite fraichement franchi par cet achat
+     * (un gros achat peut faire sauter plusieurs niveaux d'un coup). */
+    private void awardNewLoyaltyTiersIfAny(Player player, int ancienPoints, int nouveauxPoints) {
+        if (nouveauxPoints <= ancienPoints) {
+            return;
+        }
+        for (LoyaltyManager.LoyaltyTier tier : loyaltyManager.getTiers()) {
+            if (tier.pointsRequis() > ancienPoints && tier.pointsRequis() <= nouveauxPoints
+                    && !loyaltyManager.hasClaimedGift(player.getUniqueId(), tier.niveau())) {
+                loyaltyManager.markGiftClaimed(player.getUniqueId(), tier.niveau());
+                if (tier.cadeau() != null) {
+                    rewardGiver.give(player, tier.cadeau());
+                }
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("niveau", tier.nom());
+                placeholders.put("reduction", formatPercent(tier.reductionPourcent()));
+                messages.send(player, "boutique.fidelite-niveau-atteint", placeholders);
+            }
+        }
+    }
+
+    public void afficherFidelite(Player player) {
+        int points = loyaltyManager.getPoints(player.getUniqueId());
+        LoyaltyManager.LoyaltyTier tierActuel = loyaltyManager.getTierForPoints(points);
+        LoyaltyManager.LoyaltyTier prochainTier = loyaltyManager.getNextTier(points);
+
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("points", String.valueOf(points));
+        placeholders.put("niveau", tierActuel != null ? tierActuel.nom() : messages.raw("boutique.fidelite-aucun-niveau"));
+        placeholders.put("reduction", tierActuel != null ? formatPercent(tierActuel.reductionPourcent()) : "0");
+        messages.send(player, "boutique.fidelite-statut", placeholders);
+
+        if (prochainTier != null) {
+            Map<String, String> suivantPlaceholders = new HashMap<>();
+            suivantPlaceholders.put("niveau", prochainTier.nom());
+            suivantPlaceholders.put("points-manquants", String.valueOf(prochainTier.pointsRequis() - points));
+            messages.send(player, "boutique.fidelite-prochain-niveau", suivantPlaceholders);
+        } else if (tierActuel != null) {
+            messages.send(player, "boutique.fidelite-niveau-max");
+        }
     }
 
     public void afficherJetons(Player player) {
