@@ -98,7 +98,8 @@ public class BattlePassLevelEditorGui extends Menu {
                 .name(name)
                 .lore(List.of(
                         messages.raw("battlepass.editeur-recompense-lore-clic"),
-                        messages.raw("battlepass.editeur-recompense-lore-effacer")))
+                        messages.raw("battlepass.editeur-recompense-lore-effacer"),
+                        messages.raw("battlepass.editeur-recompense-lore-commande")))
                 .build();
     }
 
@@ -127,6 +128,10 @@ public class BattlePassLevelEditorGui extends Menu {
         }
         if (slot == RECOMPENSE_GRATUITE_SLOT || slot == RECOMPENSE_PREMIUM_SLOT) {
             String piste = slot == RECOMPENSE_GRATUITE_SLOT ? "gratuit" : "premium";
+            if (event.getClick() == ClickType.DROP || event.getClick() == ClickType.CONTROL_DROP) {
+                editorService.requestRewardCommand(player, level, piste);
+                return;
+            }
             ItemStack handItem = event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT
                     ? null : player.getInventory().getItemInMainHand();
             manager.setLevelReward(level, piste, handItem);

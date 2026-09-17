@@ -35,6 +35,7 @@ public class ShopAdminItemsGui extends Menu {
     };
     private static final int RETOUR_SLOT = 45;
     private static final int ADD_SLOT = 49;
+    private static final int ADD_COMMANDE_SLOT = 50;
     private static final int SUPPRIMER_CATEGORIE_SLOT = 53;
 
     private final Plugin plugin;
@@ -94,6 +95,10 @@ public class ShopAdminItemsGui extends Menu {
                 .name(messages.raw("boutique.editeur-ajouter-article"))
                 .lore(List.of(messages.raw("boutique.editeur-ajouter-article-lore")))
                 .build());
+        inventory.setItem(ADD_COMMANDE_SLOT, new ItemBuilder(Material.COMMAND_BLOCK)
+                .name(messages.raw("boutique.editeur-ajouter-article-commande"))
+                .lore(List.of(messages.raw("boutique.editeur-ajouter-article-commande-lore")))
+                .build());
         inventory.setItem(SUPPRIMER_CATEGORIE_SLOT, new ItemBuilder(Material.BARRIER)
                 .name(messages.raw("boutique.editeur-supprimer-categorie"))
                 .lore(List.of(messages.raw("boutique.editeur-supprimer-categorie-lore")))
@@ -130,6 +135,10 @@ public class ShopAdminItemsGui extends Menu {
             }
             manager.addItem(categoryId, itemId, held, 0);
             render();
+            return;
+        }
+        if (slot == ADD_COMMANDE_SLOT) {
+            editorService.requestNewCommandItem(player, categoryId);
             return;
         }
         String itemId = slotToItemId.get(slot);

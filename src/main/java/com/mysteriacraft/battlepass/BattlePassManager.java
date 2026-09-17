@@ -360,6 +360,16 @@ public class BattlePassManager {
         });
     }
 
+    /** Definit la recompense d'une piste ("gratuit"/"premium") d'un palier comme une commande
+     * console (voir RewardType.COMMANDE), executee avec {joueur} remplace par le nom du joueur. */
+    public synchronized void setLevelRewardCommand(int level, String piste, String commande) {
+        editLevelSection(level, section -> {
+            section.set(piste + ".type", "COMMANDE");
+            section.set(piste + ".commande", commande);
+            section.set(piste + ".nom", commande);
+        });
+    }
+
     private void editLevelSection(int level, java.util.function.Consumer<ConfigurationSection> editor) {
         ConfigurationSection root = battlepassConfig.get().getConfigurationSection("niveaux");
         if (root == null) {

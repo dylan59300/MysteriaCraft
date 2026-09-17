@@ -3,6 +3,7 @@ package com.mysteriacraft.shop;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.shop.gui.ShopAdminCategoriesGui;
 import com.mysteriacraft.shop.gui.ShopAdminItemEditorGui;
+import com.mysteriacraft.shop.gui.ShopAdminItemsGui;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -29,6 +30,7 @@ public class ShopEditorService {
 
     private final Map<UUID, Boolean> pendingCategoryName = new ConcurrentHashMap<>();
     private final Map<UUID, PendingItemField> pendingItemField = new ConcurrentHashMap<>();
+    private final Map<UUID, String> pendingNewCommandItem = new ConcurrentHashMap<>();
 
     public ShopEditorService(Plugin plugin, ShopManager manager, MessageManager messages) {
         this.plugin = plugin;
@@ -48,8 +50,17 @@ public class ShopEditorService {
         messages.send(player, "boutique.editeur-saisir-" + champ);
     }
 
+    /** Ferme le menu, previent l'admin, et attend sa prochaine ligne de chat comme commande de
+     * recompense (voir RewardType.COMMANDE) pour un nouvel article de cette categorie. */
+    public void requestNewCommandItem(Player player, String categoryId) {
+        pendingNewCommandItem.put(player.getUniqueId(), categoryId);
+        player.closeInventory();
+        messages.send(player, "boutique.editeur-saisir-nouvel-article-commande");
+    }
+
     public boolean hasPendingInput(UUID uuid) {
-        return pendingCategoryName.containsKey(uuid) || pendingItemField.containsKey(uuid);
+        return pendingCategoryName.containsKey(uuid) || pendingItemField.containsKey(uuid)
+                || pendingNewCommandItem.containsKey(uuid);
     }
 
     /** Appele par ShopEditorChatListener (deja sur le thread principal) avec le message tape. */
@@ -68,6 +79,28 @@ public class ShopEditorService {
             manager.addCategory(id, nom, icone);
             messages.send(player, "boutique.editeur-categorie-creee");
             Bukkit.getScheduler().runTask(plugin, () -> new ShopAdminCategoriesGui(plugin, player, manager, this, messages).open());
+            return;
+        }
+
+        String pendingCommandeCategoryId = pendingNewCommandItem.remove(uuid);
+        if (pendingCommandeCategoryId != null) {
+            String commande = message.trim();
+            if (commande.isEmpty()) {
+                messages.send(player, "boutique.editeur-valeur-invalide");
+                return;
+            }
+            String baseId = "commande";
+            String itemId = baseId;
+            int suffixe = 2;
+            ShopManager.ShopCategory category = manager.getCategory(pendingCommandeCategoryId);
+            while (manager.getItem(category, itemId) != null) {
+                itemId = baseId + "_" + suffixe;
+                suffixe++;
+            }
+            manager.addItemCommand(pendingCommandeCategoryId, itemId, commande);
+            messages.send(player, "boutique.editeur-article-commande-cree");
+            String categoryId = pendingCommandeCategoryId;
+            Bukkit.getScheduler().runTask(plugin, () -> new ShopAdminItemsGui(plugin, player, manager, this, categoryId, messages).open());
             return;
         }
 

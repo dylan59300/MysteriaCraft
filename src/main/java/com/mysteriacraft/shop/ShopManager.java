@@ -286,6 +286,26 @@ public class ShopManager {
         loadCategories();
     }
 
+    /** Ajoute un article de type COMMANDE (execute une commande console a l'achat, voir
+     * RewardType.COMMANDE), sans prix par defaut (a definir ensuite dans l'editeur d'article). */
+    public synchronized void addItemCommand(String categoryId, String itemId, String commande) {
+        ConfigurationSection categorieSection = getCategorySection(categoryId);
+        if (categorieSection == null) {
+            return;
+        }
+        ConfigurationSection itemsSection = categorieSection.getConfigurationSection("items");
+        if (itemsSection == null) {
+            itemsSection = categorieSection.createSection("items");
+        }
+        ConfigurationSection itemSection = itemsSection.createSection(itemId.toLowerCase());
+        itemSection.set("recompense.type", "COMMANDE");
+        itemSection.set("recompense.commande", commande);
+        itemSection.set("recompense.nom", commande);
+        itemSection.set("prix-achat", 0);
+        shopConfig.save();
+        loadCategories();
+    }
+
     public synchronized void removeItem(String categoryId, String itemId) {
         ConfigurationSection itemsSection = getItemsSection(categoryId);
         if (itemsSection != null) {
