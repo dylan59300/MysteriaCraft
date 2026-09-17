@@ -118,7 +118,7 @@ commands:
     # reload est verifie manuellement dans le code (mysteriacraft.encheres.admin).
   boutique:
     description: Ouvre le menu de la Boutique (achat/revente avec la monnaie interne)
-    usage: /<command> [code <code>|jetons|fidelite|panier|chercher <texte>|convertir <argent|jetons> <montant>|reload]
+    usage: /<command> [code <code>|jetons|fidelite|panier|chercher <texte>|editeur|convertir <argent|jetons> <montant>|reload]
     # Pas de "permission:" ici : ouvrir la boutique doit rester accessible a tout joueur.
     # reload est verifie manuellement dans le code (mysteriacraft.boutique.admin).
   kit:

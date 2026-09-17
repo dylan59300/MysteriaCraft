@@ -243,6 +243,94 @@ public class ShopManager {
         return null;
     }
 
+    // ---- Editeur de categories/articles en jeu (voir /boutique editeur) ----
+
+    public synchronized void addCategory(String id, String nom, Material icone) {
+        ConfigurationSection root = shopConfig.get().getConfigurationSection("categories");
+        if (root == null) {
+            root = shopConfig.get().createSection("categories");
+        }
+        ConfigurationSection section = root.createSection(id.toLowerCase());
+        section.set("nom", nom);
+        section.set("icone", icone.name());
+        shopConfig.save();
+        loadCategories();
+    }
+
+    public synchronized void removeCategory(String id) {
+        ConfigurationSection root = shopConfig.get().getConfigurationSection("categories");
+        if (root != null) {
+            root.set(id.toLowerCase(), null);
+            shopConfig.save();
+            loadCategories();
+        }
+    }
+
+    /** Ajoute un article de type ITEM a partir d'un ItemStack (typiquement l'objet tenu en main
+     * par l'admin). */
+    public synchronized void addItem(String categoryId, String itemId, ItemStack modele, double prixAchat) {
+        ConfigurationSection categorieSection = getCategorySection(categoryId);
+        if (categorieSection == null) {
+            return;
+        }
+        ConfigurationSection itemsSection = categorieSection.getConfigurationSection("items");
+        if (itemsSection == null) {
+            itemsSection = categorieSection.createSection("items");
+        }
+        ConfigurationSection itemSection = itemsSection.createSection(itemId.toLowerCase());
+        itemSection.set("recompense.type", "ITEM");
+        itemSection.set("recompense.materiel", modele.getType().name());
+        itemSection.set("recompense.quantite", Math.max(1, modele.getAmount()));
+        itemSection.set("prix-achat", Math.max(0, prixAchat));
+        shopConfig.save();
+        loadCategories();
+    }
+
+    public synchronized void removeItem(String categoryId, String itemId) {
+        ConfigurationSection itemsSection = getItemsSection(categoryId);
+        if (itemsSection != null) {
+            itemsSection.set(itemId.toLowerCase(), null);
+            shopConfig.save();
+            loadCategories();
+        }
+    }
+
+    public synchronized void setItemPrixAchat(String categoryId, String itemId, double prix) {
+        editItemSection(categoryId, itemId, section -> section.set("prix-achat", Math.max(0, prix)));
+    }
+
+    public synchronized void setItemPrixVente(String categoryId, String itemId, double prix) {
+        editItemSection(categoryId, itemId, section -> section.set("prix-vente", Math.max(0, prix)));
+    }
+
+    public synchronized void setItemStockMax(String categoryId, String itemId, int stockMax) {
+        editItemSection(categoryId, itemId, section -> section.set("stock-max", Math.max(0, stockMax)));
+    }
+
+    private ConfigurationSection getCategorySection(String categoryId) {
+        ConfigurationSection root = shopConfig.get().getConfigurationSection("categories");
+        return root == null ? null : root.getConfigurationSection(categoryId.toLowerCase());
+    }
+
+    private ConfigurationSection getItemsSection(String categoryId) {
+        ConfigurationSection categorieSection = getCategorySection(categoryId);
+        return categorieSection == null ? null : categorieSection.getConfigurationSection("items");
+    }
+
+    private void editItemSection(String categoryId, String itemId, java.util.function.Consumer<ConfigurationSection> editor) {
+        ConfigurationSection itemsSection = getItemsSection(categoryId);
+        if (itemsSection == null) {
+            return;
+        }
+        ConfigurationSection itemSection = itemsSection.getConfigurationSection(itemId.toLowerCase());
+        if (itemSection == null) {
+            return;
+        }
+        editor.accept(itemSection);
+        shopConfig.save();
+        loadCategories();
+    }
+
     // ---- Favoris (voir ShopItemsGui : shift-clic pour basculer) ----
 
     private static String favoriteKey(String categoryId, String itemId) {

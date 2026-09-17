@@ -89,8 +89,10 @@ import com.mysteriacraft.encheres.commands.EnchereCommand;
 import com.mysteriacraft.shop.ShopManager;
 import com.mysteriacraft.shop.PromotionManager;
 import com.mysteriacraft.shop.LoyaltyManager;
+import com.mysteriacraft.shop.ShopEditorService;
 import com.mysteriacraft.shop.StockManager;
 import com.mysteriacraft.shop.TokenManager;
+import com.mysteriacraft.shop.listeners.ShopEditorChatListener;
 import com.mysteriacraft.shop.ShopService;
 import com.mysteriacraft.shop.commands.ShopCommand;
 import com.mysteriacraft.kit.KitManager;
@@ -718,8 +720,11 @@ public final class MysteriaCraft extends JavaPlugin {
         this.stockManager = new StockManager(this, database);
         this.shopService = new ShopService(shopManager, economyManager, rewardGiver, customItemManager, rankManager,
                 talentManager, promotionManager, tokenManager, loyaltyManager, stockManager, messages);
+        ShopEditorService shopEditorService = new ShopEditorService(this, shopManager, messages);
+        Bukkit.getPluginManager().registerEvents(new ShopEditorChatListener(this, shopEditorService), this);
         getCommand("boutique").setExecutor(new ShopCommand(this, boutiqueConfig, promotionsConfig, fideliteConfig,
-                shopManager, shopService, promotionManager, loyaltyManager, stockManager, economyManager, messages));
+                shopManager, shopService, promotionManager, loyaltyManager, stockManager, shopEditorService,
+                economyManager, messages));
     }
 
     private void setupKits() {

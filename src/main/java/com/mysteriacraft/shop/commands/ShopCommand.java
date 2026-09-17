@@ -5,9 +5,11 @@ import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.economy.EconomyManager;
 import com.mysteriacraft.shop.LoyaltyManager;
 import com.mysteriacraft.shop.PromotionManager;
+import com.mysteriacraft.shop.ShopEditorService;
 import com.mysteriacraft.shop.ShopManager;
 import com.mysteriacraft.shop.ShopService;
 import com.mysteriacraft.shop.StockManager;
+import com.mysteriacraft.shop.gui.ShopAdminCategoriesGui;
 import com.mysteriacraft.shop.gui.ShopCartGui;
 import com.mysteriacraft.shop.gui.ShopCategoriesGui;
 import com.mysteriacraft.shop.gui.ShopItemsGui;
@@ -36,13 +38,14 @@ public class ShopCommand implements CommandExecutor {
     private final PromotionManager promotionManager;
     private final LoyaltyManager loyaltyManager;
     private final StockManager stockManager;
+    private final ShopEditorService editorService;
     private final EconomyManager economyManager;
     private final MessageManager messages;
 
     public ShopCommand(Plugin plugin, ConfigManager shopConfig, ConfigManager promotionsConfig, ConfigManager fideliteConfig,
                         ShopManager manager, ShopService service, PromotionManager promotionManager,
-                        LoyaltyManager loyaltyManager, StockManager stockManager, EconomyManager economyManager,
-                        MessageManager messages) {
+                        LoyaltyManager loyaltyManager, StockManager stockManager, ShopEditorService editorService,
+                        EconomyManager economyManager, MessageManager messages) {
         this.plugin = plugin;
         this.shopConfig = shopConfig;
         this.promotionsConfig = promotionsConfig;
@@ -52,6 +55,7 @@ public class ShopCommand implements CommandExecutor {
         this.promotionManager = promotionManager;
         this.loyaltyManager = loyaltyManager;
         this.stockManager = stockManager;
+        this.editorService = editorService;
         this.economyManager = economyManager;
         this.messages = messages;
     }
@@ -90,6 +94,15 @@ public class ShopCommand implements CommandExecutor {
 
         if (args.length > 0 && args[0].equalsIgnoreCase("fidelite")) {
             service.afficherFidelite(player);
+            return true;
+        }
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("editeur")) {
+            if (!player.hasPermission("mysteriacraft.boutique.admin")) {
+                messages.send(player, "general.pas-de-permission");
+                return true;
+            }
+            new ShopAdminCategoriesGui(plugin, player, manager, editorService, messages).open();
             return true;
         }
 
