@@ -41,7 +41,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * recettes de craft.
  *
  * IMPORTANT : contrairement a un ItemStack ou une Entity, un Block "nu" (ex: GOLD_BLOCK) n'a PAS
- * de PersistentDataContainer sur paper-api 1.21.2 (seuls les blocs avec tile entity, comme les
+ * de PersistentDataContainer sur paper-api 1.21.4 (seuls les blocs avec tile entity, comme les
  * coffres, en ont un via leur BlockState). L'etat par bloc (famille, bonus de minerais) est donc
  * suivi via une table SQLite dediee, indexee par position, mise en cache memoire (write-through :
  * chaque ecriture met a jour le cache puis persiste en base de facon asynchrone).

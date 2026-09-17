@@ -10,7 +10,7 @@
     <packaging>jar</packaging>
 
     <name>MysteriaCraft</name>
-    <description>Plugin Paper 1.21.2 - Crates, Economie, Kits, BattlePass, Quetes, Pets, LuckyBlock</description>
+    <description>Plugin Paper 1.21.4 - Crates, Economie, Kits, BattlePass, Quetes, Pets, LuckyBlock</description>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -29,7 +29,7 @@
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>1.21.2-R0.1-SNAPSHOT</version>
+            <version>1.21.4-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
 
