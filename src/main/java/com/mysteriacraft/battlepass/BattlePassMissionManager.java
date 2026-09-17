@@ -23,7 +23,7 @@ import java.util.UUID;
  */
 public class BattlePassMissionManager {
 
-    public enum MissionType { MINER, TUER, PECHER }
+    public enum MissionType { MINER, TUER, PECHER, CRAFT, PLACER, ENCHANTER, TONDRE }
 
     public record MissionTemplate(MissionType type, String cible, int quantiteMin, int quantiteMax) {
     }
@@ -80,8 +80,13 @@ public class BattlePassMissionManager {
             }
             try {
                 MissionType type = MissionType.valueOf(String.valueOf(map.get("type")));
-                String cible = type == MissionType.PECHER ? "POISSON" :
-                        String.valueOf(type == MissionType.TUER ? map.get("entite") : map.get("materiel"));
+                String cible = switch (type) {
+                    case PECHER -> "POISSON";
+                    case ENCHANTER -> "OBJET";
+                    case TONDRE -> "MOUTON";
+                    case TUER -> String.valueOf(map.get("entite"));
+                    default -> String.valueOf(map.get("materiel")); // MINER, CRAFT, PLACER
+                };
                 int quantiteMin = map.get("quantite-min") instanceof Number n ? n.intValue() : 1;
                 int quantiteMax = map.get("quantite-max") instanceof Number n ? n.intValue() : quantiteMin;
                 templates.add(new MissionTemplate(type, cible, Math.max(1, quantiteMin), Math.max(quantiteMin, quantiteMax)));
