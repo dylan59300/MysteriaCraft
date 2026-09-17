@@ -401,6 +401,14 @@ public class LuckyBlockManager {
         return sorted;
     }
 
+    /** Toutes les familles, MEME hors-saison, triees par ordre : utilise par l'editeur en jeu
+     * (voir /luckyblockadmin editeur) qui doit pouvoir gerer une famille saisonniere a tout moment. */
+    public List<LuckyBlockFamily> getAllFamilies() {
+        List<LuckyBlockFamily> all = new ArrayList<>(families.values());
+        all.sort(Comparator.comparingInt(LuckyBlockFamily::order));
+        return all;
+    }
+
     public LuckyBlockFamily getFamily(String id) {
         return id == null ? null : families.get(id.toLowerCase());
     }
@@ -633,6 +641,176 @@ public class LuckyBlockManager {
 
     private NamespacedKey recipeKey(String familyId) {
         return new NamespacedKey(plugin, "luckyblock-" + familyId.toLowerCase());
+    }
+
+    // ---- Editeur de familles/effets en jeu (voir /luckyblockadmin editeur) ----
+
+    private ConfigurationSection getFamilySection(String id) {
+        ConfigurationSection root = luckyBlocksConfig.get().getConfigurationSection("familles");
+        return root == null ? null : root.getConfigurationSection(id.toLowerCase());
+    }
+
+    private void editFamilySection(String id, java.util.function.Consumer<ConfigurationSection> editor) {
+        ConfigurationSection section = getFamilySection(id);
+        if (section == null) {
+            return;
+        }
+        editor.accept(section);
+        luckyBlocksConfig.save();
+        loadFamilies();
+    }
+
+    /** Cree une nouvelle famille (prix/chance par defaut, sans effet propre : elle herite quand
+     * meme du pool commun, voir loadSharedGoodEffects) et la sauvegarde immediatement. */
+    public synchronized void addFamily(String id, String nom, Material materiel) {
+        ConfigurationSection root = luckyBlocksConfig.get().getConfigurationSection("familles");
+        if (root == null) {
+            root = luckyBlocksConfig.get().createSection("familles");
+        }
+        ConfigurationSection section = root.createSection(id.toLowerCase());
+        section.set("nom", nom);
+        section.set("materiel", materiel.name());
+        section.set("prix-achat", 0);
+        section.set("chance-bonne-base", 50.0);
+        luckyBlocksConfig.save();
+        loadFamilies();
+    }
+
+    public synchronized void removeFamily(String id) {
+        ConfigurationSection root = luckyBlocksConfig.get().getConfigurationSection("familles");
+        if (root != null) {
+            root.set(id.toLowerCase(), null);
+            luckyBlocksConfig.save();
+            loadFamilies();
+        }
+    }
+
+    public synchronized void setFamillePrixAchat(String id, double prix) {
+        editFamilySection(id, section -> section.set("prix-achat", Math.max(0, prix)));
+    }
+
+    public synchronized void setFamilleChanceBonne(String id, double chance) {
+        editFamilySection(id, section -> section.set("chance-bonne-base", Math.max(0, Math.min(100, chance))));
+    }
+
+    /** "MM-jj" ou null pour effacer (voir "familles saisonnieres"). */
+    public synchronized void setFamilleActifDu(String id, String valeur) {
+        editFamilySection(id, section -> section.set("actif-du", valeur));
+    }
+
+    public synchronized void setFamilleActifAu(String id, String valeur) {
+        editFamilySection(id, section -> section.set("actif-au", valeur));
+    }
+
+    /** Copie generique d'une Map issue de getMapList() (type capture inconnu) vers une Map modifiable. */
+    private static Map<String, Object> copyMap(Map<?, ?> source) {
+        Map<String, Object> copy = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : source.entrySet()) {
+            copy.put(String.valueOf(entry.getKey()), entry.getValue());
+        }
+        return copy;
+    }
+
+    /** Les effets PROPRES a cette famille (hors pool commun, voir "effets" dans luckyblocks.yml),
+     * dans l'ordre de la config : ce que l'editeur en jeu liste/modifie/supprime par index. */
+    public synchronized List<LuckyBlockEffect> getOwnEffects(String familyId) {
+        ConfigurationSection section = getFamilySection(familyId);
+        if (section == null) {
+            return List.of();
+        }
+        List<LuckyBlockEffect> result = new ArrayList<>();
+        for (Map<?, ?> raw : section.getMapList("effets")) {
+            LuckyBlockEffect effect = parseEffect(raw);
+            if (effect != null) {
+                result.add(effect);
+            }
+        }
+        return result;
+    }
+
+    /** Ajoute un effet BON de type ITEM a partir d'un ItemStack (typiquement l'objet tenu en main). */
+    public synchronized void addGoodEffectFromItem(String familyId, ItemStack modele, double chance) {
+        ConfigurationSection section = getFamilySection(familyId);
+        if (section == null) {
+            return;
+        }
+        List<Map<?, ?>> effets = new ArrayList<>(section.getMapList("effets"));
+        Map<String, Object> recompense = new LinkedHashMap<>();
+        recompense.put("type", "ITEM");
+        recompense.put("materiel", modele.getType().name());
+        recompense.put("quantite", Math.max(1, modele.getAmount()));
+        Map<String, Object> effet = new LinkedHashMap<>();
+        effet.put("type", "BON");
+        effet.put("chance", chance);
+        effet.put("recompense", recompense);
+        effets.add(effet);
+        section.set("effets", effets);
+        luckyBlocksConfig.save();
+        loadFamilies();
+    }
+
+    /** Ajoute un effet MAUVAIS avec des valeurs par defaut pour son type (modifiables ensuite dans
+     * luckyblocks.yml si besoin ; seule la chance est editable depuis l'editeur en jeu). */
+    public synchronized void addBadEffect(String familyId, BadEffectType type, double chance) {
+        ConfigurationSection section = getFamilySection(familyId);
+        if (section == null) {
+            return;
+        }
+        List<Map<?, ?>> effets = new ArrayList<>(section.getMapList("effets"));
+        Map<String, Object> effet = new LinkedHashMap<>();
+        effet.put("type", "MAUVAIS");
+        effet.put("chance", chance);
+        effet.put("action", type.name());
+        switch (type) {
+            case TNT -> effet.put("quantite", 3);
+            case MOBS -> {
+                effet.put("mob", "ZOMBIE");
+                effet.put("quantite", 3);
+            }
+            case POTION -> {
+                effet.put("effet-potion", "POISON");
+                effet.put("duree-secondes", 5);
+                effet.put("amplificateur", 0);
+            }
+            case FOUDRE -> {
+            }
+        }
+        effets.add(effet);
+        section.set("effets", effets);
+        luckyBlocksConfig.save();
+        loadFamilies();
+    }
+
+    public synchronized void setEffectChanceAt(String familyId, int index, double chance) {
+        ConfigurationSection section = getFamilySection(familyId);
+        if (section == null) {
+            return;
+        }
+        List<Map<?, ?>> effets = new ArrayList<>(section.getMapList("effets"));
+        if (index < 0 || index >= effets.size()) {
+            return;
+        }
+        Map<String, Object> effet = copyMap(effets.get(index));
+        effet.put("chance", Math.max(0, chance));
+        effets.set(index, effet);
+        section.set("effets", effets);
+        luckyBlocksConfig.save();
+        loadFamilies();
+    }
+
+    public synchronized void removeEffectAt(String familyId, int index) {
+        ConfigurationSection section = getFamilySection(familyId);
+        if (section == null) {
+            return;
+        }
+        List<Map<?, ?>> effets = new ArrayList<>(section.getMapList("effets"));
+        if (index < 0 || index >= effets.size()) {
+            return;
+        }
+        effets.remove(index);
+        section.set("effets", effets);
+        luckyBlocksConfig.save();
+        loadFamilies();
     }
 
 }

@@ -2,9 +2,12 @@ package com.mysteriacraft.luckyblock.commands;
 
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
+import com.mysteriacraft.luckyblock.LuckyBlockEditorService;
 import com.mysteriacraft.luckyblock.LuckyBlockFamily;
 import com.mysteriacraft.luckyblock.LuckyBlockManager;
 import com.mysteriacraft.luckyblock.LuckyBlockService;
+import com.mysteriacraft.luckyblock.gui.LuckyBlockFamiliesEditorGui;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -24,16 +27,21 @@ import java.util.stream.Collectors;
  */
 public class LuckyBlockAdminCommand implements CommandExecutor, TabCompleter {
 
+    private final Plugin plugin;
     private final ConfigManager luckyBlocksConfig;
     private final LuckyBlockManager manager;
     private final LuckyBlockService service;
+    private final LuckyBlockEditorService editorService;
     private final MessageManager messages;
 
-    public LuckyBlockAdminCommand(ConfigManager luckyBlocksConfig, LuckyBlockManager manager,
-                                   LuckyBlockService service, MessageManager messages) {
+    public LuckyBlockAdminCommand(Plugin plugin, ConfigManager luckyBlocksConfig, LuckyBlockManager manager,
+                                   LuckyBlockService service, LuckyBlockEditorService editorService,
+                                   MessageManager messages) {
+        this.plugin = plugin;
         this.luckyBlocksConfig = luckyBlocksConfig;
         this.manager = manager;
         this.service = service;
+        this.editorService = editorService;
         this.messages = messages;
     }
 
@@ -53,6 +61,15 @@ public class LuckyBlockAdminCommand implements CommandExecutor, TabCompleter {
             manager.loadFamilies();
             manager.registerRecipes();
             messages.send(sender, "luckyblock.reload");
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("editeur")) {
+            if (!(sender instanceof Player player)) {
+                messages.send(sender, "general.commande-joueur-uniquement");
+                return true;
+            }
+            new LuckyBlockFamiliesEditorGui(plugin, player, manager, editorService, messages).open();
             return true;
         }
 
@@ -133,7 +150,7 @@ public class LuckyBlockAdminCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return filterStartsWith(List.of("give", "simulate", "reload"), args[0]);
+            return filterStartsWith(List.of("give", "simulate", "reload", "editeur"), args[0]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
             return null; // Bukkit complete automatiquement avec les joueurs en ligne.

@@ -43,10 +43,12 @@ import com.mysteriacraft.pets.commands.PetsAdminCommand;
 import com.mysteriacraft.pets.commands.PetsCommand;
 import com.mysteriacraft.pets.listeners.PetJoinQuitListener;
 import com.mysteriacraft.pets.listeners.PetCombatListener;
+import com.mysteriacraft.luckyblock.LuckyBlockEditorService;
 import com.mysteriacraft.luckyblock.LuckyBlockManager;
 import com.mysteriacraft.luckyblock.LuckyBlockService;
 import com.mysteriacraft.luckyblock.commands.LuckyBlockAdminCommand;
 import com.mysteriacraft.luckyblock.commands.LuckyBlockCommand;
+import com.mysteriacraft.luckyblock.listeners.LuckyBlockEditorChatListener;
 import com.mysteriacraft.luckyblock.listeners.LuckyBlockListener;
 import com.mysteriacraft.luckyblock.generator.LuckyBlockGeneratorManager;
 import com.mysteriacraft.luckyblock.generator.LuckyBlockGeneratorService;
@@ -520,7 +522,10 @@ public final class MysteriaCraft extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new LuckyBlockListener(luckyBlockManager, luckyBlockService, messages), this);
 
         getCommand("luckyblock").setExecutor(new LuckyBlockCommand(luckyBlockManager, luckyBlockService, economyManager, messages));
-        LuckyBlockAdminCommand luckyBlockAdminCommand = new LuckyBlockAdminCommand(luckyBlocksConfig, luckyBlockManager, luckyBlockService, messages);
+        LuckyBlockEditorService luckyBlockEditorService = new LuckyBlockEditorService(this, luckyBlockManager, messages);
+        Bukkit.getPluginManager().registerEvents(new LuckyBlockEditorChatListener(this, luckyBlockEditorService), this);
+        LuckyBlockAdminCommand luckyBlockAdminCommand = new LuckyBlockAdminCommand(this, luckyBlocksConfig, luckyBlockManager,
+                luckyBlockService, luckyBlockEditorService, messages);
         getCommand("luckyblockadmin").setExecutor(luckyBlockAdminCommand);
         getCommand("luckyblockadmin").setTabCompleter(luckyBlockAdminCommand);
     }

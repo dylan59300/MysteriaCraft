@@ -58,8 +58,8 @@ commands:
     description: Ouvre le menu des Lucky Blocks, ou achete directement avec buy
     usage: /<command> [buy <famille> [quantite]]
   luckyblockadmin:
-    description: Donne un Lucky Block, simule N casses reelles (test/preview), ou recharge luckyblocks.yml
-    usage: /<command> <give <joueur> <famille> [quantite]|simulate <famille> <nombre>|reload>
+    description: Donne un Lucky Block, simule N casses reelles (test/preview), recharge luckyblocks.yml, ou ouvre l'editeur en jeu
+    usage: /<command> <give <joueur> <famille> [quantite]|simulate <famille> <nombre>|reload|editeur>
     permission: mysteriacraft.luckyblock.admin
   customitem:
     description: Catalogue des items custom, gere les minerais/objets (give admin, sell, reload admin)
