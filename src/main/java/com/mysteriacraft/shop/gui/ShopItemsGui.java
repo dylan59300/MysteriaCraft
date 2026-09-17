@@ -168,6 +168,9 @@ public class ShopItemsGui extends Menu {
         if (item.isSellable()) {
             lore.add(messages.raw("boutique.gui-clic-vendre"));
         }
+        if (item.isPurchasable()) {
+            lore.add(messages.raw("boutique.gui-clic-panier"));
+        }
         lore.add(favorite ? messages.raw("boutique.gui-favori-retirer") : messages.raw("boutique.gui-favori-ajouter"));
         if (favorite) {
             lore.add(0, messages.raw("boutique.gui-favori-marque"));
@@ -222,6 +225,14 @@ public class ShopItemsGui extends Menu {
 
         if (event.isShiftClick()) {
             toggleFavorite(player, item);
+            return;
+        }
+        if (event.getClick() == ClickType.DROP) {
+            service.ajouterAuPanier(player, item, 1);
+            return;
+        }
+        if (event.getClick() == ClickType.CONTROL_DROP) {
+            service.ajouterAuPanier(player, item, 10);
             return;
         }
         if (event.getClick() == ClickType.RIGHT) {

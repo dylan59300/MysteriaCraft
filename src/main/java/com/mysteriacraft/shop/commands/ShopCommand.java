@@ -8,7 +8,10 @@ import com.mysteriacraft.shop.PromotionManager;
 import com.mysteriacraft.shop.ShopManager;
 import com.mysteriacraft.shop.ShopService;
 import com.mysteriacraft.shop.StockManager;
+import com.mysteriacraft.shop.gui.ShopCartGui;
 import com.mysteriacraft.shop.gui.ShopCategoriesGui;
+import com.mysteriacraft.shop.gui.ShopItemsGui;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -87,6 +90,24 @@ public class ShopCommand implements CommandExecutor {
 
         if (args.length > 0 && args[0].equalsIgnoreCase("fidelite")) {
             service.afficherFidelite(player);
+            return true;
+        }
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("panier")) {
+            new ShopCartGui(plugin, player, manager, service, economyManager, promotionManager, stockManager, messages).open();
+            return true;
+        }
+
+        if (args.length > 1 && args[0].equalsIgnoreCase("chercher")) {
+            String texte = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
+            var resultats = manager.searchItems(texte);
+            if (resultats.isEmpty()) {
+                messages.send(player, "boutique.recherche-vide");
+                return true;
+            }
+            ShopManager.ShopCategory categorieResultats = new ShopManager.ShopCategory(
+                    "recherche", messages.raw("boutique.recherche-titre"), Material.COMPASS, resultats);
+            new ShopItemsGui(plugin, player, categorieResultats, manager, service, economyManager, promotionManager, stockManager, messages).open();
             return true;
         }
 

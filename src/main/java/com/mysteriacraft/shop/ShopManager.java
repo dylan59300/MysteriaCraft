@@ -162,6 +162,21 @@ public class ShopManager {
         return keys;
     }
 
+    /** Tous les articles (toutes categories confondues) dont le nom affiche contient ce texte
+     * (insensible a la casse). Voir /boutique chercher. */
+    public List<ShopItem> searchItems(String texte) {
+        List<ShopItem> resultats = new ArrayList<>();
+        String recherche = texte.toLowerCase();
+        for (ShopCategory category : categories.values()) {
+            for (ShopItem item : category.items()) {
+                if (item.displayName().toLowerCase().contains(recherche)) {
+                    resultats.add(item);
+                }
+            }
+        }
+        return resultats;
+    }
+
     public ShopItem getItem(ShopCategory category, String itemId) {
         if (category == null || itemId == null) {
             return null;
