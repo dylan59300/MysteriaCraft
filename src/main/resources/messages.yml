@@ -41,7 +41,7 @@ economie:
   baltop-vide: "&7Aucun joueur enregistre pour le moment."
 
 battlepass:
-  titre-gui: "&8BattlePass - Saison permanente"
+  titre-gui: "&8BattlePass - {saison}"
   niveau-suivant: "&6&lBattlePass ! &aVous avez atteint le niveau &e{niveau}&a !"
   deja-premium: "&eVous possedez deja le pass premium."
   fonds-insuffisants: "&cVous n'avez pas assez d'argent pour acheter le pass premium."
@@ -98,6 +98,14 @@ battlepass:
   titres-titre: "&8&l--- Titres debloques ---"
   titres-ligne: "&e{titre}"
   bonus-premiere-quete: "&6&lBonus premiere quete du jour ! &aXP BattlePass supplementaire recue."
+  saison-archivee: "&d&l*** Nouvelle saison ! *** &7La saison precedente a ete archivee (voir /battlepass historique), xp et pass premium reinitialises pour tous."
+  top-vide: "&7Personne n'a encore gagne d'xp cette saison."
+  top-titre: "&8&l--- Classement BattlePass ({saison}) ---"
+  top-ligne: "&e#{rang} &7{joueur} &7- Niveau &6{niveau} &7(&e{xp}&7 xp)"
+  historique-vide: "&7Aucune saison de BattlePass terminee pour le moment."
+  historique-titre: "&8&l--- Historique de vos saisons BattlePass ---"
+  historique-ligne: "&7Saison {saison} &7: Niveau &6{niveau} &7(&e{xp}&7 xp)"
+  gui-info-saison: "&d{saison} &7(&e{jours}&7 jour(s) restant(s))"
 
 quests:
   titre-gui: "&8Quetes (quotidiennes & hebdomadaires)"

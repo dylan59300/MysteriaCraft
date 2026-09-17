@@ -51,6 +51,15 @@ public class BattlePassAdminCommand implements CommandExecutor {
             battlepassConfig.reload();
             manager.loadLevels();
             messages.send(sender, "battlepass.reload");
+            if (manager.checkAndArchiveSeasonIfNeeded()) {
+                messages.send(sender, "battlepass.saison-archivee");
+            }
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("nouvellesaison")) {
+            manager.forceArchiveSeasonNow();
+            messages.send(sender, "battlepass.saison-archivee");
             return true;
         }
 

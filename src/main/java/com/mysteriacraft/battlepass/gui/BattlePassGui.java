@@ -25,7 +25,8 @@ import java.util.Set;
 /**
  * Menu du BattlePass : deux pistes de recompenses (gratuite en haut, premium en bas) alignees
  * par palier, pagination, achat de la piste premium, et reclamation au clic.
- * Saison permanente : la progression (xp, premium, reclamations) n'est jamais reinitialisee.
+ * Fonctionne par saisons (voir BattlePassManager) : la progression (xp, premium, reclamations)
+ * est reinitialisee a chaque nouvelle saison.
  */
 public class BattlePassGui extends Menu {
 
@@ -69,7 +70,8 @@ public class BattlePassGui extends Menu {
     @Override
     public Inventory build() {
         MenuHolder holder = new MenuHolder(this);
-        this.inventory = Bukkit.createInventory(holder, SIZE, MessageManager.color(messages.raw("battlepass.titre-gui")));
+        String titreGui = replace(messages.raw("battlepass.titre-gui"), "saison", manager.getSeasonNom());
+        this.inventory = Bukkit.createInventory(holder, SIZE, MessageManager.color(titreGui));
         holder.setInventory(inventory);
         this.levels = manager.getLevels();
         render();
@@ -152,6 +154,9 @@ public class BattlePassGui extends Menu {
     private void renderInfoItem(int currentLevel) {
         BattlePassLevel next = manager.getLevel(currentLevel + 1);
         List<String> lore = new ArrayList<>();
+        String saisonLore = replace(messages.raw("battlepass.gui-info-saison"), "saison", manager.getSeasonNom());
+        saisonLore = replace(saisonLore, "jours", String.valueOf(manager.getSeasonDaysRemaining()));
+        lore.add(saisonLore);
         lore.add(replace(messages.raw("battlepass.gui-info-xp"), "xp", String.valueOf(xp)));
         if (next != null) {
             long remaining = Math.max(0, next.xpRequired() - xp);

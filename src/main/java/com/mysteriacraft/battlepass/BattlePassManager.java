@@ -13,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -23,7 +24,9 @@ import java.util.UUID;
 
 /**
  * Charge les paliers du BattlePass depuis battlepass.yml et gere la progression des joueurs
- * (xp, statut premium, recompenses reclamees) en SQLite. Saison permanente : pas de reset.
+ * (xp, statut premium, recompenses reclamees) en SQLite. Fonctionne par SAISONS (voir
+ * checkAndArchiveSeasonIfNeeded) : a l'echeance de "saison.fin", xp et premium sont archives puis
+ * remis a zero pour tous, comme un vrai plugin BattlePass.
  */
 public class BattlePassManager {
 
@@ -38,6 +41,10 @@ public class BattlePassManager {
     private long firstQuestBonusXp = 0;
     private long sprintDurationSeconds = 3600;
     private double sprintMultiplier = 3.0;
+
+    private int seasonNumero = 1;
+    private String seasonNom = "Saison 1";
+    private LocalDate seasonFin = LocalDate.now().plusMonths(3);
 
     /** Fenetres d'evenement double xp (ou autre multiplicateur) optionnelles, voir "evenements-xp"
      * dans battlepass.yml. Reutilise le meme format actif-du/actif-au que les quetes saisonnieres. */
@@ -86,7 +93,14 @@ public class BattlePassManager {
                         "uuid TEXT NOT NULL PRIMARY KEY, titre TEXT NOT NULL);",
                 // Premiere quete terminee du jour (bonus xp, voir QuestService).
                 "CREATE TABLE IF NOT EXISTS battlepass_premiere_quete (" +
-                        "uuid TEXT NOT NULL, jour TEXT NOT NULL, PRIMARY KEY (uuid, jour));"
+                        "uuid TEXT NOT NULL, jour TEXT NOT NULL, PRIMARY KEY (uuid, jour));",
+                // Petite table cle/valeur generique (voir getMeta/setMeta), utilisee pour retenir
+                // quelle date de fin de saison a deja ete traitee (voir checkAndArchiveSeasonIfNeeded).
+                "CREATE TABLE IF NOT EXISTS battlepass_meta (cle TEXT PRIMARY KEY, valeur TEXT NOT NULL);",
+                // Niveau/xp final de chaque joueur a la fin de chaque saison passee (voir /battlepass historique).
+                "CREATE TABLE IF NOT EXISTS battlepass_historique_saisons (" +
+                        "uuid TEXT NOT NULL, saison INTEGER NOT NULL, niveau INTEGER NOT NULL, " +
+                        "xp INTEGER NOT NULL, PRIMARY KEY (uuid, saison));"
         };
         Connection connection = database.getConnection();
         for (String sql : statements) {
@@ -95,6 +109,13 @@ public class BattlePassManager {
             } catch (SQLException e) {
                 plugin.getLogger().severe("Erreur creation table battlepass : " + e.getMessage());
             }
+        }
+        // Migration douce : ajoute la colonne "nom" (pour /battlepass top) si absente. L'erreur
+        // "duplicate column" sur une base deja migree est normale et volontairement ignoree.
+        try (PreparedStatement statement = connection.prepareStatement("ALTER TABLE battlepass_joueurs ADD COLUMN nom TEXT;")) {
+            statement.executeUpdate();
+        } catch (SQLException ignored) {
+            // Colonne deja presente.
         }
     }
 
@@ -118,6 +139,18 @@ public class BattlePassManager {
         sprintDurationSeconds = battlepassConfig.get().getLong("sprint-duree-secondes", 3600);
         sprintMultiplier = battlepassConfig.get().getDouble("sprint-multiplicateur", 3.0);
         prestigeReward = RewardParser.parse(battlepassConfig.get().getConfigurationSection("prestige-recompense"));
+
+        ConfigurationSection saisonSection = battlepassConfig.get().getConfigurationSection("saison");
+        if (saisonSection != null) {
+            seasonNumero = Math.max(1, saisonSection.getInt("numero", 1));
+            seasonNom = saisonSection.getString("nom", "Saison " + seasonNumero);
+            try {
+                seasonFin = LocalDate.parse(saisonSection.getString("fin", LocalDate.now().plusMonths(3).toString()));
+            } catch (Exception e) {
+                plugin.getLogger().warning("Date de fin de saison invalide dans battlepass.yml (format attendu AAAA-MM-JJ) : " + e.getMessage());
+                seasonFin = LocalDate.now().plusMonths(3);
+            }
+        }
 
         List<?> eventsRaw = battlepassConfig.get().getMapList("evenements-xp");
         for (Object raw : eventsRaw) {
@@ -203,6 +236,26 @@ public class BattlePassManager {
         return prestigeReward;
     }
 
+    public int getSeasonNumero() {
+        return seasonNumero;
+    }
+
+    public String getSeasonNom() {
+        return seasonNom;
+    }
+
+    public LocalDate getSeasonFin() {
+        return seasonFin;
+    }
+
+    public boolean isSeasonEnded() {
+        return LocalDate.now().isAfter(seasonFin);
+    }
+
+    public long getSeasonDaysRemaining() {
+        return Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), seasonFin));
+    }
+
     /** Multiplicateur d'xp cumule de tous les evenements actuellement actifs (voir "evenements-xp"),
      * 1.0 si aucun n'est actif. Plusieurs evenements simultanes se MULTIPLIENT entre eux. */
     public double getActiveEventMultiplier() {
@@ -281,15 +334,17 @@ public class BattlePassManager {
         return false;
     }
 
-    /** Ajoute de l'xp au joueur (creant son enregistrement si besoin) et renvoie la nouvelle xp totale. */
-    public synchronized long addXp(UUID uuid, long amount) {
+    /** Ajoute de l'xp au joueur (creant son enregistrement si besoin) et renvoie la nouvelle xp
+     * totale. Le nom est retenu pour /battlepass top (classement de la saison en cours). */
+    public synchronized long addXp(UUID uuid, long amount, String nom) {
         long newXp = Math.max(0, getXp(uuid) + amount);
-        String upsert = "INSERT INTO battlepass_joueurs (uuid, xp, premium) VALUES (?, ?, 0) " +
-                "ON CONFLICT(uuid) DO UPDATE SET xp = excluded.xp;";
+        String upsert = "INSERT INTO battlepass_joueurs (uuid, xp, premium, nom) VALUES (?, ?, 0, ?) " +
+                "ON CONFLICT(uuid) DO UPDATE SET xp = excluded.xp, nom = excluded.nom;";
         Connection connection = database.getConnection();
         try (PreparedStatement statement = connection.prepareStatement(upsert)) {
             statement.setString(1, uuid.toString());
             statement.setLong(2, newXp);
+            statement.setString(3, nom);
             statement.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().severe("Erreur mise a jour xp battlepass pour " + uuid + " : " + e.getMessage());
@@ -593,5 +648,160 @@ public class BattlePassManager {
             plugin.getLogger().severe("Erreur verification premiere quete du jour pour " + uuid + " : " + e.getMessage());
             return false;
         }
+    }
+
+    // ---- Meta cle/valeur generique (voir checkAndArchiveSeasonIfNeeded) ----
+
+    private synchronized String getMeta(String cle) {
+        String select = "SELECT valeur FROM battlepass_meta WHERE cle = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, cle);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("valeur");
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture meta battlepass " + cle + " : " + e.getMessage());
+        }
+        return null;
+    }
+
+    private synchronized void setMeta(String cle, String valeur) {
+        String upsert = "INSERT INTO battlepass_meta (cle, valeur) VALUES (?, ?) " +
+                "ON CONFLICT(cle) DO UPDATE SET valeur = excluded.valeur;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(upsert)) {
+            statement.setString(1, cle);
+            statement.setString(2, valeur);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur ecriture meta battlepass " + cle + " : " + e.getMessage());
+        }
+    }
+
+    // ---- Saisons (voir la doc en tete de battlepass.yml) ----
+
+    private static final String META_SAISON_FIN_TRAITEE = "saison-fin-traitee";
+
+    /** A appeler au demarrage et a chaque /battlepassadmin reload : archive et remet a zero la
+     * saison en cours si sa date de fin (saison.fin) est depassee ET n'a pas deja ete traitee
+     * (evite un double archivage si la date reste inchangee apres un reload). Renvoie true si un
+     * archivage a eu lieu. */
+    public synchronized boolean checkAndArchiveSeasonIfNeeded() {
+        if (!isSeasonEnded()) {
+            return false;
+        }
+        String finTraitee = getMeta(META_SAISON_FIN_TRAITEE);
+        if (seasonFin.toString().equals(finTraitee)) {
+            return false;
+        }
+        archiverSaison(seasonNumero);
+        setMeta(META_SAISON_FIN_TRAITEE, seasonFin.toString());
+        return true;
+    }
+
+    /** /battlepassadmin nouvellesaison : force l'archivage/reset immediatement, sans attendre la
+     * date de fin configuree (utile pour terminer une saison en avance). */
+    public synchronized void forceArchiveSeasonNow() {
+        archiverSaison(seasonNumero);
+        setMeta(META_SAISON_FIN_TRAITEE, seasonFin.toString());
+    }
+
+    /** Archive le niveau/xp final de chaque joueur ayant progresse cette saison, puis remet a zero
+     * xp et statut premium POUR TOUS (le premium doit donc etre rachete a chaque nouvelle saison,
+     * comme dans un vrai battle pass). Prestige et titres debloques NE SONT PAS touches : ce sont
+     * des progressions permanentes, separees des saisons. */
+    private void archiverSaison(int numeroTermine) {
+        Connection connection = database.getConnection();
+        String insertHistorique = "INSERT INTO battlepass_historique_saisons (uuid, saison, niveau, xp) " +
+                "SELECT uuid, ?, 0, xp FROM battlepass_joueurs WHERE xp > 0 " +
+                "ON CONFLICT(uuid, saison) DO UPDATE SET xp = excluded.xp;";
+        try (PreparedStatement statement = connection.prepareStatement(insertHistorique)) {
+            statement.setInt(1, numeroTermine);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur archivage historique de la saison " + numeroTermine + " : " + e.getMessage());
+        }
+
+        try (PreparedStatement select = connection.prepareStatement("SELECT uuid, xp FROM battlepass_historique_saisons WHERE saison = ?;")) {
+            select.setInt(1, numeroTermine);
+            try (ResultSet rs = select.executeQuery();
+                 PreparedStatement updateNiveau = connection.prepareStatement(
+                         "UPDATE battlepass_historique_saisons SET niveau = ? WHERE uuid = ? AND saison = ?;")) {
+                while (rs.next()) {
+                    long xp = rs.getLong("xp");
+                    updateNiveau.setInt(1, computeLevel(xp));
+                    updateNiveau.setString(2, rs.getString("uuid"));
+                    updateNiveau.setInt(3, numeroTermine);
+                    updateNiveau.addBatch();
+                }
+                updateNiveau.executeBatch();
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur calcul des niveaux finaux de la saison " + numeroTermine + " : " + e.getMessage());
+        }
+
+        try (PreparedStatement reset = connection.prepareStatement("UPDATE battlepass_joueurs SET xp = 0, premium = 0;")) {
+            reset.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur reinitialisation xp/premium pour la nouvelle saison : " + e.getMessage());
+        }
+        try (PreparedStatement clearClaims = connection.prepareStatement("DELETE FROM battlepass_reclamations;")) {
+            clearClaims.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur reinitialisation des reclamations pour la nouvelle saison : " + e.getMessage());
+        }
+        try (PreparedStatement clearMystere = connection.prepareStatement("DELETE FROM battlepass_mystere_roule;")) {
+            clearMystere.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur reinitialisation des roulements mystere pour la nouvelle saison : " + e.getMessage());
+        }
+        plugin.getLogger().info("BattlePass : saison " + numeroTermine + " archivee, xp/premium reinitialises pour tous.");
+    }
+
+    /** Classement de la saison EN COURS (voir /battlepass top), trie par xp decroissante. */
+    public record TopEntry(String nom, long xp, int niveau) {
+    }
+
+    public synchronized List<TopEntry> getTopPlayers(int limit) {
+        List<TopEntry> entries = new ArrayList<>();
+        String select = "SELECT nom, xp FROM battlepass_joueurs WHERE xp > 0 ORDER BY xp DESC LIMIT ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setInt(1, limit);
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    long xp = rs.getLong("xp");
+                    String nom = rs.getString("nom");
+                    entries.add(new TopEntry(nom != null ? nom : "?", xp, computeLevel(xp)));
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture classement battlepass : " + e.getMessage());
+        }
+        return entries;
+    }
+
+    /** Historique des saisons passees d'un joueur (voir /battlepass historique), triee de la plus recente a la plus ancienne. */
+    public record SeasonHistoryEntry(int saison, int niveau, long xp) {
+    }
+
+    public synchronized List<SeasonHistoryEntry> getSeasonHistory(UUID uuid) {
+        List<SeasonHistoryEntry> entries = new ArrayList<>();
+        String select = "SELECT saison, niveau, xp FROM battlepass_historique_saisons WHERE uuid = ? ORDER BY saison DESC;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    entries.add(new SeasonHistoryEntry(rs.getInt("saison"), rs.getInt("niveau"), rs.getLong("xp")));
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture historique des saisons pour " + uuid + " : " + e.getMessage());
+        }
+        return entries;
     }
 }

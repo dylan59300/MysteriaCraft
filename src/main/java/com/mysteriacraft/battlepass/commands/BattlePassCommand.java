@@ -61,6 +61,14 @@ public class BattlePassCommand implements CommandExecutor {
                     handleListTitles(player);
                     return true;
                 }
+                case "top" -> {
+                    handleTop(player);
+                    return true;
+                }
+                case "historique" -> {
+                    handleHistory(player);
+                    return true;
+                }
                 default -> {
                 }
             }
@@ -123,6 +131,51 @@ public class BattlePassCommand implements CommandExecutor {
             return;
         }
         service.giftLevels(player, receiver, levelsToGift);
+    }
+
+    private void handleTop(Player player) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            var top = manager.getTopPlayers(10);
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (top.isEmpty()) {
+                    messages.send(player, "battlepass.top-vide");
+                    return;
+                }
+                Map<String, String> titrePlaceholders = new HashMap<>();
+                titrePlaceholders.put("saison", manager.getSeasonNom());
+                messages.send(player, "battlepass.top-titre", titrePlaceholders);
+                int rang = 1;
+                for (BattlePassManager.TopEntry entry : top) {
+                    Map<String, String> placeholders = new HashMap<>();
+                    placeholders.put("rang", String.valueOf(rang));
+                    placeholders.put("joueur", entry.nom());
+                    placeholders.put("niveau", String.valueOf(entry.niveau()));
+                    placeholders.put("xp", String.valueOf(entry.xp()));
+                    messages.send(player, "battlepass.top-ligne", placeholders);
+                    rang++;
+                }
+            });
+        });
+    }
+
+    private void handleHistory(Player player) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            var history = manager.getSeasonHistory(player.getUniqueId());
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (history.isEmpty()) {
+                    messages.send(player, "battlepass.historique-vide");
+                    return;
+                }
+                messages.send(player, "battlepass.historique-titre");
+                for (BattlePassManager.SeasonHistoryEntry entry : history) {
+                    Map<String, String> placeholders = new HashMap<>();
+                    placeholders.put("saison", String.valueOf(entry.saison()));
+                    placeholders.put("niveau", String.valueOf(entry.niveau()));
+                    placeholders.put("xp", String.valueOf(entry.xp()));
+                    messages.send(player, "battlepass.historique-ligne", placeholders);
+                }
+            });
+        });
     }
 
     private void handleListTitles(Player player) {

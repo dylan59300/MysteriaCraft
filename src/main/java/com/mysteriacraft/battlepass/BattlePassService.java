@@ -96,7 +96,7 @@ public class BattlePassService implements RewardGiver.XpBoosterHandler, RewardGi
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             long oldXp = manager.getXp(player.getUniqueId());
             int oldLevel = manager.computeLevel(oldXp);
-            long newXp = manager.addXp(player.getUniqueId(), boostedAmount);
+            long newXp = manager.addXp(player.getUniqueId(), boostedAmount, player.getName());
             manager.recordXpGain(player.getUniqueId(), boostedAmount);
             int newLevel = manager.computeLevel(newXp);
 
@@ -339,8 +339,8 @@ public class BattlePassService implements RewardGiver.XpBoosterHandler, RewardGi
                 Bukkit.getScheduler().runTask(plugin, () -> messages.send(sender, "battlepass.don-fonds-insuffisants"));
                 return;
             }
-            manager.addXp(sender.getUniqueId(), -xpNeeded);
-            manager.addXp(receiver.getUniqueId(), xpNeeded);
+            manager.addXp(sender.getUniqueId(), -xpNeeded, sender.getName());
+            manager.addXp(receiver.getUniqueId(), xpNeeded, receiver.getName());
             Bukkit.getScheduler().runTask(plugin, () -> {
                 Map<String, String> senderPlaceholders = new HashMap<>();
                 senderPlaceholders.put("joueur", receiver.getName());

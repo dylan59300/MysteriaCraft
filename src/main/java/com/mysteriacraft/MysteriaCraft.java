@@ -425,6 +425,7 @@ public final class MysteriaCraft extends JavaPlugin {
     private void setupBattlePass() {
         this.battlepassConfig = new ConfigManager(this, "battlepass.yml");
         this.battlePassManager = new BattlePassManager(this, database, battlepassConfig);
+        battlePassManager.checkAndArchiveSeasonIfNeeded();
         this.battlePassService = new BattlePassService(this, battlePassManager, economyManager, rewardGiver, messages);
         rewardGiver.setBoosterHandler(battlePassService);
         rewardGiver.setTitleUnlockHandler(battlePassService);

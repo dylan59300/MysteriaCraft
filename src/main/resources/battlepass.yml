@@ -1,9 +1,21 @@
 # =========================================
 #   MysteriaCraft - Configuration du BattlePass
 # =========================================
-# Saison permanente : pas de date de fin, la progression n'est jamais reinitialisee (voir
-# /battlepass prestige pour recommencer volontairement au niveau 1).
-# xp-requis est CUMULATIF (xp totale necessaire depuis le debut pour atteindre ce palier).
+# Fonctionne par SAISONS, comme un vrai plugin BattlePass (Fortnite-like) : la saison actuelle
+# se termine a la date "saison.fin" ci-dessous. A cette echeance (verifiee au demarrage et a
+# chaque /battlepassadmin reload), le plugin archive automatiquement le niveau/xp final de chaque
+# joueur (consultable via /battlepass historique) puis reinitialise xp et pass premium POUR TOUS
+# (le premium s'achete DONC a nouveau chaque saison, comme dans un vrai battle pass). Pour lancer
+# une nouvelle saison : montez "saison.numero", changez "saison.fin" (et les recompenses de
+# "niveaux" si besoin), puis /battlepassadmin reload. /battlepassadmin nouvellesaison force
+# l'archivage/reset immediatement, sans attendre la date. Prestige et titres debloques NE sont PAS
+# reinitialises par un changement de saison (progression permanente separee, voir /battlepass
+# prestige).
+# xp-requis est CUMULATIF (xp totale necessaire depuis le debut de la saison pour atteindre ce palier).
+saison:
+  numero: 1
+  nom: "Saison 1 : Les Fondations"
+  fin: "2026-12-31"
 # gratuit / premium : n'importe quel type de Reward (voir RewardParser), ITEM/ECONOMIE/BOOST_XP/
 #                     PET/LUCKYBLOCK/OBJET_CUSTOM/GENERATEUR/MACHINE/AGRANDISSEMENT_ILE/TITRE_CHAT.
 #                     Laisser absent = pas de recompense sur cette piste.
