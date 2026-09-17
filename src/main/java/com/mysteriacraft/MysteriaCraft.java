@@ -1,6 +1,13 @@
 package com.mysteriacraft;
 
+import com.mysteriacraft.admin.AdminChatService;
+import com.mysteriacraft.admin.AdminMaintenanceManager;
+import com.mysteriacraft.admin.AdminMuteManager;
+import com.mysteriacraft.admin.AdminSummaryRegistry;
 import com.mysteriacraft.admin.commands.AdminCommand;
+import com.mysteriacraft.admin.listeners.AdminChatListener;
+import com.mysteriacraft.admin.listeners.AdminMaintenanceListener;
+import com.mysteriacraft.admin.listeners.AdminMuteChatListener;
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.core.storage.Database;
@@ -407,7 +414,7 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Panel admin unifie (/admin, voir AdminRegistry) : independant, ne fait que
         // dispatcher les commandes deja enregistrees par les setup*() precedents. ----
-        getCommand("admin").setExecutor(new AdminCommand(messages));
+        setupAdminPanel();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -854,6 +861,27 @@ public final class MysteriaCraft extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(
                 new EtabliListener(this, etabliManager, etabliService, customItemManager, messages), this);
         getCommand("etabli").setExecutor(new EtabliCommand(etabliConfig, etabliManager, messages));
+    }
+
+    private void setupAdminPanel() {
+        AdminMaintenanceManager maintenanceManager = new AdminMaintenanceManager(this, database);
+        AdminChatService adminChatService = new AdminChatService(messages);
+        AdminMuteManager muteManager = new AdminMuteManager(this, database);
+        Bukkit.getPluginManager().registerEvents(new AdminMaintenanceListener(maintenanceManager, messages), this);
+        Bukkit.getPluginManager().registerEvents(new AdminChatListener(this, adminChatService), this);
+        Bukkit.getPluginManager().registerEvents(new AdminMuteChatListener(muteManager, messages), this);
+        getCommand("admin").setExecutor(new AdminCommand(maintenanceManager, adminChatService, muteManager, messages));
+
+        // Resumes affiches dans la lore de quelques modules (voir AdminSummaryRegistry) ;
+        // les autres modules gardent une lore generique.
+        AdminSummaryRegistry.register("BattlePass", () -> battlePassManager.getLevels().size() + " palier(s)");
+        AdminSummaryRegistry.register("Boutique", () -> shopManager.getCategoriesSorted().size() + " categorie(s)");
+        AdminSummaryRegistry.register("Quetes", () -> questManager.getAllQuests().size() + " quete(s)");
+        AdminSummaryRegistry.register("Pets", () -> petManager.getPetsSorted().size() + " pet(s)");
+        AdminSummaryRegistry.register("Kits", () -> kitManager.getKitsSorted().size() + " kit(s)");
+        AdminSummaryRegistry.register("Lucky Block", () -> luckyBlockManager.getFamiliesSorted().size() + " famille(s)");
+        AdminSummaryRegistry.register("Talents", () -> talentManager.getNodesSorted().size() + " noeud(s)");
+        AdminSummaryRegistry.register("Metiers", () -> metierManager.getMetiers().size() + " metier(s)");
     }
 
     @Override
