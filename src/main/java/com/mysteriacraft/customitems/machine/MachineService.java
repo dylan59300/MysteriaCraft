@@ -172,7 +172,7 @@ public class MachineService {
         messages.send(player, "machine.ravitaillee", placeholders);
 
         Location loc = machineBlock.getLocation().add(0.5, 1.0, 0.5);
-        loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 15, 0.4, 0.4, 0.4);
+        loc.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, loc, 15, 0.4, 0.4, 0.4);
         player.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 0.6f, 1.5f);
     }
 
@@ -235,7 +235,7 @@ public class MachineService {
         messages.send(player, "machine.tier-ameliore", placeholders);
 
         Location loc = machineBlock.getLocation().add(0.5, 1.0, 0.5);
-        loc.getWorld().spawnParticle(Particle.TOTEM, loc, 40, 0.4, 0.5, 0.4, 0.1);
+        loc.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, loc, 40, 0.4, 0.5, 0.4, 0.1);
         loc.getWorld().playSound(loc, Sound.ITEM_TOTEM_USE, 1f, 1.2f);
     }
 
@@ -298,7 +298,7 @@ public class MachineService {
             ItemStack reward = luckyBlockManager.createItem(family);
             giveItem(player, reward);
 
-            effectLocation.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, effectLocation, 25, 0.4, 0.4, 0.4);
+            effectLocation.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, effectLocation, 25, 0.4, 0.4, 0.4);
             player.playSound(effectLocation, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.3f);
 
             Map<String, String> placeholders = new HashMap<>();
@@ -488,7 +488,7 @@ public class MachineService {
             Location effectLocation = location.clone().add(0.5, 1.1, 0.5);
             int fuel = manager.getFuel(block);
             if (fuel <= 0) {
-                world.spawnParticle(Particle.SMOKE_NORMAL, effectLocation, 1, 0.1, 0.1, 0.1, 0.0);
+                world.spawnParticle(Particle.SMOKE, effectLocation, 1, 0.1, 0.1, 0.1, 0.0);
             } else if (fuel < 5) {
                 world.spawnParticle(Particle.FLAME, effectLocation, 1, 0.15, 0.1, 0.15, 0.0);
             } else {
@@ -544,7 +544,7 @@ public class MachineService {
         if (match == null) {
             // Aucun minerai accepte trouve dans l'entree : petit indicateur visuel de reapprovisionnement.
             Location warningLocation = containers.input().getLocation().add(0.5, 1.1, 0.5);
-            containers.input().getWorld().spawnParticle(Particle.REDSTONE, warningLocation, 6, 0.2, 0.1, 0.2, 0.0,
+            containers.input().getWorld().spawnParticle(Particle.DUST, warningLocation, 6, 0.2, 0.1, 0.2, 0.0,
                     new Particle.DustOptions(Color.RED, 1.2f));
             return;
         }
@@ -605,7 +605,7 @@ public class MachineService {
             world.spawnParticle(Particle.END_ROD, location, 20, 0.4, 0.4, 0.4);
             world.playSound(location, Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1f);
         } else {
-            world.spawnParticle(Particle.VILLAGER_HAPPY, location, 25, 0.4, 0.4, 0.4);
+            world.spawnParticle(Particle.HAPPY_VILLAGER, location, 25, 0.4, 0.4, 0.4);
             world.playSound(location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.3f);
         }
     }

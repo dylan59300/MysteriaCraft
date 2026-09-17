@@ -68,7 +68,7 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
         if (effect.kind() == EffectKind.BON) {
             rewardGiver.give(player, effect.reward());
             if (announce) {
-                location.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, location.clone().add(0.5, 0.5, 0.5), 30, 0.5, 0.5, 0.5);
+                location.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, location.clone().add(0.5, 0.5, 0.5), 30, 0.5, 0.5, 0.5);
                 player.playSound(location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
 
                 Map<String, String> placeholders = new HashMap<>();
@@ -79,7 +79,7 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
         }
 
         if (announce) {
-            location.getWorld().spawnParticle(Particle.SMOKE_NORMAL, location.clone().add(0.5, 0.5, 0.5), 40, 0.5, 0.5, 0.5);
+            location.getWorld().spawnParticle(Particle.SMOKE, location.clone().add(0.5, 0.5, 0.5), 40, 0.5, 0.5, 0.5);
             player.playSound(location, Sound.ENTITY_WITHER_SPAWN, 0.5f, 1.5f);
         }
 
@@ -131,7 +131,7 @@ public class LuckyBlockService implements RewardGiver.LuckyBlockGiveHandler {
 
     private void spawnTnt(Location location, int amount) {
         for (int i = 0; i < amount; i++) {
-            Entity entity = location.getWorld().spawnEntity(location.clone().add(0.5, 0.5, 0.5), EntityType.PRIMED_TNT);
+            Entity entity = location.getWorld().spawnEntity(location.clone().add(0.5, 0.5, 0.5), EntityType.TNT);
             if (entity instanceof TNTPrimed tnt) {
                 tnt.setFuseTicks(60);
             }

@@ -49,7 +49,7 @@ public class GemmeManager {
             String nom = section.getString("nom", id);
             Attribute attribut;
             try {
-                attribut = Attribute.valueOf(section.getString("attribut", "GENERIC_ATTACK_DAMAGE").toUpperCase());
+                attribut = Attribute.valueOf(section.getString("attribut", "ATTACK_DAMAGE").toUpperCase());
             } catch (IllegalArgumentException e) {
                 plugin.getLogger().warning("Attribut de gemme invalide pour '" + id + "' : " + section.getString("attribut"));
                 continue;

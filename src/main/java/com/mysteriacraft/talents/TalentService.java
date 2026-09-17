@@ -67,13 +67,13 @@ public class TalentService {
      * uniquement). */
     public void applyPassiveBonuses(Player player) {
         UUID uuid = player.getUniqueId();
-        applyModifier(player, Attribute.GENERIC_ATTACK_DAMAGE, DEGATS_MODIFIER_UUID, manager.getBonusDegats(uuid));
-        applyModifier(player, Attribute.GENERIC_MAX_HEALTH, VIE_MODIFIER_UUID, manager.getBonusVieMax(uuid));
+        applyModifier(player, Attribute.ATTACK_DAMAGE, DEGATS_MODIFIER_UUID, manager.getBonusDegats(uuid));
+        applyModifier(player, Attribute.MAX_HEALTH, VIE_MODIFIER_UUID, manager.getBonusVieMax(uuid));
 
         int niveauMinage = manager.getNiveauVitesseMinage(uuid);
-        player.removePotionEffect(PotionEffectType.FAST_DIGGING);
+        player.removePotionEffect(PotionEffectType.HASTE);
         if (niveauMinage > 0) {
-            player.addPotionEffect(new PotionEffect(PotionEffectType.FAST_DIGGING,
+            player.addPotionEffect(new PotionEffect(PotionEffectType.HASTE,
                     PotionEffect.INFINITE_DURATION, niveauMinage - 1, true, false));
         }
     }

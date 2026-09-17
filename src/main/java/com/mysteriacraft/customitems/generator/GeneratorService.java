@@ -89,7 +89,7 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
         }
 
         Location loc = block.getLocation().add(0.5, 1.0, 0.5);
-        loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 20, 0.4, 0.4, 0.4);
+        loc.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, loc, 20, 0.4, 0.4, 0.4);
         player.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
     }
 
@@ -115,7 +115,7 @@ public class GeneratorService implements RewardGiver.GeneratorGiveHandler {
         messages.send(player, "generateur.recupere-objets", placeholders);
 
         Location loc = block.getLocation().add(0.5, 1.0, 0.5);
-        loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 20, 0.4, 0.4, 0.4);
+        loc.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, loc, 20, 0.4, 0.4, 0.4);
         player.playSound(loc, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1.2f);
     }
 

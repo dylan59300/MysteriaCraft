@@ -5,8 +5,8 @@
 # permanent (bonus passif) tant qu'elle est active. Le premier choix est gratuit ; en changer
 # ensuite coute "prix-changement" (argent, module Economie).
 #
-# effet : nom d'effet de potion vanilla (ex: FAST_DIGGING = Hate, INCREASE_DAMAGE = Force,
-#         SATURATION, REGENERATION, SPEED, JUMP...).
+# effet : nom d'effet de potion vanilla (ex: HASTE = Hate, STRENGTH = Force,
+#         SATURATION, REGENERATION, SPEED, JUMP_BOOST...).
 # amplificateur : niveau de l'effet (0 = niveau I).
 
 prix-changement: 2000
@@ -17,7 +17,7 @@ classes:
     icone: DIAMOND_PICKAXE
     lore:
       - "&7Rapidite de minage accrue."
-    effet: FAST_DIGGING
+    effet: HASTE
     amplificateur: 1
 
   guerrier:
@@ -25,7 +25,7 @@ classes:
     icone: DIAMOND_SWORD
     lore:
       - "&7Degats de melee augmentes."
-    effet: INCREASE_DAMAGE
+    effet: STRENGTH
     amplificateur: 0
 
   fermier:

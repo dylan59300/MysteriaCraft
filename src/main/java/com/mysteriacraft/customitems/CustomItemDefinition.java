@@ -18,9 +18,9 @@ import java.util.Map;
  * @param recipeIngredients association caractere de la forme -> materiau vanilla requis.
  * @param enchantments enchantements appliques (sans limite de niveau vanilla) pour un equipement
  *                      "full custom" (armes/outils/armures) : id vanilla -> niveau. Vide = aucun.
- * @param extraAttackDamage bonus de degats d'attaque (attribut GENERIC_ATTACK_DAMAGE) ajoute EN
+ * @param extraAttackDamage bonus de degats d'attaque (attribut ATTACK_DAMAGE) ajoute EN
  *                          PLUS des degats de base de l'item-de-base. 0 = aucun bonus.
- * @param extraArmor bonus d'armure (attribut GENERIC_ARMOR) ajoute pour une piece d'armure
+ * @param extraArmor bonus d'armure (attribut ARMOR) ajoute pour une piece d'armure
  *                    (casque/plastron/jambieres/bottes). 0 = aucun bonus.
  * @param unbreakable si true, l'item ne perd jamais de durabilite (indicateur Unbreakable vanilla).
  * @param volDeVie enchantement custom "Vol de vie" : % des degats infliges (arme en main) rendus

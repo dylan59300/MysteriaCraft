@@ -81,7 +81,7 @@ public class CustomItemService implements RewardGiver.CustomItemGiveHandler {
 
         if (definition.volDeVie() > 0) {
             double heal = event.getFinalDamage() * (definition.volDeVie() / 100.0);
-            AttributeInstance maxHealthAttr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+            AttributeInstance maxHealthAttr = player.getAttribute(Attribute.MAX_HEALTH);
             double maxHealth = maxHealthAttr != null ? maxHealthAttr.getValue() : 20.0;
             player.setHealth(Math.min(maxHealth, player.getHealth() + heal));
         }

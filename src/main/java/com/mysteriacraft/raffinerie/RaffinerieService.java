@@ -76,7 +76,7 @@ public class RaffinerieService {
         messages.send(player, bonus ? "raffinerie.raffine-bonus" : "raffinerie.raffine", placeholders);
 
         Location loc = block.getLocation().add(0.5, 1.0, 0.5);
-        loc.getWorld().spawnParticle(bonus ? Particle.FLAME : Particle.SMOKE_NORMAL, loc, 15, 0.3, 0.3, 0.3);
+        loc.getWorld().spawnParticle(bonus ? Particle.FLAME : Particle.SMOKE, loc, 15, 0.3, 0.3, 0.3);
         player.playSound(loc, Sound.BLOCK_FURNACE_FIRE_CRACKLE, 1f, 1f);
     }
 

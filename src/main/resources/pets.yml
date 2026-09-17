@@ -6,7 +6,7 @@
 # Deblocage : achat direct (/pets, prix en monnaie interne) OU recompense (battlepass/quete
 # via une recompense de type PET avec le meme pet-id que ci-dessous).
 # prix : 0 = non achetable directement (uniquement obtenable en recompense).
-# degats-bonus : bonus de degats d'attaque (attribut GENERIC_ATTACK_DAMAGE) applique au JOUEUR
+# degats-bonus : bonus de degats d'attaque (attribut ATTACK_DAMAGE) applique au JOUEUR
 #                tant que ce pet est actif. 0 = aucun bonus.
 # esquive-pourcent : % de chance d'annuler COMPLETEMENT des degats subis, tant que ce pet est
 #                    actif. 0 = aucun bonus.

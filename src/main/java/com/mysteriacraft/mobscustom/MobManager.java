@@ -108,12 +108,12 @@ public class MobManager {
         livingEntity.setCustomName(MessageManager.color(definition.nom()));
         livingEntity.setCustomNameVisible(true);
 
-        AttributeInstance maxHealth = livingEntity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        AttributeInstance maxHealth = livingEntity.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealth != null) {
             maxHealth.setBaseValue(definition.vieMax());
             livingEntity.setHealth(definition.vieMax());
         }
-        AttributeInstance degats = livingEntity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
+        AttributeInstance degats = livingEntity.getAttribute(Attribute.ATTACK_DAMAGE);
         if (degats != null) {
             degats.setBaseValue(definition.degats());
         }

@@ -187,7 +187,7 @@ public class MiningMachineService {
             if (!manager.isActive(block)) {
                 // La passe vient de se terminer (chunk entierement parcouru).
                 Location effect = block.getLocation().add(0.5, 1.0, 0.5);
-                world.spawnParticle(Particle.EXPLOSION_LARGE, effect, 3, 0.3, 0.3, 0.3);
+                world.spawnParticle(Particle.EXPLOSION, effect, 3, 0.3, 0.3, 0.3);
                 world.playSound(effect, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
             }
         }

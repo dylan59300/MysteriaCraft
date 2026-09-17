@@ -83,10 +83,10 @@ public class RuneService {
 
         switch (type.effet()) {
             case FEU -> target.setFireTicks((int) type.valeur());
-            case GLACE -> target.addPotionEffect(new PotionEffect(PotionEffectType.SLOW,
+            case GLACE -> target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,
                     (int) type.valeur(), 1, false, true));
             case VIE -> {
-                AttributeInstance maxHealthAttribute = attacker.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+                AttributeInstance maxHealthAttribute = attacker.getAttribute(Attribute.MAX_HEALTH);
                 double max = maxHealthAttribute != null ? maxHealthAttribute.getValue() : 20.0;
                 attacker.setHealth(Math.min(max, attacker.getHealth() + type.valeur()));
             }

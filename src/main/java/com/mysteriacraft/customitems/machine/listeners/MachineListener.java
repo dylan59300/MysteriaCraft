@@ -71,8 +71,8 @@ public class MachineListener implements Listener {
         // aucun degat reel n'est inflige au monde (pas de bloc detruit ni de joueur blesse).
         if (manager.getFuel(block) > 0) {
             Location center = block.getLocation().add(0.5, 0.5, 0.5);
-            center.getWorld().spawnParticle(Particle.EXPLOSION_LARGE, center, 3, 0.2, 0.2, 0.2);
-            center.getWorld().spawnParticle(Particle.SMOKE_LARGE, center, 25, 0.4, 0.4, 0.4);
+            center.getWorld().spawnParticle(Particle.EXPLOSION, center, 3, 0.2, 0.2, 0.2);
+            center.getWorld().spawnParticle(Particle.LARGE_SMOKE, center, 25, 0.4, 0.4, 0.4);
             center.getWorld().playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 1f, 0.9f);
         }
 

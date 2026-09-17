@@ -248,13 +248,13 @@ public class CustomItemManager {
 
             EquipmentSlot slot = resolveEquipmentSlot(definition.baseItem());
             if (definition.extraAttackDamage() > 0 && slot == EquipmentSlot.HAND) {
-                meta.addAttributeModifier(Attribute.GENERIC_ATTACK_DAMAGE, new AttributeModifier(
+                meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, new AttributeModifier(
                         UUID.nameUUIDFromBytes(("mysteriacraft-degats-" + definition.id()).getBytes()),
                         "mysteriacraft-degats-bonus", definition.extraAttackDamage(),
                         AttributeModifier.Operation.ADD_NUMBER, slot));
             }
             if (definition.extraArmor() > 0 && slot != null && slot != EquipmentSlot.HAND) {
-                meta.addAttributeModifier(Attribute.GENERIC_ARMOR, new AttributeModifier(
+                meta.addAttributeModifier(Attribute.ARMOR, new AttributeModifier(
                         UUID.nameUUIDFromBytes(("mysteriacraft-armure-" + definition.id()).getBytes()),
                         "mysteriacraft-armure-bonus", definition.extraArmor(),
                         AttributeModifier.Operation.ADD_NUMBER, slot));

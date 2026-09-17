@@ -163,11 +163,11 @@ public class PetService implements RewardGiver.PetUnlockHandler {
         messages.send(player, "pets.invoque", placeholders);
     }
 
-    /** Applique le bonus de degats du pet actif au JOUEUR (attribut GENERIC_ATTACK_DAMAGE), plus
+    /** Applique le bonus de degats du pet actif au JOUEUR (attribut ATTACK_DAMAGE), plus
      * le bonus de Dressage accumule (voir PetTrainingManager), en remplacant tout modificateur
      * precedent (changement de pet ou nouveau niveau de dressage). */
     private void applyDegatsBonus(Player player, PetDefinition pet) {
-        AttributeInstance attribute = player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
+        AttributeInstance attribute = player.getAttribute(Attribute.ATTACK_DAMAGE);
         if (attribute == null) {
             return;
         }
@@ -182,7 +182,7 @@ public class PetService implements RewardGiver.PetUnlockHandler {
     }
 
     private void removeDegatsBonus(Player player) {
-        AttributeInstance attribute = player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
+        AttributeInstance attribute = player.getAttribute(Attribute.ATTACK_DAMAGE);
         if (attribute == null) {
             return;
         }

@@ -8,30 +8,30 @@
 # Chaque gemme (sous "gemmes") :
 #   nom      : nom affiche dans la lore de l'equipement.
 #   item-id  : id de l'item custom consomme (voir custom_items.yml).
-#   attribut : attribut Bukkit vanilla applique (ex: GENERIC_ATTACK_DAMAGE, GENERIC_ARMOR,
-#              GENERIC_MAX_HEALTH, GENERIC_MOVEMENT_SPEED, GENERIC_ATTACK_SPEED).
+#   attribut : attribut Bukkit vanilla applique (ex: ATTACK_DAMAGE, ARMOR,
+#              MAX_HEALTH, MOVEMENT_SPEED, ATTACK_SPEED).
 #   valeur   : montant ajoute a cet attribut (ADD_NUMBER).
 gemmes:
   gemme_force:
     nom: "&cGemme de Force"
     item-id: gemme_force
-    attribut: GENERIC_ATTACK_DAMAGE
+    attribut: ATTACK_DAMAGE
     valeur: 2.0
 
   gemme_protection:
     nom: "&9Gemme de Protection"
     item-id: gemme_protection
-    attribut: GENERIC_ARMOR
+    attribut: ARMOR
     valeur: 2.0
 
   gemme_vitalite:
     nom: "&aGemme de Vitalite"
     item-id: gemme_vitalite
-    attribut: GENERIC_MAX_HEALTH
+    attribut: MAX_HEALTH
     valeur: 4.0
 
   gemme_agilite:
     nom: "&bGemme d'Agilite"
     item-id: gemme_agilite
-    attribut: GENERIC_MOVEMENT_SPEED
+    attribut: MOVEMENT_SPEED
     valeur: 0.02

@@ -78,7 +78,7 @@ public class LuckyBlockGeneratorService {
         messages.send(player, added < fuelType.production() ? "generateurlb.ravitaille-plafonne" : "generateurlb.ravitaille", placeholders);
 
         Location loc = generatorBlock.getLocation().add(0.5, 1.0, 0.5);
-        loc.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, loc, 15, 0.4, 0.4, 0.4);
+        loc.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, loc, 15, 0.4, 0.4, 0.4);
         player.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 0.6f, 1.5f);
         updateHologram(generatorBlock);
     }
@@ -178,7 +178,7 @@ public class LuckyBlockGeneratorService {
             block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 1, 0.5), reward);
         }
         Location effect = block.getLocation().add(0.5, 1.2, 0.5);
-        effect.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, effect, 15, 0.3, 0.3, 0.3);
+        effect.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, effect, 15, 0.3, 0.3, 0.3);
     }
 
     private void updateHologram(Block block) {
