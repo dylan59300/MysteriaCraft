@@ -7,6 +7,7 @@ import com.mysteriacraft.shop.LoyaltyManager;
 import com.mysteriacraft.shop.PromotionManager;
 import com.mysteriacraft.shop.ShopManager;
 import com.mysteriacraft.shop.ShopService;
+import com.mysteriacraft.shop.StockManager;
 import com.mysteriacraft.shop.gui.ShopCategoriesGui;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -31,12 +32,14 @@ public class ShopCommand implements CommandExecutor {
     private final ShopService service;
     private final PromotionManager promotionManager;
     private final LoyaltyManager loyaltyManager;
+    private final StockManager stockManager;
     private final EconomyManager economyManager;
     private final MessageManager messages;
 
     public ShopCommand(Plugin plugin, ConfigManager shopConfig, ConfigManager promotionsConfig, ConfigManager fideliteConfig,
                         ShopManager manager, ShopService service, PromotionManager promotionManager,
-                        LoyaltyManager loyaltyManager, EconomyManager economyManager, MessageManager messages) {
+                        LoyaltyManager loyaltyManager, StockManager stockManager, EconomyManager economyManager,
+                        MessageManager messages) {
         this.plugin = plugin;
         this.shopConfig = shopConfig;
         this.promotionsConfig = promotionsConfig;
@@ -45,6 +48,7 @@ public class ShopCommand implements CommandExecutor {
         this.service = service;
         this.promotionManager = promotionManager;
         this.loyaltyManager = loyaltyManager;
+        this.stockManager = stockManager;
         this.economyManager = economyManager;
         this.messages = messages;
     }
@@ -101,7 +105,7 @@ public class ShopCommand implements CommandExecutor {
             return true;
         }
 
-        new ShopCategoriesGui(plugin, player, manager, service, economyManager, promotionManager, messages).open();
+        new ShopCategoriesGui(plugin, player, manager, service, economyManager, promotionManager, stockManager, messages).open();
         return true;
     }
 }

@@ -34,9 +34,12 @@ public class ShopManager {
     /** Un article de boutique : ce qu'il donne (reward), son prix d'achat et son prix de revente
      * (0 = non rachetable). categoryId reste celui de sa VRAIE categorie meme lorsque l'article
      * est affiche dans la categorie virtuelle "Favoris" (voir getFavorites), pour que
-     * basculer un favori depuis cet ecran cible la bonne cle. */
+     * basculer un favori depuis cet ecran cible la bonne cle.
+     * stockMax <= 0 signifie un stock ILLIMITE (comportement par defaut, voir StockManager) ;
+     * sinon l'article se reapprovisionne de "reapproQuantite" toutes les "reapproIntervalleMinutes". */
     public record ShopItem(String id, String categoryId, String displayName, ItemStack icon, Reward reward,
-                            double buyPrice, double sellPrice) {
+                            double buyPrice, double sellPrice, int stockMax, int reapproIntervalleMinutes,
+                            int reapproQuantite) {
 
         public boolean isPurchasable() {
             return buyPrice > 0;
@@ -44,6 +47,10 @@ public class ShopManager {
 
         public boolean isSellable() {
             return sellPrice > 0 && (reward.type() == RewardType.ITEM || reward.type() == RewardType.OBJET_CUSTOM);
+        }
+
+        public boolean hasStockLimite() {
+            return stockMax > 0;
         }
     }
 
@@ -124,8 +131,12 @@ public class ShopManager {
                 }
                 double buyPrice = itemSection.getDouble("prix-achat", 0);
                 double sellPrice = itemSection.getDouble("prix-vente", 0);
+                int stockMax = Math.max(0, itemSection.getInt("stock-max", 0));
+                int reapproIntervalleMinutes = Math.max(1, itemSection.getInt("reappro-intervalle-minutes", 60));
+                int reapproQuantite = Math.max(1, itemSection.getInt("reappro-quantite", 1));
                 items.add(new ShopItem(itemId.toLowerCase(), categoryId.toLowerCase(), reward.displayName(),
-                        reward.displayIcon(), reward, buyPrice, sellPrice));
+                        reward.displayIcon(), reward, buyPrice, sellPrice, stockMax, reapproIntervalleMinutes,
+                        reapproQuantite));
             }
         }
         return new ShopCategory(categoryId.toLowerCase(), displayName, icon, items);

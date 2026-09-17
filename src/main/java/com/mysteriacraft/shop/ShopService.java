@@ -34,12 +34,13 @@ public class ShopService {
     private final PromotionManager promotionManager;
     private final TokenManager tokenManager;
     private final LoyaltyManager loyaltyManager;
+    private final StockManager stockManager;
     private final MessageManager messages;
 
     public ShopService(ShopManager shopManager, EconomyManager economyManager, RewardGiver rewardGiver,
                         CustomItemManager customItemManager, RankManager rankManager, TalentManager talentManager,
                         PromotionManager promotionManager, TokenManager tokenManager, LoyaltyManager loyaltyManager,
-                        MessageManager messages) {
+                        StockManager stockManager, MessageManager messages) {
         this.shopManager = shopManager;
         this.economyManager = economyManager;
         this.rewardGiver = rewardGiver;
@@ -49,12 +50,19 @@ public class ShopService {
         this.promotionManager = promotionManager;
         this.tokenManager = tokenManager;
         this.loyaltyManager = loyaltyManager;
+        this.stockManager = stockManager;
         this.messages = messages;
     }
 
     public void buy(Player player, ShopManager.ShopItem item) {
         if (!item.isPurchasable()) {
             messages.send(player, "boutique.non-achetable");
+            return;
+        }
+        if (item.hasStockLimite() && stockManager.getStockRestant(item) <= 0) {
+            Map<String, String> ruptureMessage = new HashMap<>();
+            ruptureMessage.put("minutes", String.valueOf(stockManager.getMinutesAvantProchainReappro(item)));
+            messages.send(player, "boutique.rupture-de-stock", ruptureMessage);
             return;
         }
 
@@ -67,6 +75,12 @@ public class ShopService {
 
         if (!economyManager.withdraw(player.getUniqueId(), prixFinal)) {
             messages.send(player, "boutique.fonds-insuffisants");
+            return;
+        }
+        if (!stockManager.consommerStock(item)) {
+            // Rupture survenue entre la verification et l'achat (tres rare, meme thread) : on rembourse.
+            economyManager.deposit(player.getUniqueId(), prixFinal);
+            messages.send(player, "boutique.rupture-de-stock", Map.of("minutes", String.valueOf(stockManager.getMinutesAvantProchainReappro(item))));
             return;
         }
         rewardGiver.give(player, item.reward());

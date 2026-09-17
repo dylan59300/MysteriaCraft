@@ -8,6 +8,7 @@ import com.mysteriacraft.economy.EconomyManager;
 import com.mysteriacraft.shop.PromotionManager;
 import com.mysteriacraft.shop.ShopManager;
 import com.mysteriacraft.shop.ShopService;
+import com.mysteriacraft.shop.StockManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -45,6 +46,7 @@ public class ShopItemsGui extends Menu {
     private final ShopService service;
     private final EconomyManager economyManager;
     private final PromotionManager promotionManager;
+    private final StockManager stockManager;
     private final MessageManager messages;
     private final Map<Integer, String> slotToItemId = new HashMap<>();
 
@@ -53,7 +55,7 @@ public class ShopItemsGui extends Menu {
 
     public ShopItemsGui(Plugin plugin, Player viewer, ShopManager.ShopCategory category, ShopManager manager,
                          ShopService service, EconomyManager economyManager, PromotionManager promotionManager,
-                         MessageManager messages) {
+                         StockManager stockManager, MessageManager messages) {
         super(viewer);
         this.plugin = plugin;
         this.category = category;
@@ -61,6 +63,7 @@ public class ShopItemsGui extends Menu {
         this.service = service;
         this.economyManager = economyManager;
         this.promotionManager = promotionManager;
+        this.stockManager = stockManager;
         this.messages = messages;
     }
 
@@ -145,6 +148,15 @@ public class ShopItemsGui extends Menu {
         } else {
             lore.add(messages.raw("boutique.gui-non-achetable"));
         }
+        if (item.isPurchasable() && item.hasStockLimite()) {
+            int stockRestant = stockManager.getStockRestant(item);
+            if (stockRestant > 0) {
+                lore.add(replace(messages.raw("boutique.gui-stock-restant"), "stock", String.valueOf(stockRestant)));
+            } else {
+                long minutes = stockManager.getMinutesAvantProchainReappro(item);
+                lore.add(replace(messages.raw("boutique.gui-stock-epuise"), "minutes", String.valueOf(minutes)));
+            }
+        }
         if (item.isSellable()) {
             lore.add(replace(messages.raw("boutique.gui-prix-vente"), "prix", economyManager.format(item.sellPrice())));
         }
@@ -184,7 +196,7 @@ public class ShopItemsGui extends Menu {
 
         if (slot == BACK_SLOT) {
             if (event.getWhoClicked() instanceof Player player) {
-                new ShopCategoriesGui(plugin, player, manager, service, economyManager, promotionManager, messages).open();
+                new ShopCategoriesGui(plugin, player, manager, service, economyManager, promotionManager, stockManager, messages).open();
             }
             return;
         }

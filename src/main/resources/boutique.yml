@@ -20,6 +20,10 @@
 #   prix-vente  : montant credite pour revendre TOUT le stack tenu en main (absent/0 = non
 #                 rachetable). Uniquement possible pour une recompense de type ITEM ou OBJET_CUSTOM
 #                 (les seules qui correspondent a un objet concret que le joueur peut tenir).
+#   stock-max, reappro-intervalle-minutes, reappro-quantite (voir StockManager) : optionnels,
+#                 absent/0 sur "stock-max" = stock ILLIMITE (comportement par defaut). Si defini,
+#                 l'article ne peut etre achete que "stock-max" fois avant de se reapprovisionner
+#                 tout seul de "reappro-quantite" toutes les "reappro-intervalle-minutes".
 
 categories:
   blocs:
@@ -43,6 +47,11 @@ categories:
           nom: "Lingot de fer"
         prix-achat: 25
         prix-vente: 12
+        # Exemple de stock limite (voir la doc en tete de fichier) : 200 lingots en stock, qui se
+        # reapprovisionnent de 50 toutes les 30 minutes.
+        stock-max: 200
+        reappro-intervalle-minutes: 30
+        reappro-quantite: 50
 
       or:
         recompense:

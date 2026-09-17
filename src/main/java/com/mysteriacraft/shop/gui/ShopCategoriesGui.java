@@ -8,6 +8,7 @@ import com.mysteriacraft.economy.EconomyManager;
 import com.mysteriacraft.shop.PromotionManager;
 import com.mysteriacraft.shop.ShopManager;
 import com.mysteriacraft.shop.ShopService;
+import com.mysteriacraft.shop.StockManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -37,6 +38,7 @@ public class ShopCategoriesGui extends Menu {
     private final ShopService service;
     private final EconomyManager economyManager;
     private final PromotionManager promotionManager;
+    private final StockManager stockManager;
     private final MessageManager messages;
     private final Map<Integer, String> slotToCategoryId = new HashMap<>();
 
@@ -45,13 +47,15 @@ public class ShopCategoriesGui extends Menu {
     private int page = 0;
 
     public ShopCategoriesGui(Plugin plugin, Player viewer, ShopManager manager, ShopService service,
-                              EconomyManager economyManager, PromotionManager promotionManager, MessageManager messages) {
+                              EconomyManager economyManager, PromotionManager promotionManager,
+                              StockManager stockManager, MessageManager messages) {
         super(viewer);
         this.plugin = plugin;
         this.manager = manager;
         this.service = service;
         this.economyManager = economyManager;
         this.promotionManager = promotionManager;
+        this.stockManager = stockManager;
         this.messages = messages;
     }
 
@@ -152,7 +156,7 @@ public class ShopCategoriesGui extends Menu {
         if (category == null) {
             return;
         }
-        new ShopItemsGui(plugin, player, category, manager, service, economyManager, promotionManager, messages).open();
+        new ShopItemsGui(plugin, player, category, manager, service, economyManager, promotionManager, stockManager, messages).open();
     }
 
     private void openFavorites(Player player) {
@@ -164,7 +168,7 @@ public class ShopCategoriesGui extends Menu {
                 }
                 ShopManager.ShopCategory favoritesCategory = new ShopManager.ShopCategory(
                         "favoris", messages.raw("boutique.gui-favoris"), Material.NETHER_STAR, favorites);
-                new ShopItemsGui(plugin, player, favoritesCategory, manager, service, economyManager, promotionManager, messages).open();
+                new ShopItemsGui(plugin, player, favoritesCategory, manager, service, economyManager, promotionManager, stockManager, messages).open();
             });
         });
     }

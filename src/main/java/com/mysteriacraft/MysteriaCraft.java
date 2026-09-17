@@ -89,6 +89,7 @@ import com.mysteriacraft.encheres.commands.EnchereCommand;
 import com.mysteriacraft.shop.ShopManager;
 import com.mysteriacraft.shop.PromotionManager;
 import com.mysteriacraft.shop.LoyaltyManager;
+import com.mysteriacraft.shop.StockManager;
 import com.mysteriacraft.shop.TokenManager;
 import com.mysteriacraft.shop.ShopService;
 import com.mysteriacraft.shop.commands.ShopCommand;
@@ -233,6 +234,7 @@ public final class MysteriaCraft extends JavaPlugin {
     private PromotionManager promotionManager;
     private TokenManager tokenManager;
     private LoyaltyManager loyaltyManager;
+    private StockManager stockManager;
     private ConfigManager kitsConfig;
     private KitManager kitManager;
     private KitService kitService;
@@ -713,10 +715,11 @@ public final class MysteriaCraft extends JavaPlugin {
         this.loyaltyManager = new LoyaltyManager(this, database, fideliteConfig);
         this.promotionManager = new PromotionManager(this, database, promotionsConfig, loyaltyManager);
         this.tokenManager = new TokenManager(this, database, promotionsConfig);
+        this.stockManager = new StockManager(this, database);
         this.shopService = new ShopService(shopManager, economyManager, rewardGiver, customItemManager, rankManager,
-                talentManager, promotionManager, tokenManager, loyaltyManager, messages);
+                talentManager, promotionManager, tokenManager, loyaltyManager, stockManager, messages);
         getCommand("boutique").setExecutor(new ShopCommand(this, boutiqueConfig, promotionsConfig, fideliteConfig,
-                shopManager, shopService, promotionManager, loyaltyManager, economyManager, messages));
+                shopManager, shopService, promotionManager, loyaltyManager, stockManager, economyManager, messages));
     }
 
     private void setupKits() {
