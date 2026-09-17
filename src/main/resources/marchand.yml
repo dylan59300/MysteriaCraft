@@ -22,7 +22,7 @@
 #   offres : chaque entree coute "cout" pieces d'echange (avant reduction fidelite, retirees de
 #            l'inventaire du joueur, meme reparties sur plusieurs piles) contre la "recompense"
 #            (n'importe quel type de Reward : ITEM, ECONOMIE, OBJET_CUSTOM, GENERATEUR,
-#            GENERATEUR_LUCKYBLOCK, MACHINE, AGRANDISSEMENT_ILE, TITRE_CHAT...). limite-periode
+#            GENERATEUR_LUCKYBLOCK, MACHINE, AGRANDISSEMENT_ILE, TITRE_CHAT, COMMANDE...). limite-periode
 #            (JOUR/SEMAINE/absent) + limite-
 #            quantite : nombre maximum d'achats de CETTE offre par joueur sur la periode donnee.
 #   rachats : le SENS INVERSE des offres (accessible via le bouton "Vendre des ressources" du menu

@@ -2,6 +2,7 @@ package com.mysteriacraft.core.reward;
 
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.economy.EconomyManager;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -170,6 +171,12 @@ public class RewardGiver {
                 }
             }
             case ITEM -> giveItem(player, reward);
+            case COMMANDE -> {
+                String commande = reward.customItemId();
+                if (commande != null && !commande.isBlank()) {
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), commande.replace("{joueur}", player.getName()));
+                }
+            }
         }
     }
 

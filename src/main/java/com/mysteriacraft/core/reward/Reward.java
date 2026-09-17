@@ -17,6 +17,8 @@ import org.bukkit.inventory.ItemStack;
  * - MACHINE : customItemId reutilise comme id de machine ("transformation" ou "miniere") + amount
  * - AGRANDISSEMENT_ILE : amount reutilise comme nombre de blocs de rayon offerts
  * - TITRE_CHAT : customItemId reutilise comme texte du titre debloque
+ * - COMMANDE : customItemId reutilise comme commande a executer (console), avec {joueur} remplace
+ *              par le nom du joueur au moment de la donner
  */
 public record Reward(
         RewardType type,
@@ -74,6 +76,10 @@ public record Reward(
 
     public static Reward ofTitle(String titre, String displayName, ItemStack displayIcon) {
         return new Reward(RewardType.TITRE_CHAT, null, 0, 0, 0, 0, null, null, titre, displayName, displayIcon);
+    }
+
+    public static Reward ofCommand(String commande, String displayName, ItemStack displayIcon) {
+        return new Reward(RewardType.COMMANDE, null, 0, 0, 0, 0, null, null, commande, displayName, displayIcon);
     }
 
     /** Copie cette recompense avec sa "valeur" doublee (montant/quantite selon le type), utilisee

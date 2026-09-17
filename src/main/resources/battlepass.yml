@@ -24,7 +24,7 @@ saison:
   # l'editeur en jeu ou battlepass.yml, puis /battlepassadmin reload).
   rotation: true
 # gratuit / premium : n'importe quel type de Reward (voir RewardParser), ITEM/ECONOMIE/BOOST_XP/
-#                     PET/LUCKYBLOCK/OBJET_CUSTOM/GENERATEUR/MACHINE/AGRANDISSEMENT_ILE/TITRE_CHAT.
+#                     PET/LUCKYBLOCK/OBJET_CUSTOM/GENERATEUR/MACHINE/AGRANDISSEMENT_ILE/TITRE_CHAT/COMMANDE.
 #                     Laisser absent = pas de recompense sur cette piste.
 # mystere-pool : optionnelle, liste de recompenses (meme format que "gratuit") sur la piste
 #                GRATUITE d'un palier. Si presente, remplace "gratuit" : une seule est tiree au

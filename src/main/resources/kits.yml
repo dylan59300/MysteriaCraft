@@ -15,7 +15,7 @@
 #   recompenses         : liste de Reward (voir les autres configs pour la liste complete des
 #                         types : ITEM, ECONOMIE, OBJET_CUSTOM, GENERATEUR,
 #                         GENERATEUR_LUCKYBLOCK, MACHINE, PET, LUCKYBLOCK, BOOST_XP,
-#                         AGRANDISSEMENT_ILE, TITRE_CHAT...), toutes donnees d'un coup a la
+#                         AGRANDISSEMENT_ILE, TITRE_CHAT, COMMANDE...), toutes donnees d'un coup a la
 #                         recuperation du kit.
 
 kits:

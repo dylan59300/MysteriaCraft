@@ -31,8 +31,20 @@ public final class RewardParser {
             case "MACHINE" -> parseMachine(section);
             case "AGRANDISSEMENT_ILE" -> parseIslandUpgrade(section);
             case "TITRE_CHAT" -> parseTitle(section);
+            case "COMMANDE" -> parseCommand(section);
             default -> parseItem(section);
         };
+    }
+
+    private static Reward parseCommand(ConfigurationSection section) {
+        String commande = section.getString("commande", "");
+        String displayName = section.getString("nom", "Commande");
+        Material iconMaterial = Material.matchMaterial(section.getString("icone", "COMMAND_BLOCK"));
+        if (iconMaterial == null) {
+            iconMaterial = Material.COMMAND_BLOCK;
+        }
+        ItemStack icon = new ItemBuilder(iconMaterial).name("&e" + displayName).build();
+        return Reward.ofCommand(commande, displayName, icon);
     }
 
     private static Reward parseTitle(ConfigurationSection section) {

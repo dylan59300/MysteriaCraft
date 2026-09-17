@@ -749,6 +749,28 @@ public class LuckyBlockManager {
         loadFamilies();
     }
 
+    /** Ajoute un effet BON de type COMMANDE (execute une commande console, {joueur} remplace par
+     * le nom du joueur qui obtient l'effet). */
+    public synchronized void addGoodEffectFromCommand(String familyId, String commande, double chance) {
+        ConfigurationSection section = getFamilySection(familyId);
+        if (section == null) {
+            return;
+        }
+        List<Map<?, ?>> effets = new ArrayList<>(section.getMapList("effets"));
+        Map<String, Object> recompense = new LinkedHashMap<>();
+        recompense.put("type", "COMMANDE");
+        recompense.put("commande", commande);
+        recompense.put("nom", commande);
+        Map<String, Object> effet = new LinkedHashMap<>();
+        effet.put("type", "BON");
+        effet.put("chance", chance);
+        effet.put("recompense", recompense);
+        effets.add(effet);
+        section.set("effets", effets);
+        luckyBlocksConfig.save();
+        loadFamilies();
+    }
+
     /** Ajoute un effet MAUVAIS avec des valeurs par defaut pour son type (modifiables ensuite dans
      * luckyblocks.yml si besoin ; seule la chance est editable depuis l'editeur en jeu). */
     public synchronized void addBadEffect(String familyId, BadEffectType type, double chance) {

@@ -29,6 +29,9 @@ public class LuckyBlockEditorService {
     private record PendingEffetChance(String familyId, int index) {
     }
 
+    private record PendingEffetCommande(String familyId) {
+    }
+
     private static final Pattern DATE_MM_JJ = Pattern.compile("^(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$");
 
     private final Plugin plugin;
@@ -38,6 +41,7 @@ public class LuckyBlockEditorService {
     private final Map<UUID, Boolean> pendingNomFamille = new ConcurrentHashMap<>();
     private final Map<UUID, PendingFamilleField> pendingFamilleField = new ConcurrentHashMap<>();
     private final Map<UUID, PendingEffetChance> pendingEffetChance = new ConcurrentHashMap<>();
+    private final Map<UUID, PendingEffetCommande> pendingEffetCommande = new ConcurrentHashMap<>();
 
     public LuckyBlockEditorService(Plugin plugin, LuckyBlockManager manager, MessageManager messages) {
         this.plugin = plugin;
@@ -63,9 +67,15 @@ public class LuckyBlockEditorService {
         messages.send(player, "luckyblock.editeur-saisir-effet-chance");
     }
 
+    public void requestEffetCommande(Player player, String familyId) {
+        pendingEffetCommande.put(player.getUniqueId(), new PendingEffetCommande(familyId));
+        player.closeInventory();
+        messages.send(player, "luckyblock.editeur-saisir-effet-commande");
+    }
+
     public boolean hasPendingInput(UUID uuid) {
         return pendingNomFamille.containsKey(uuid) || pendingFamilleField.containsKey(uuid)
-                || pendingEffetChance.containsKey(uuid);
+                || pendingEffetChance.containsKey(uuid) || pendingEffetCommande.containsKey(uuid);
     }
 
     public void handleChatInput(Player player, String message) {
@@ -102,6 +112,18 @@ public class LuckyBlockEditorService {
                 messages.send(player, "luckyblock.editeur-valeur-invalide");
             }
             reopenEffectsEditor(player, pendingEffet.familyId());
+            return;
+        }
+
+        PendingEffetCommande pendingCommande = pendingEffetCommande.remove(uuid);
+        if (pendingCommande != null) {
+            if (valeur.isEmpty()) {
+                messages.send(player, "luckyblock.editeur-valeur-invalide");
+            } else {
+                manager.addGoodEffectFromCommand(pendingCommande.familyId(), valeur, 10.0);
+                messages.send(player, "luckyblock.editeur-effet-commande-ajoute");
+            }
+            reopenEffectsEditor(player, pendingCommande.familyId());
         }
     }
 

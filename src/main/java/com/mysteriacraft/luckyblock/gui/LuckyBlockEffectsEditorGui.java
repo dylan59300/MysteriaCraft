@@ -10,6 +10,7 @@ import com.mysteriacraft.luckyblock.LuckyBlockEditorService;
 import com.mysteriacraft.luckyblock.LuckyBlockEffect;
 import com.mysteriacraft.luckyblock.LuckyBlockFamily;
 import com.mysteriacraft.luckyblock.LuckyBlockManager;
+import com.mysteriacraft.core.reward.RewardType;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -41,6 +42,7 @@ public class LuckyBlockEffectsEditorGui extends Menu {
     private static final int AJOUTER_MOBS_SLOT = 47;
     private static final int AJOUTER_POTION_SLOT = 48;
     private static final int AJOUTER_FOUDRE_SLOT = 49;
+    private static final int AJOUTER_COMMANDE_SLOT = 50;
     private static final int RETOUR_SLOT = 53;
 
     private final Plugin plugin;
@@ -84,7 +86,7 @@ public class LuckyBlockEffectsEditorGui extends Menu {
                     replace(messages.raw("luckyblock.editeur-effet-lore-chance"), "chance", String.valueOf(effet.chance())),
                     messages.raw("luckyblock.editeur-effet-lore-clic"),
                     messages.raw("luckyblock.editeur-effet-lore-shift-clic"));
-            Material icone = effet.kind() == EffectKind.BON ? Material.EMERALD : iconeMauvais(effet);
+            Material icone = iconeEffet(effet);
             inventory.setItem(CONTENT_SLOTS[i], new ItemBuilder(icone).name(effet.displayName()).lore(lore).build());
             slotToIndex.put(CONTENT_SLOTS[i], i);
         }
@@ -101,7 +103,19 @@ public class LuckyBlockEffectsEditorGui extends Menu {
                 .name(messages.raw("luckyblock.editeur-ajouter-potion")).build());
         inventory.setItem(AJOUTER_FOUDRE_SLOT, new ItemBuilder(Material.TRIDENT)
                 .name(messages.raw("luckyblock.editeur-ajouter-foudre")).build());
+        inventory.setItem(AJOUTER_COMMANDE_SLOT, new ItemBuilder(Material.COMMAND_BLOCK)
+                .name(messages.raw("luckyblock.editeur-ajouter-commande"))
+                .lore(List.of(messages.raw("luckyblock.editeur-ajouter-commande-lore")))
+                .build());
         inventory.setItem(RETOUR_SLOT, new ItemBuilder(Material.ARROW).name(messages.raw("luckyblock.editeur-retour")).build());
+    }
+
+    private Material iconeEffet(LuckyBlockEffect effet) {
+        if (effet.kind() == EffectKind.BON) {
+            return effet.reward() != null && effet.reward().type() == RewardType.COMMANDE
+                    ? Material.COMMAND_BLOCK : Material.EMERALD;
+        }
+        return iconeMauvais(effet);
     }
 
     private Material iconeMauvais(LuckyBlockEffect effet) {
@@ -156,6 +170,10 @@ public class LuckyBlockEffectsEditorGui extends Menu {
         if (slot == AJOUTER_FOUDRE_SLOT) {
             manager.addBadEffect(familyId, BadEffectType.FOUDRE, 10.0);
             render();
+            return;
+        }
+        if (slot == AJOUTER_COMMANDE_SLOT) {
+            editorService.requestEffetCommande(player, familyId);
             return;
         }
 

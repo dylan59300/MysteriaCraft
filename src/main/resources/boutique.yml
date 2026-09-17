@@ -13,7 +13,7 @@
 # Chaque article (sous "items") :
 #   recompense  : n'importe quel type de Reward (voir les autres configs pour la liste complete :
 #                 ITEM, ECONOMIE, OBJET_CUSTOM, GENERATEUR, GENERATEUR_LUCKYBLOCK, MACHINE,
-#                 PET, LUCKYBLOCK, BOOST_XP, AGRANDISSEMENT_ILE, TITRE_CHAT...), donnee a l'achat.
+#                 PET, LUCKYBLOCK, BOOST_XP, AGRANDISSEMENT_ILE, TITRE_CHAT, COMMANDE...), donnee a l'achat.
 #                 Pour type ITEM, l'icone du menu est automatiquement le materiau/quantite donnes
 #                 (le champ "icone" de la recompense n'est utilise que par les autres types).
 #   prix-achat  : cout en monnaie interne pour 1 achat (absent/0 = non achetable, affiche seulement).

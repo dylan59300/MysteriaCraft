@@ -26,5 +26,7 @@ public enum RewardType {
      * (module Iles), plafonne a taille-max comme /ile upgrade. */
     AGRANDISSEMENT_ILE,
     /** Debloque un titre de chat (module BattlePass), selectionnable ensuite via /battlepass titre. */
-    TITRE_CHAT
+    TITRE_CHAT,
+    /** Execute une commande console (le placeholder {joueur} est remplace par le nom du joueur). */
+    COMMANDE
 }

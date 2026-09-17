@@ -316,7 +316,11 @@ luckyblock:
   editeur-ajouter-mobs: "&c&lAjouter Mobs"
   editeur-ajouter-potion: "&c&lAjouter Potion"
   editeur-ajouter-foudre: "&c&lAjouter Foudre"
+  editeur-ajouter-commande: "&a&lAjouter un effet BON (Commande)"
+  editeur-ajouter-commande-lore: "&7Execute une commande console ; {joueur} = nom du joueur"
   editeur-main-vide: "&cVous devez tenir un objet en main pour l'ajouter comme effet."
+  editeur-saisir-effet-commande: "&eTapez dans le chat la commande a executer (sans le /, ex: give {joueur} diamond 1)."
+  editeur-effet-commande-ajoute: "&aEffet commande ajoute."
 
 customitem:
   usage: "&cUsage : /customitem <[gui]|give <joueur> <id> [quantite]|sell <id>|recettes|reload>"
