@@ -240,6 +240,12 @@ public class PromotionManager {
         return get("reduction-max-pourcent", 80);
     }
 
+    // ---- Integration BattlePass (voir "idee : integrations inter-modules") ----
+
+    public double getXpBattlepassPar100Argent() {
+        return get("xp-battlepass-par-100-argent", 0);
+    }
+
     /** Somme des reductions AUTOMATIQUES (hors code promo, gere separement) applicables a cet
      * achat, plafonnee a reduction-max-pourcent. */
     public double getReductionAutomatiquePourcent(Player player, String categoryId, String itemId, List<String> toutesLesClesTriees) {

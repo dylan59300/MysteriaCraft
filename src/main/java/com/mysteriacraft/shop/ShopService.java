@@ -1,5 +1,6 @@
 package com.mysteriacraft.shop;
 
+import com.mysteriacraft.battlepass.BattlePassService;
 import com.mysteriacraft.core.config.MessageManager;
 import com.mysteriacraft.core.reward.Reward;
 import com.mysteriacraft.core.reward.RewardGiver;
@@ -38,6 +39,7 @@ public class ShopService {
     private final TokenManager tokenManager;
     private final LoyaltyManager loyaltyManager;
     private final StockManager stockManager;
+    private final BattlePassService battlePassService;
     private final MessageManager messages;
 
     /** Panier (voir /boutique panier) : entierement en memoire, jamais persiste (comme le code
@@ -50,7 +52,7 @@ public class ShopService {
     public ShopService(ShopManager shopManager, EconomyManager economyManager, RewardGiver rewardGiver,
                         CustomItemManager customItemManager, RankManager rankManager, TalentManager talentManager,
                         PromotionManager promotionManager, TokenManager tokenManager, LoyaltyManager loyaltyManager,
-                        StockManager stockManager, MessageManager messages) {
+                        StockManager stockManager, BattlePassService battlePassService, MessageManager messages) {
         this.shopManager = shopManager;
         this.economyManager = economyManager;
         this.rewardGiver = rewardGiver;
@@ -61,6 +63,7 @@ public class ShopService {
         this.tokenManager = tokenManager;
         this.loyaltyManager = loyaltyManager;
         this.stockManager = stockManager;
+        this.battlePassService = battlePassService;
         this.messages = messages;
     }
 
@@ -131,6 +134,14 @@ public class ShopService {
         int ancienPoints = loyaltyManager.getPoints(player.getUniqueId());
         int nouveauxPoints = loyaltyManager.addPointsForPurchase(player.getUniqueId(), prixFinal);
         awardNewLoyaltyTiersIfAny(player, ancienPoints, nouveauxPoints);
+
+        long xpBattlepassGagnee = Math.round(prixFinal / 100.0 * promotionManager.getXpBattlepassPar100Argent());
+        if (xpBattlepassGagnee > 0) {
+            battlePassService.addXp(player, xpBattlepassGagnee);
+            if (notifier) {
+                messages.send(player, "boutique.xp-battlepass-gagnee", Map.of("xp", String.valueOf(xpBattlepassGagnee)));
+            }
+        }
 
         if (notifier) {
             Map<String, String> placeholders = new HashMap<>();

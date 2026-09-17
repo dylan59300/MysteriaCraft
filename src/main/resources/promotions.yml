@@ -48,3 +48,8 @@ jetons:
   cashback-jeton-par-100-argent: 1
   taux-argent-par-jeton-min: 80
   taux-argent-par-jeton-max: 120
+
+# Integration avec le BattlePass (voir "idee : integrations inter-modules") : chaque achat en
+# boutique donne aussi un peu d'xp BattlePass, proportionnelle a l'argent REELLEMENT depense
+# (apres reductions). 0 = desactive.
+xp-battlepass-par-100-argent: 5

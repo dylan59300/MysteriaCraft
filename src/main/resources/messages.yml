@@ -562,6 +562,7 @@ boutique:
   editeur-saisir-stock-max: "&eTapez dans le chat le nouveau stock maximum (0 = illimite)."
   editeur-valeur-invalide: "&cValeur invalide."
   editeur-valeur-modifiee: "&aValeur mise a jour."
+  xp-battlepass-gagnee: "&d+{xp} xp BattlePass !"
 
 prestige:
   info: "&6&lPrestige &7- Niveau actuel : &e{niveau} &7(&e{bonus}%&7 bonus de vente). &7Prochain : &e{nom-suivant} &7pour &e{cout} &7(&e{bonus-suivant}%&7 bonus). Tapez &e/prestige confirmer"

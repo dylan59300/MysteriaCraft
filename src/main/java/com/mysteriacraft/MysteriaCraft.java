@@ -719,7 +719,7 @@ public final class MysteriaCraft extends JavaPlugin {
         this.tokenManager = new TokenManager(this, database, promotionsConfig);
         this.stockManager = new StockManager(this, database);
         this.shopService = new ShopService(shopManager, economyManager, rewardGiver, customItemManager, rankManager,
-                talentManager, promotionManager, tokenManager, loyaltyManager, stockManager, messages);
+                talentManager, promotionManager, tokenManager, loyaltyManager, stockManager, battlePassService, messages);
         ShopEditorService shopEditorService = new ShopEditorService(this, shopManager, messages);
         Bukkit.getPluginManager().registerEvents(new ShopEditorChatListener(this, shopEditorService), this);
         getCommand("boutique").setExecutor(new ShopCommand(this, boutiqueConfig, promotionsConfig, fideliteConfig,
