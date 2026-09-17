@@ -27,7 +27,7 @@ public final class AdminRegistry {
             new AdminModule("Pets", Material.BONE, "mysteriacraft.pets.admin",
                     "petsadmin reload", null, "pets", false),
             new AdminModule("Lucky Block", Material.END_CRYSTAL, "mysteriacraft.luckyblock.admin",
-                    "luckyblockadmin reload", null, "luckyblock", false),
+                    "luckyblockadmin reload", "luckyblockadmin editeur", "luckyblock", false),
             new AdminModule("Items Custom", Material.NETHERITE_INGOT, "mysteriacraft.customitem.admin", "customitem reload"),
             new AdminModule("Machine a Transformation", Material.FURNACE, "mysteriacraft.machine.admin", "machine reload"),
             new AdminModule("Machine a Miner", Material.IRON_PICKAXE, "mysteriacraft.machineminiere.admin", "machineminiere reload"),
