@@ -1,7 +1,9 @@
 package com.mysteriacraft.battlepass.commands;
 
+import com.mysteriacraft.battlepass.BattlePassEditorService;
 import com.mysteriacraft.battlepass.BattlePassManager;
 import com.mysteriacraft.battlepass.BattlePassService;
+import com.mysteriacraft.battlepass.gui.BattlePassEditorGui;
 import com.mysteriacraft.core.config.ConfigManager;
 import com.mysteriacraft.core.config.MessageManager;
 import org.bukkit.Bukkit;
@@ -25,14 +27,16 @@ public class BattlePassAdminCommand implements CommandExecutor {
     private final ConfigManager battlepassConfig;
     private final BattlePassManager manager;
     private final BattlePassService service;
+    private final BattlePassEditorService editorService;
     private final MessageManager messages;
 
     public BattlePassAdminCommand(Plugin plugin, ConfigManager battlepassConfig, BattlePassManager manager,
-                                   BattlePassService service, MessageManager messages) {
+                                   BattlePassService service, BattlePassEditorService editorService, MessageManager messages) {
         this.plugin = plugin;
         this.battlepassConfig = battlepassConfig;
         this.manager = manager;
         this.service = service;
+        this.editorService = editorService;
         this.messages = messages;
     }
 
@@ -60,6 +64,15 @@ public class BattlePassAdminCommand implements CommandExecutor {
         if (args[0].equalsIgnoreCase("nouvellesaison")) {
             manager.forceArchiveSeasonNow();
             messages.send(sender, "battlepass.saison-archivee");
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("editeur")) {
+            if (!(sender instanceof Player player)) {
+                messages.send(sender, "general.commande-joueur-uniquement");
+                return true;
+            }
+            new BattlePassEditorGui(plugin, player, manager, editorService, messages).open();
             return true;
         }
 

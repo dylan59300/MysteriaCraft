@@ -16,6 +16,13 @@ saison:
   numero: 1
   nom: "Saison 1 : Les Fondations"
   fin: "2026-12-31"
+  # rotation: true (defaut) = les paliers ci-dessous ("niveaux") sont automatiquement reutilises
+  # a l'identique pour la saison suivante (comme le vrai plugin BattlePass). Passez a "false" si
+  # vous voulez etre OBLIGE de configurer de nouveaux paliers a chaque saison : a l'archivage, les
+  # paliers actuels sont sauvegardes dans plugins/MysteriaCraft/battlepass_archives/saison-N.yml
+  # puis vides (le menu affichera "aucun palier" jusqu'a ce qu'un admin en redefinisse via
+  # l'editeur en jeu ou battlepass.yml, puis /battlepassadmin reload).
+  rotation: true
 # gratuit / premium : n'importe quel type de Reward (voir RewardParser), ITEM/ECONOMIE/BOOST_XP/
 #                     PET/LUCKYBLOCK/OBJET_CUSTOM/GENERATEUR/MACHINE/AGRANDISSEMENT_ILE/TITRE_CHAT.
 #                     Laisser absent = pas de recompense sur cette piste.
@@ -53,6 +60,43 @@ evenements-xp:
 chapitres:
   1: "Les Fondations"
   2: "L'Ascension"
+
+# Missions quotidiennes integrees au BattlePass (comme le vrai plugin), independantes du module
+# Quetes : chaque jour, "nombre-par-jour" missions sont tirees au hasard parmi "modeles" (avec un
+# objectif aleatoire entre quantite-min/max), et terminer une mission donne de l'xp BattlePass
+# directement. Voir /battlepass missions.
+missions-quotidiennes:
+  nombre-par-jour: 3
+  xp-recompense-min: 30
+  xp-recompense-max: 80
+  modeles:
+    - type: MINER
+      materiel: STONE
+      quantite-min: 32
+      quantite-max: 96
+    - type: MINER
+      materiel: IRON_ORE
+      quantite-min: 8
+      quantite-max: 24
+    - type: MINER
+      materiel: DIAMOND_ORE
+      quantite-min: 2
+      quantite-max: 6
+    - type: TUER
+      entite: ZOMBIE
+      quantite-min: 5
+      quantite-max: 15
+    - type: TUER
+      entite: SKELETON
+      quantite-min: 5
+      quantite-max: 15
+    - type: TUER
+      entite: SPIDER
+      quantite-min: 5
+      quantite-max: 15
+    - type: PECHER
+      quantite-min: 5
+      quantite-max: 20
 
 niveaux:
   1:

@@ -13,11 +13,15 @@ import com.mysteriacraft.economy.commands.PayCommand;
 import com.mysteriacraft.economy.commands.PayConfirmCommand;
 import com.mysteriacraft.economy.listeners.EconomyJoinQuitListener;
 import com.mysteriacraft.core.gui.MenuListener;
+import com.mysteriacraft.battlepass.BattlePassEditorService;
 import com.mysteriacraft.battlepass.BattlePassManager;
+import com.mysteriacraft.battlepass.BattlePassMissionManager;
 import com.mysteriacraft.battlepass.BattlePassService;
 import com.mysteriacraft.battlepass.commands.BattlePassAdminCommand;
 import com.mysteriacraft.battlepass.commands.BattlePassCommand;
 import com.mysteriacraft.battlepass.commands.BattlePassConfirmPremiumCommand;
+import com.mysteriacraft.battlepass.listeners.BattlePassEditorChatListener;
+import com.mysteriacraft.battlepass.listeners.BattlePassMissionListener;
 import com.mysteriacraft.battlepass.listeners.ChatTitleListener;
 import com.mysteriacraft.quests.QuestManager;
 import com.mysteriacraft.quests.QuestService;
@@ -168,6 +172,7 @@ public final class MysteriaCraft extends JavaPlugin {
     private ConfigManager battlepassConfig;
     private BattlePassManager battlePassManager;
     private BattlePassService battlePassService;
+    private BattlePassMissionManager battlePassMissionManager;
 
     private ConfigManager questsConfig;
     private QuestManager questManager;
@@ -431,9 +436,17 @@ public final class MysteriaCraft extends JavaPlugin {
         rewardGiver.setTitleUnlockHandler(battlePassService);
         Bukkit.getPluginManager().registerEvents(new ChatTitleListener(battlePassService), this);
 
-        getCommand("battlepass").setExecutor(new BattlePassCommand(this, battlePassManager, battlePassService, messages));
+        this.battlePassMissionManager = new BattlePassMissionManager(this, database, battlepassConfig);
+        Bukkit.getPluginManager().registerEvents(
+                new BattlePassMissionListener(this, battlePassMissionManager, battlePassService, messages), this);
+
+        BattlePassEditorService battlePassEditorService = new BattlePassEditorService(this, battlePassManager, messages);
+        Bukkit.getPluginManager().registerEvents(new BattlePassEditorChatListener(this, battlePassEditorService), this);
+
+        getCommand("battlepass").setExecutor(
+                new BattlePassCommand(this, battlePassManager, battlePassService, battlePassMissionManager, messages));
         getCommand("battlepassadmin").setExecutor(
-                new BattlePassAdminCommand(this, battlepassConfig, battlePassManager, battlePassService, messages));
+                new BattlePassAdminCommand(this, battlepassConfig, battlePassManager, battlePassService, battlePassEditorService, messages));
         getCommand("battlepassconfirmpremium").setExecutor(
                 new BattlePassConfirmPremiumCommand(battlePassService, messages));
 

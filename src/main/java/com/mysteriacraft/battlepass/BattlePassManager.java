@@ -45,6 +45,7 @@ public class BattlePassManager {
     private int seasonNumero = 1;
     private String seasonNom = "Saison 1";
     private LocalDate seasonFin = LocalDate.now().plusMonths(3);
+    private boolean seasonRotationEnabled = true;
 
     /** Fenetres d'evenement double xp (ou autre multiplicateur) optionnelles, voir "evenements-xp"
      * dans battlepass.yml. Reutilise le meme format actif-du/actif-au que les quetes saisonnieres. */
@@ -144,6 +145,7 @@ public class BattlePassManager {
         if (saisonSection != null) {
             seasonNumero = Math.max(1, saisonSection.getInt("numero", 1));
             seasonNom = saisonSection.getString("nom", "Saison " + seasonNumero);
+            seasonRotationEnabled = saisonSection.getBoolean("rotation", true);
             try {
                 seasonFin = LocalDate.parse(saisonSection.getString("fin", LocalDate.now().plusMonths(3).toString()));
             } catch (Exception e) {
@@ -256,6 +258,10 @@ public class BattlePassManager {
         return Math.max(0, ChronoUnit.DAYS.between(LocalDate.now(), seasonFin));
     }
 
+    public boolean isSeasonRotationEnabled() {
+        return seasonRotationEnabled;
+    }
+
     /** Multiplicateur d'xp cumule de tous les evenements actuellement actifs (voir "evenements-xp"),
      * 1.0 si aucun n'est actif. Plusieurs evenements simultanes se MULTIPLIENT entre eux. */
     public double getActiveEventMultiplier() {
@@ -298,6 +304,74 @@ public class BattlePassManager {
             }
         }
         return null;
+    }
+
+    // ---- Editeur de paliers en jeu (voir /battlepassadmin editeur) ----
+
+    /** Cree un nouveau palier (xp-requis = dernier palier + 500, meme chapitre que le dernier,
+     * sans recompense) et le sauvegarde immediatement dans battlepass.yml. Renvoie son numero. */
+    public synchronized int addLevel() {
+        int newLevel = getMaxLevelNumber() + 1;
+        BattlePassLevel last = getLevel(getMaxLevelNumber());
+        long xpRequired = last != null ? last.xpRequired() + 500 : 0;
+        int chapitre = last != null ? last.chapitre() : 1;
+        ConfigurationSection section = battlepassConfig.get().getConfigurationSection("niveaux");
+        if (section == null) {
+            section = battlepassConfig.get().createSection("niveaux");
+        }
+        ConfigurationSection nouveau = section.createSection(String.valueOf(newLevel));
+        nouveau.set("xp-requis", xpRequired);
+        nouveau.set("chapitre", chapitre);
+        battlepassConfig.save();
+        loadLevels();
+        return newLevel;
+    }
+
+    /** Supprime un palier de battlepass.yml (les reclamations deja faites par les joueurs sur ce
+     * palier restent en base, sans effet, mais ne genent rien). */
+    public synchronized void removeLevel(int level) {
+        ConfigurationSection section = battlepassConfig.get().getConfigurationSection("niveaux");
+        if (section != null) {
+            section.set(String.valueOf(level), null);
+            battlepassConfig.save();
+            loadLevels();
+        }
+    }
+
+    public synchronized void setLevelXpRequired(int level, long xpRequired) {
+        editLevelSection(level, section -> section.set("xp-requis", Math.max(0, xpRequired)));
+    }
+
+    public synchronized void setLevelChapitre(int level, int chapitre) {
+        editLevelSection(level, section -> section.set("chapitre", Math.max(0, chapitre)));
+    }
+
+    /** Definit (ou efface si item == null) la recompense ITEM d'une piste ("gratuit"/"premium")
+     * d'un palier, a partir d'un ItemStack (typiquement l'objet tenu en main par l'admin). */
+    public synchronized void setLevelReward(int level, String piste, org.bukkit.inventory.ItemStack item) {
+        editLevelSection(level, section -> {
+            if (item == null || item.getType().isAir()) {
+                section.set(piste, null);
+                return;
+            }
+            section.set(piste + ".type", "ITEM");
+            section.set(piste + ".materiel", item.getType().name());
+            section.set(piste + ".quantite", item.getAmount());
+        });
+    }
+
+    private void editLevelSection(int level, java.util.function.Consumer<ConfigurationSection> editor) {
+        ConfigurationSection root = battlepassConfig.get().getConfigurationSection("niveaux");
+        if (root == null) {
+            return;
+        }
+        ConfigurationSection section = root.getConfigurationSection(String.valueOf(level));
+        if (section == null) {
+            return;
+        }
+        editor.accept(section);
+        battlepassConfig.save();
+        loadLevels();
     }
 
     // ---- Progression joueur ----
@@ -758,7 +832,36 @@ public class BattlePassManager {
         } catch (SQLException e) {
             plugin.getLogger().severe("Erreur reinitialisation des roulements mystere pour la nouvelle saison : " + e.getMessage());
         }
+
+        if (!seasonRotationEnabled) {
+            archiveLevelsConfigToFile(numeroTermine);
+            battlepassConfig.get().set("niveaux", null);
+            battlepassConfig.save();
+            loadLevels();
+        }
         plugin.getLogger().info("BattlePass : saison " + numeroTermine + " archivee, xp/premium reinitialises pour tous.");
+    }
+
+    /** Sauvegarde la section "niveaux" actuelle dans un fichier separe avant de la vider (voir
+     * "rotation: false" dans battlepass.yml), pour ne jamais perdre la configuration des paliers
+     * d'une saison passee. */
+    private void archiveLevelsConfigToFile(int numeroTermine) {
+        ConfigurationSection niveauxSection = battlepassConfig.get().getConfigurationSection("niveaux");
+        if (niveauxSection == null) {
+            return;
+        }
+        try {
+            java.io.File dossier = new java.io.File(plugin.getDataFolder(), "battlepass_archives");
+            if (!dossier.exists()) {
+                dossier.mkdirs();
+            }
+            java.io.File fichier = new java.io.File(dossier, "saison-" + numeroTermine + ".yml");
+            org.bukkit.configuration.file.YamlConfiguration archive = new org.bukkit.configuration.file.YamlConfiguration();
+            archive.set("niveaux", niveauxSection);
+            archive.save(fichier);
+        } catch (Exception e) {
+            plugin.getLogger().severe("Erreur archivage des paliers de la saison " + numeroTermine + " : " + e.getMessage());
+        }
     }
 
     /** Classement de la saison EN COURS (voir /battlepass top), trie par xp decroissante. */

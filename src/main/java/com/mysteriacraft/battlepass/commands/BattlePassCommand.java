@@ -1,6 +1,7 @@
 package com.mysteriacraft.battlepass.commands;
 
 import com.mysteriacraft.battlepass.BattlePassManager;
+import com.mysteriacraft.battlepass.BattlePassMissionManager;
 import com.mysteriacraft.battlepass.BattlePassService;
 import com.mysteriacraft.battlepass.gui.BattlePassGui;
 import com.mysteriacraft.core.config.MessageManager;
@@ -19,12 +20,15 @@ public class BattlePassCommand implements CommandExecutor {
     private final Plugin plugin;
     private final BattlePassManager manager;
     private final BattlePassService service;
+    private final BattlePassMissionManager missionManager;
     private final MessageManager messages;
 
-    public BattlePassCommand(Plugin plugin, BattlePassManager manager, BattlePassService service, MessageManager messages) {
+    public BattlePassCommand(Plugin plugin, BattlePassManager manager, BattlePassService service,
+                              BattlePassMissionManager missionManager, MessageManager messages) {
         this.plugin = plugin;
         this.manager = manager;
         this.service = service;
+        this.missionManager = missionManager;
         this.messages = messages;
     }
 
@@ -67,6 +71,10 @@ public class BattlePassCommand implements CommandExecutor {
                 }
                 case "historique" -> {
                     handleHistory(player);
+                    return true;
+                }
+                case "missions" -> {
+                    handleMissions(player);
                     return true;
                 }
                 default -> {
@@ -173,6 +181,28 @@ public class BattlePassCommand implements CommandExecutor {
                     placeholders.put("niveau", String.valueOf(entry.niveau()));
                     placeholders.put("xp", String.valueOf(entry.xp()));
                     messages.send(player, "battlepass.historique-ligne", placeholders);
+                }
+            });
+        });
+    }
+
+    private void handleMissions(Player player) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            var missions = missionManager.getOrGenerateDailyMissions(player.getUniqueId());
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (missions.isEmpty()) {
+                    messages.send(player, "battlepass.missions-vide");
+                    return;
+                }
+                messages.send(player, "battlepass.missions-titre");
+                for (BattlePassMissionManager.Mission mission : missions) {
+                    Map<String, String> placeholders = new HashMap<>();
+                    placeholders.put("type", mission.type().name());
+                    placeholders.put("cible", mission.cible());
+                    placeholders.put("progression", String.valueOf(mission.progression()));
+                    placeholders.put("objectif", String.valueOf(mission.objectif()));
+                    placeholders.put("xp", String.valueOf(mission.xpRecompense()));
+                    messages.send(player, mission.terminee() ? "battlepass.missions-ligne-terminee" : "battlepass.missions-ligne-encours", placeholders);
                 }
             });
         });

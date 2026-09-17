@@ -29,10 +29,10 @@ commands:
     permission: mysteriacraft.eco.admin
   battlepass:
     description: Ouvre le menu du BattlePass (par saisons)
-    usage: /<command> [prestige|sprint|stats|donner|titre|titres|top|historique]
+    usage: /<command> [prestige|sprint|stats|donner|titre|titres|top|historique|missions]
   battlepassadmin:
-    description: Gere le BattlePass (addxp, reload, nouvellesaison)
-    usage: /<command> <addxp <joueur> <montant>|reload|nouvellesaison>
+    description: Gere le BattlePass (addxp, reload, nouvellesaison, editeur)
+    usage: /<command> <addxp <joueur> <montant>|reload|nouvellesaison|editeur>
     permission: mysteriacraft.battlepass.admin
   battlepassconfirmpremium:
     description: Confirme l'achat en attente du Pass Premium
