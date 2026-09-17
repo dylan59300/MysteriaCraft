@@ -1461,3 +1461,276 @@ items:
       ingredients:
         I: IRON_BLOCK
         A: ANVIL
+
+  # =========================================
+  #   Set Platinum (import complet, avec vraie texture via resource pack)
+  # =========================================
+  # custom-model-data + resource pack officiel du serveur (voir /resourcepack) : sans le pack
+  # installe, ces items gardent juste l'apparence de leur item-de-base vanilla.
+  # Le lingot n'a volontairement pas de recette : il s'obtient en passant le minerai brut a la
+  # Raffinerie (voir raffine-vers ci-dessous), comme un minerai vanilla classique.
+  # Le pepite n'a ni source ni recette (limitation du moteur de recette : un seul craft possible par
+  # item) : uniquement obtenable via le tirage aleatoire de la Machine a Transformation.
+  # L'armure utilise une base DOREE (et non diamant) : c'est la texture de couche portee (layer1/2)
+  # du DIAMANT qui aurait du etre sacrifiee sinon, alors que l'or est bien moins utilise par les
+  # joueurs. Les bonus d'armure ci-dessous sont calcules pour ATTEINDRE le meme total final que le
+  # set d'origine (armure-bonus = total vise - armure de base de l'item dore).
+  raw_platinum:
+    nom: "&fPlatine Brut"
+    lore:
+      - "&7Un minerai brillant et tres dense,"
+      - "&7a faire fondre a la Raffinerie."
+    item-de-base: RAW_IRON
+    minerais-source: [IRON_ORE, DEEPSLATE_IRON_ORE]
+    chance-drop: 6
+    prix-vente: 100
+    custom-model-data: 1
+    raffine-vers: platinum_ingot
+
+  platinum_ingot:
+    nom: "&fLingot de Platine"
+    lore:
+      - "&7Obtenu en raffinant du Platine Brut."
+    item-de-base: IRON_INGOT
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 250
+    custom-model-data: 2
+
+  platinum_nugget:
+    nom: "&fPepite de Platine"
+    lore:
+      - "&7Un petit fragment de platine."
+    item-de-base: IRON_NUGGET
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 25
+    custom-model-data: 3
+
+  platinum_block:
+    nom: "&fBloc de Platine"
+    lore:
+      - "&7Un bloc de stockage compact."
+      - "&7(l'apparence en tant que bloc pose"
+      - "&7reste celle d'un bloc de fer vanilla)"
+    item-de-base: IRON_BLOCK
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    custom-model-data: 4
+    # Craftable a l'etabli : 9 lingots de platine (compaction).
+    recette:
+      forme:
+        - "III"
+        - "III"
+        - "III"
+      ingredients-custom:
+        I: platinum_ingot
+
+  platinum_raw_block:
+    nom: "&fBloc de Platine Brut"
+    lore:
+      - "&7Un bloc de stockage compact pour"
+      - "&7le minerai brut."
+      - "&7(l'apparence en tant que bloc pose"
+      - "&7reste celle d'un bloc de fer brut vanilla)"
+    item-de-base: RAW_IRON_BLOCK
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 0
+    custom-model-data: 5
+    # Craftable a l'etabli : 9 platines bruts (compaction).
+    recette:
+      forme:
+        - "RRR"
+        - "RRR"
+        - "RRR"
+      ingredients-custom:
+        R: raw_platinum
+
+  platinum_sword:
+    nom: "&fEpee de Platine"
+    lore:
+      - "&7Aussi tranchante qu'une lame de diamant,"
+      - "&7mais bien plus resistante."
+    item-de-base: DIAMOND_SWORD
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 600
+    durabilite-custom: 1800
+    custom-model-data: 6
+    recette:
+      forme:
+        - " I "
+        - " I "
+        - " S "
+      ingredients:
+        S: STICK
+      ingredients-custom:
+        I: platinum_ingot
+
+  platinum_pickaxe:
+    nom: "&fPioche de Platine"
+    lore:
+      - "&7Mine aussi bien qu'une pioche en diamant,"
+      - "&7mais bien plus resistante."
+    item-de-base: DIAMOND_PICKAXE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 600
+    durabilite-custom: 1800
+    custom-model-data: 7
+    recette:
+      forme:
+        - "III"
+        - " S "
+        - " S "
+      ingredients:
+        S: STICK
+      ingredients-custom:
+        I: platinum_ingot
+
+  platinum_axe:
+    nom: "&fHache de Platine"
+    lore:
+      - "&7Aussi efficace qu'une hache en diamant,"
+      - "&7mais bien plus resistante."
+    item-de-base: DIAMOND_AXE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 600
+    durabilite-custom: 1800
+    custom-model-data: 8
+    recette:
+      forme:
+        - "II "
+        - "IS "
+        - " S "
+      ingredients:
+        S: STICK
+      ingredients-custom:
+        I: platinum_ingot
+
+  platinum_shovel:
+    nom: "&fPelle de Platine"
+    lore:
+      - "&7Aussi efficace qu'une pelle en diamant,"
+      - "&7mais bien plus resistante."
+    item-de-base: DIAMOND_SHOVEL
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 500
+    durabilite-custom: 1800
+    custom-model-data: 9
+    recette:
+      forme:
+        - " I "
+        - " S "
+        - " S "
+      ingredients:
+        S: STICK
+      ingredients-custom:
+        I: platinum_ingot
+
+  platinum_hoe:
+    nom: "&fHoue de Platine"
+    lore:
+      - "&7Aussi efficace qu'une houe en diamant,"
+      - "&7mais bien plus resistante."
+    item-de-base: DIAMOND_HOE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 500
+    durabilite-custom: 1800
+    custom-model-data: 10
+    recette:
+      forme:
+        - "II "
+        - " S "
+        - " S "
+      ingredients:
+        S: STICK
+      ingredients-custom:
+        I: platinum_ingot
+
+  platinum_helmet:
+    nom: "&fCasque de Platine"
+    lore:
+      - "&7Une protection eclatante,"
+      - "&7digne d'un metal rare."
+      - "&7+1 armure"
+    item-de-base: GOLDEN_HELMET
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 700
+    armure-bonus: 1
+    durabilite-custom: 468
+    custom-model-data: 11
+    recette:
+      forme:
+        - "III"
+        - "I I"
+      ingredients-custom:
+        I: platinum_ingot
+
+  platinum_chestplate:
+    nom: "&fPlastron de Platine"
+    lore:
+      - "&7Une protection eclatante,"
+      - "&7digne d'un metal rare."
+      - "&7+3 armure"
+    item-de-base: GOLDEN_CHESTPLATE
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 900
+    armure-bonus: 3
+    durabilite-custom: 680
+    custom-model-data: 12
+    recette:
+      forme:
+        - "I I"
+        - "III"
+        - "III"
+      ingredients-custom:
+        I: platinum_ingot
+
+  platinum_leggings:
+    nom: "&fJambieres de Platine"
+    lore:
+      - "&7Une protection eclatante,"
+      - "&7digne d'un metal rare."
+      - "&7+4 armure"
+    item-de-base: GOLDEN_LEGGINGS
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 850
+    armure-bonus: 4
+    durabilite-custom: 638
+    custom-model-data: 13
+    recette:
+      forme:
+        - "III"
+        - "I I"
+        - "I I"
+      ingredients-custom:
+        I: platinum_ingot
+
+  platinum_boots:
+    nom: "&fBottes de Platine"
+    lore:
+      - "&7Une protection eclatante,"
+      - "&7digne d'un metal rare."
+      - "&7+2 armure"
+    item-de-base: GOLDEN_BOOTS
+    minerais-source: []
+    chance-drop: 0
+    prix-vente: 600
+    armure-bonus: 2
+    durabilite-custom: 494
+    custom-model-data: 14
+    recette:
+      forme:
+        - "I I"
+        - "I I"
+      ingredients-custom:
+        I: platinum_ingot

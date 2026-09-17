@@ -99,6 +99,16 @@ public class CustomItemManager {
                 for (Map.Entry<Character, Material> entry : definition.recipeIngredients().entrySet()) {
                     recipe.setIngredient(entry.getKey(), entry.getValue());
                 }
+                for (Map.Entry<Character, String> entry : definition.recipeCustomIngredients().entrySet()) {
+                    CustomItemDefinition ingredientDefinition = getItem(entry.getValue());
+                    if (ingredientDefinition == null) {
+                        plugin.getLogger().warning("Ingredient custom inconnu pour la recette de '" + definition.id()
+                                + "' : " + entry.getValue());
+                        continue;
+                    }
+                    recipe.setIngredient(entry.getKey(), new org.bukkit.inventory.RecipeChoice.ExactChoice(
+                            createItem(ingredientDefinition)));
+                }
                 Bukkit.addRecipe(recipe);
             } catch (IllegalArgumentException e) {
                 plugin.getLogger().severe("Recette invalide pour l'item custom '" + definition.id() + "' : " + e.getMessage());
@@ -128,6 +138,7 @@ public class CustomItemManager {
 
         List<String> recipeShape = List.of();
         Map<Character, Material> recipeIngredients = new LinkedHashMap<>();
+        Map<Character, String> recipeCustomIngredients = new LinkedHashMap<>();
         ConfigurationSection recette = section.getConfigurationSection("recette");
         if (recette != null) {
             recipeShape = recette.getStringList("forme");
@@ -146,6 +157,19 @@ public class CustomItemManager {
                         continue;
                     }
                     recipeIngredients.put(charKey.charAt(0), ingredientMaterial);
+                }
+            }
+            // Ingredients qui sont eux-memes des items custom (impossible via "ingredients" qui ne
+            // connait que des materiaux vanilla, voir ShapedRecipe#setIngredient(char, Material)).
+            ConfigurationSection customIngredientsSection = recette.getConfigurationSection("ingredients-custom");
+            if (customIngredientsSection != null) {
+                for (String charKey : customIngredientsSection.getKeys(false)) {
+                    if (charKey.length() != 1) {
+                        plugin.getLogger().warning("Cle d'ingredient custom invalide (1 caractere attendu) pour l'item custom '"
+                                + id + "' : " + charKey);
+                        continue;
+                    }
+                    recipeCustomIngredients.put(charKey.charAt(0), customIngredientsSection.getString(charKey));
                 }
             }
         }
@@ -168,10 +192,12 @@ public class CustomItemManager {
         double volDeVie = section.getDouble("vol-de-vie", 0);
         int durabiliteCustom = Math.max(0, section.getInt("durabilite-custom", 0));
         boolean excluLootMachine = section.getBoolean("exclu-loot-machine", false);
+        int customModelData = Math.max(0, section.getInt("custom-model-data", 0));
+        String raffineVersId = section.contains("raffine-vers") ? section.getString("raffine-vers") : null;
 
         return new CustomItemDefinition(id, displayName, lore, baseItem, sourceOres, dropChance,
                 sellPrice, recipeShape, recipeIngredients, enchantments, extraAttackDamage, extraArmor, unbreakable,
-                volDeVie, durabiliteCustom, excluLootMachine);
+                volDeVie, durabiliteCustom, excluLootMachine, customModelData, raffineVersId, recipeCustomIngredients);
     }
 
     public List<CustomItemDefinition> getItemsSorted() {
@@ -231,6 +257,9 @@ public class CustomItemManager {
             }
             if (definition.unbreakable()) {
                 meta.setUnbreakable(true);
+            }
+            if (definition.hasCustomModelData()) {
+                meta.setCustomModelData(definition.customModelData());
             }
             if (definition.isGear()) {
                 // La lore custom decrit deja les bonus : masque les lignes vanilla redondantes

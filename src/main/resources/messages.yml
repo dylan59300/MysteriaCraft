@@ -797,6 +797,11 @@ etabli:
   craft-reussi-forgeron: "&a&lRecette fabriquee ! &e{recette} &7(bonus Forgeron : un ingredient economise)"
   reload: "&aL'Etabli a ete recharge."
   gui-verrouillee: "&c&l??? Recette non decouverte ???"
+
+resourcepack:
+  envoye: "&aEnvoi du resource pack du serveur..."
+  non-configure: "&cAucun resource pack n'est configure sur ce serveur."
+  reload: "&aLa configuration du resource pack a ete rechargee."
   gui-trouver-parchemin: "&7Trouvez le Parchemin correspondant"
   gui-ingredients: "&6&lIngredients requis :"
   gui-clic-craft: "&eCliquez pour fabriquer"

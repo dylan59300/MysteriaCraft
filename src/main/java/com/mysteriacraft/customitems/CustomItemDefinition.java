@@ -34,6 +34,17 @@ import java.util.Map;
  *                          Machine a Transformation (voir MachineService#pickRandomCustomItem) :
  *                          reserve aux items qui ne doivent PAS sortir du RNG (ex: l'oeuf du PNJ
  *                          Marchand, deliberement uniquement craftable/en recompense ciblee).
+ * @param customModelData valeur CustomModelData appliquee a l'item (0 = aucune), utilisee par un
+ *                         resource pack pour lui donner une texture propre (voir
+ *                         "resource pack Platinum" et les modeles vanilla surcharges correspondants).
+ *                         Sans resource pack installe cote client, l'item garde juste l'apparence
+ *                         de son item-de-base.
+ * @param raffineVersId id d'un AUTRE item custom obtenu en passant celui-ci a la Raffinerie (voir
+ *                       RaffinerieManager), typiquement un minerai brut custom -> son lingot custom.
+ *                       null = pas de conversion (comportement par defaut, inchange).
+ * @param recipeCustomIngredients association caractere de la forme -> id d'un AUTRE item custom
+ *                                requis dans la recette (en plus/a la place de recipeIngredients,
+ *                                qui ne peut referencer que des materiaux vanilla). Vide = aucun.
  */
 public record CustomItemDefinition(
         String id,
@@ -51,7 +62,10 @@ public record CustomItemDefinition(
         boolean unbreakable,
         double volDeVie,
         int durabiliteCustom,
-        boolean excluLootMachine
+        boolean excluLootMachine,
+        int customModelData,
+        String raffineVersId,
+        Map<Character, String> recipeCustomIngredients
 ) {
 
     public boolean hasNaturalSource() {
@@ -72,5 +86,13 @@ public record CustomItemDefinition(
 
     public boolean hasCustomDurability() {
         return durabiliteCustom > 0;
+    }
+
+    public boolean hasCustomModelData() {
+        return customModelData > 0;
+    }
+
+    public boolean hasRaffinage() {
+        return raffineVersId != null;
     }
 }

@@ -194,6 +194,11 @@ commands:
     description: Recharge la configuration de l'Etabli Ameliore (admin)
     usage: /<command> reload
     permission: mysteriacraft.etabli.admin
+  resourcepack:
+    description: Renvoie le resource pack du serveur (textures des items custom), ou le recharge (admin)
+    usage: /<command> [reload]
+    # Pas de "permission:" ici : renvoyer le pack doit rester accessible a tout joueur. reload est
+    # verifie manuellement dans le code (mysteriacraft.resourcepack.admin).
 
 permissions:
   mysteriacraft.admin:
@@ -291,4 +296,7 @@ permissions:
     default: op
   mysteriacraft.etabli.admin:
     description: Autorise la gestion admin de l'Etabli Ameliore (reload)
+    default: op
+  mysteriacraft.resourcepack.admin:
+    description: Autorise la gestion admin du resource pack (reload)
     default: op

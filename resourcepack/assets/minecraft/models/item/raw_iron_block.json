@@ -1,0 +1,9 @@
+{
+  "parent": "block/raw_iron_block",
+  "overrides": [
+    {
+      "predicate": { "custom_model_data": 5 },
+      "model": "item/platinum_raw_block"
+    }
+  ]
+}

@@ -160,6 +160,9 @@ import com.mysteriacraft.mobscustom.listeners.MobListener;
 import com.mysteriacraft.etabli.EtabliManager;
 import com.mysteriacraft.etabli.EtabliService;
 import com.mysteriacraft.etabli.commands.EtabliCommand;
+import com.mysteriacraft.resourcepack.ResourcePackCommand;
+import com.mysteriacraft.resourcepack.ResourcePackListener;
+import com.mysteriacraft.resourcepack.ResourcePackManager;
 import com.mysteriacraft.etabli.listeners.EtabliListener;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
@@ -417,6 +420,9 @@ public final class MysteriaCraft extends JavaPlugin {
         // ---- Panel admin unifie (/admin, voir AdminRegistry) : independant, ne fait que
         // dispatcher les commandes deja enregistrees par les setup*() precedents. ----
         setupAdminPanel();
+
+        // ---- Resource pack officiel (textures des items custom, ex : Set Platine) ----
+        setupResourcePack();
 
         getLogger().info("MysteriaCraft active en " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -777,7 +783,7 @@ public final class MysteriaCraft extends JavaPlugin {
     private void setupRaffinerie() {
         this.raffinerieConfig = new ConfigManager(this, "raffinerie.yml");
         this.raffinerieManager = new RaffinerieManager(this, raffinerieConfig);
-        this.raffinerieService = new RaffinerieService(raffinerieManager, messages);
+        this.raffinerieService = new RaffinerieService(raffinerieManager, customItemManager, messages);
         Bukkit.getPluginManager().registerEvents(new RaffinerieListener(raffinerieManager, raffinerieService), this);
         getCommand("raffinerie").setExecutor(new RaffinerieCommand(raffinerieConfig, raffinerieManager, messages));
     }
@@ -866,6 +872,15 @@ public final class MysteriaCraft extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(
                 new EtabliListener(this, etabliManager, etabliService, customItemManager, messages), this);
         getCommand("etabli").setExecutor(new EtabliCommand(etabliConfig, etabliManager, messages));
+    }
+
+    private void setupResourcePack() {
+        ConfigManager resourcePackConfig = new ConfigManager(this, "resourcepack.yml");
+        ResourcePackManager resourcePackManager = new ResourcePackManager(resourcePackConfig);
+        ResourcePackListener resourcePackListener = new ResourcePackListener(this, resourcePackManager);
+        Bukkit.getPluginManager().registerEvents(resourcePackListener, this);
+        getCommand("resourcepack").setExecutor(
+                new ResourcePackCommand(resourcePackManager, resourcePackListener, messages));
     }
 
     private void setupAdminPanel() {
