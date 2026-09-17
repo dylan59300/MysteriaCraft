@@ -72,25 +72,55 @@ public class ShopEditorService {
         }
 
         PendingItemField pending = pendingItemField.remove(uuid);
-        if (pending != null) {
-            double valeur;
-            try {
-                valeur = Double.parseDouble(message.trim());
-            } catch (NumberFormatException e) {
-                messages.send(player, "boutique.editeur-valeur-invalide");
-                reopenItemEditor(player, pending);
-                return;
-            }
-            switch (pending.champ()) {
-                case "prix-achat" -> manager.setItemPrixAchat(pending.categoryId(), pending.itemId(), valeur);
-                case "prix-vente" -> manager.setItemPrixVente(pending.categoryId(), pending.itemId(), valeur);
-                case "stock-max" -> manager.setItemStockMax(pending.categoryId(), pending.itemId(), (int) valeur);
-                default -> {
-                }
-            }
-            messages.send(player, "boutique.editeur-valeur-modifiee");
-            reopenItemEditor(player, pending);
+        if (pending == null) {
+            return;
         }
+
+        if (pending.champ().equals("actif-du") || pending.champ().equals("actif-au")) {
+            handleDateInput(player, pending, message.trim());
+            return;
+        }
+
+        double valeur;
+        try {
+            valeur = Double.parseDouble(message.trim());
+        } catch (NumberFormatException e) {
+            messages.send(player, "boutique.editeur-valeur-invalide");
+            reopenItemEditor(player, pending);
+            return;
+        }
+        switch (pending.champ()) {
+            case "prix-achat" -> manager.setItemPrixAchat(pending.categoryId(), pending.itemId(), valeur);
+            case "prix-vente" -> manager.setItemPrixVente(pending.categoryId(), pending.itemId(), valeur);
+            case "stock-max" -> manager.setItemStockMax(pending.categoryId(), pending.itemId(), (int) valeur);
+            case "reappro-intervalle-minutes" -> manager.setItemReapproIntervalle(pending.categoryId(), pending.itemId(), (int) valeur);
+            case "reappro-quantite" -> manager.setItemReapproQuantite(pending.categoryId(), pending.itemId(), (int) valeur);
+            default -> {
+            }
+        }
+        messages.send(player, "boutique.editeur-valeur-modifiee");
+        reopenItemEditor(player, pending);
+    }
+
+    private static final java.util.regex.Pattern DATE_MM_JJ = java.util.regex.Pattern.compile(
+            "^(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$");
+
+    /** Saisie d'une date "MM-jj" (voir "editions saisonnieres") ; "aucun"/"aucune" efface la borne. */
+    private void handleDateInput(Player player, PendingItemField pending, String valeur) {
+        boolean effacer = valeur.equalsIgnoreCase("aucun") || valeur.equalsIgnoreCase("aucune");
+        if (!effacer && !DATE_MM_JJ.matcher(valeur).matches()) {
+            messages.send(player, "boutique.editeur-date-invalide");
+            reopenItemEditor(player, pending);
+            return;
+        }
+        String valeurFinale = effacer ? null : valeur;
+        if (pending.champ().equals("actif-du")) {
+            manager.setItemActifDu(pending.categoryId(), pending.itemId(), valeurFinale);
+        } else {
+            manager.setItemActifAu(pending.categoryId(), pending.itemId(), valeurFinale);
+        }
+        messages.send(player, "boutique.editeur-valeur-modifiee");
+        reopenItemEditor(player, pending);
     }
 
     private void reopenItemEditor(Player player, PendingItemField pending) {

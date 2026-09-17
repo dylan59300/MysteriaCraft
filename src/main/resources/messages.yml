@@ -562,6 +562,17 @@ boutique:
   editeur-saisir-stock-max: "&eTapez dans le chat le nouveau stock maximum (0 = illimite)."
   editeur-valeur-invalide: "&cValeur invalide."
   editeur-valeur-modifiee: "&aValeur mise a jour."
+  editeur-reappro-intervalle-nom: "&6&lReappro toutes les : {minutes} min"
+  editeur-reappro-quantite-nom: "&6&lQuantite reappro : {quantite}"
+  editeur-actif-du-nom: "&d&lActif du : {date}"
+  editeur-actif-au-nom: "&d&lActif au : {date}"
+  editeur-aucune-date: "&7(aucune)"
+  editeur-date-lore-format: "&7Format MM-jj (ex: 12-25), ou 'aucun' pour effacer"
+  editeur-date-invalide: "&cDate invalide (format attendu MM-jj, ex: 12-25, ou 'aucun')."
+  editeur-saisir-reappro-intervalle-minutes: "&eTapez dans le chat le nouvel intervalle de reappro (en minutes)."
+  editeur-saisir-reappro-quantite: "&eTapez dans le chat la nouvelle quantite reapprovisionnee a chaque intervalle."
+  editeur-saisir-actif-du: "&eTapez dans le chat la nouvelle date de debut (format MM-jj, ex: 12-25), ou 'aucun' pour effacer."
+  editeur-saisir-actif-au: "&eTapez dans le chat la nouvelle date de fin (format MM-jj, ex: 12-25), ou 'aucun' pour effacer."
   xp-battlepass-gagnee: "&d+{xp} xp BattlePass !"
 
 prestige:

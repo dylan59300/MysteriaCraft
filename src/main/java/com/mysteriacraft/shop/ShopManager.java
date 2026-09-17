@@ -307,6 +307,23 @@ public class ShopManager {
         editItemSection(categoryId, itemId, section -> section.set("stock-max", Math.max(0, stockMax)));
     }
 
+    public synchronized void setItemReapproIntervalle(String categoryId, String itemId, int minutes) {
+        editItemSection(categoryId, itemId, section -> section.set("reappro-intervalle-minutes", Math.max(1, minutes)));
+    }
+
+    public synchronized void setItemReapproQuantite(String categoryId, String itemId, int quantite) {
+        editItemSection(categoryId, itemId, section -> section.set("reappro-quantite", Math.max(1, quantite)));
+    }
+
+    /** "MM-jj" ou null pour effacer (voir "editions saisonnieres"). */
+    public synchronized void setItemActifDu(String categoryId, String itemId, String valeur) {
+        editItemSection(categoryId, itemId, section -> section.set("actif-du", valeur));
+    }
+
+    public synchronized void setItemActifAu(String categoryId, String itemId, String valeur) {
+        editItemSection(categoryId, itemId, section -> section.set("actif-au", valeur));
+    }
+
     private ConfigurationSection getCategorySection(String categoryId) {
         ConfigurationSection root = shopConfig.get().getConfigurationSection("categories");
         return root == null ? null : root.getConfigurationSection(categoryId.toLowerCase());

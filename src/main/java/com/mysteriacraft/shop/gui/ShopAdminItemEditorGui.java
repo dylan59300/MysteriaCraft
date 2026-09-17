@@ -16,18 +16,23 @@ import org.bukkit.plugin.Plugin;
 import java.util.List;
 
 /**
- * Edite un article precis de la Boutique (voir ShopAdminItemsGui) : prix d'achat/vente et stock
- * max (saisis au chat), ou suppression de l'article. La recompense elle-meme (type ITEM fixe a la
- * creation) n'est pas modifiable ici : supprimez et recreez l'article pour en changer.
+ * Edite un article precis de la Boutique (voir ShopAdminItemsGui) : prix d'achat/vente, stock max +
+ * reappro, et fenetre saisonniere (actif-du/actif-au), tous saisis au chat, ou suppression de
+ * l'article. La recompense elle-meme (type ITEM fixe a la creation) n'est pas modifiable ici :
+ * supprimez et recreez l'article pour en changer.
  */
 public class ShopAdminItemEditorGui extends Menu {
 
-    private static final int SIZE = 27;
+    private static final int SIZE = 45;
     private static final int PRIX_ACHAT_SLOT = 10;
-    private static final int PRIX_VENTE_SLOT = 12;
-    private static final int STOCK_MAX_SLOT = 14;
-    private static final int SUPPRIMER_SLOT = 16;
-    private static final int RETOUR_SLOT = 22;
+    private static final int PRIX_VENTE_SLOT = 11;
+    private static final int STOCK_MAX_SLOT = 12;
+    private static final int REAPPRO_INTERVALLE_SLOT = 13;
+    private static final int REAPPRO_QUANTITE_SLOT = 14;
+    private static final int ACTIF_DU_SLOT = 20;
+    private static final int ACTIF_AU_SLOT = 21;
+    private static final int SUPPRIMER_SLOT = 31;
+    private static final int RETOUR_SLOT = 40;
 
     private final Plugin plugin;
     private final ShopManager manager;
@@ -79,6 +84,22 @@ public class ShopAdminItemEditorGui extends Menu {
                 .name(replace(messages.raw("boutique.editeur-stock-max-nom"), "stock", item.hasStockLimite() ? String.valueOf(item.stockMax()) : "0"))
                 .lore(List.of(messages.raw("boutique.editeur-stock-max-lore"), messages.raw("boutique.editeur-cliquer-modifier")))
                 .build());
+        inventory.setItem(REAPPRO_INTERVALLE_SLOT, new ItemBuilder(Material.CLOCK)
+                .name(replace(messages.raw("boutique.editeur-reappro-intervalle-nom"), "minutes", String.valueOf(item.reapproIntervalleMinutes())))
+                .lore(List.of(messages.raw("boutique.editeur-cliquer-modifier")))
+                .build());
+        inventory.setItem(REAPPRO_QUANTITE_SLOT, new ItemBuilder(Material.HOPPER)
+                .name(replace(messages.raw("boutique.editeur-reappro-quantite-nom"), "quantite", String.valueOf(item.reapproQuantite())))
+                .lore(List.of(messages.raw("boutique.editeur-cliquer-modifier")))
+                .build());
+        inventory.setItem(ACTIF_DU_SLOT, new ItemBuilder(Material.SUNFLOWER)
+                .name(replace(messages.raw("boutique.editeur-actif-du-nom"), "date", item.actifDu() != null ? item.actifDu() : messages.raw("boutique.editeur-aucune-date")))
+                .lore(List.of(messages.raw("boutique.editeur-date-lore-format"), messages.raw("boutique.editeur-cliquer-modifier")))
+                .build());
+        inventory.setItem(ACTIF_AU_SLOT, new ItemBuilder(Material.CARVED_PUMPKIN)
+                .name(replace(messages.raw("boutique.editeur-actif-au-nom"), "date", item.actifAu() != null ? item.actifAu() : messages.raw("boutique.editeur-aucune-date")))
+                .lore(List.of(messages.raw("boutique.editeur-date-lore-format"), messages.raw("boutique.editeur-cliquer-modifier")))
+                .build());
         inventory.setItem(SUPPRIMER_SLOT, new ItemBuilder(Material.BARRIER)
                 .name(messages.raw("boutique.editeur-supprimer-article"))
                 .lore(List.of(messages.raw("boutique.editeur-supprimer-article-lore")))
@@ -105,6 +126,22 @@ public class ShopAdminItemEditorGui extends Menu {
         }
         if (slot == STOCK_MAX_SLOT) {
             editorService.requestItemField(player, categoryId, itemId, "stock-max");
+            return;
+        }
+        if (slot == REAPPRO_INTERVALLE_SLOT) {
+            editorService.requestItemField(player, categoryId, itemId, "reappro-intervalle-minutes");
+            return;
+        }
+        if (slot == REAPPRO_QUANTITE_SLOT) {
+            editorService.requestItemField(player, categoryId, itemId, "reappro-quantite");
+            return;
+        }
+        if (slot == ACTIF_DU_SLOT) {
+            editorService.requestItemField(player, categoryId, itemId, "actif-du");
+            return;
+        }
+        if (slot == ACTIF_AU_SLOT) {
+            editorService.requestItemField(player, categoryId, itemId, "actif-au");
             return;
         }
         if (slot == SUPPRIMER_SLOT) {
