@@ -1471,10 +1471,10 @@ items:
   # Raffinerie (voir raffine-vers ci-dessous), comme un minerai vanilla classique.
   # Le pepite n'a ni source ni recette (limitation du moteur de recette : un seul craft possible par
   # item) : uniquement obtenable via le tirage aleatoire de la Machine a Transformation.
-  # L'armure utilise une base DOREE (et non diamant) : c'est la texture de couche portee (layer1/2)
-  # du DIAMANT qui aurait du etre sacrifiee sinon, alors que l'or est bien moins utilise par les
-  # joueurs. Les bonus d'armure ci-dessous sont calcules pour ATTEINDRE le meme total final que le
-  # set d'origine (armure-bonus = total vise - armure de base de l'item dore).
+  # L'armure utilise le composant "equippable" (Minecraft 1.21.2+) pour un skin porte 100% propre :
+  # aucun materiau vanilla n'est plus sacrifie (voir CustomItemManager#createItem). Base diamant
+  # conservee (stats/durabilite d'origine), armure-bonus ajuste juste l'ecart pour atteindre le
+  # total vise par le set d'origine.
   raw_platinum:
     nom: "&fPlatine Brut"
     lore:
@@ -1658,12 +1658,10 @@ items:
     lore:
       - "&7Une protection eclatante,"
       - "&7digne d'un metal rare."
-      - "&7+1 armure"
-    item-de-base: GOLDEN_HELMET
+    item-de-base: DIAMOND_HELMET
     minerais-source: []
     chance-drop: 0
     prix-vente: 700
-    armure-bonus: 1
     durabilite-custom: 468
     custom-model-data: 11
     recette:
@@ -1678,12 +1676,10 @@ items:
     lore:
       - "&7Une protection eclatante,"
       - "&7digne d'un metal rare."
-      - "&7+3 armure"
-    item-de-base: GOLDEN_CHESTPLATE
+    item-de-base: DIAMOND_CHESTPLATE
     minerais-source: []
     chance-drop: 0
     prix-vente: 900
-    armure-bonus: 3
     durabilite-custom: 680
     custom-model-data: 12
     recette:
@@ -1699,12 +1695,12 @@ items:
     lore:
       - "&7Une protection eclatante,"
       - "&7digne d'un metal rare."
-      - "&7+4 armure"
-    item-de-base: GOLDEN_LEGGINGS
+      - "&7+1 armure"
+    item-de-base: DIAMOND_LEGGINGS
     minerais-source: []
     chance-drop: 0
     prix-vente: 850
-    armure-bonus: 4
+    armure-bonus: 1
     durabilite-custom: 638
     custom-model-data: 13
     recette:
@@ -1720,12 +1716,12 @@ items:
     lore:
       - "&7Une protection eclatante,"
       - "&7digne d'un metal rare."
-      - "&7+2 armure"
-    item-de-base: GOLDEN_BOOTS
+      - "&7+1 armure"
+    item-de-base: DIAMOND_BOOTS
     minerais-source: []
     chance-drop: 0
     prix-vente: 600
-    armure-bonus: 2
+    armure-bonus: 1
     durabilite-custom: 494
     custom-model-data: 14
     recette:

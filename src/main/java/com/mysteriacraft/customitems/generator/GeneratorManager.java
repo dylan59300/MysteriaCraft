@@ -43,7 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * recupere tout l'argent stocke sur le solde du joueur.
  *
  * IMPORTANT : contrairement a un ItemStack ou une Entity, un Block "nu" (ex: IRON_ORE) n'a PAS de
- * PersistentDataContainer sur paper-api 1.20.1 (seuls les blocs avec tile entity, comme les
+ * PersistentDataContainer sur paper-api 1.21.2 (seuls les blocs avec tile entity, comme les
  * coffres, en ont un via leur BlockState). L'etat de chaque generateur pose (type, proprietaire,
  * stock, bonus de rythme, hologramme) est donc suivi via une table SQLite dediee indexee par
  * position, mise en cache memoire (write-through : chaque ecriture met a jour le cache puis

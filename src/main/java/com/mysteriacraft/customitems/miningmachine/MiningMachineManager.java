@@ -36,7 +36,7 @@ import java.util.function.BiConsumer;
  * Charge la configuration de la Machine a Miner (mining_machine.yml) et suit l'etat de chaque
  * machine posee : proprietaire, carburant restant (en "blocs minables"), curseur de progression
  * dans le chunk en cours, si elle est active, et son hologramme. Comme MachineManager (Machine a
- * Transformation), un Block "nu" n'a pas de PersistentDataContainer sur paper-api 1.20.1 : l'etat
+ * Transformation), un Block "nu" n'a pas de PersistentDataContainer sur paper-api 1.21.2 : l'etat
  * est donc suivi via une table SQLite dediee indexee par position, mise en cache memoire
  * (write-through).
  */

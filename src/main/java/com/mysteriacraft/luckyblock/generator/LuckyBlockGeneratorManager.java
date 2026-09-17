@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * de l'item, voir createItem/getFamilyIdFromItem), carburant restant (en Lucky Blocks producibles)
  * et son hologramme. Comme les autres blocs "actifs" du plugin (Machine a Miner, Machine a
  * Transformation, Generateurs d'argent/ressources), un Block "nu" n'a pas de
- * PersistentDataContainer sur paper-api 1.20.1 : l'etat est suivi via une table SQLite dediee
+ * PersistentDataContainer sur paper-api 1.21.2 : l'etat est suivi via une table SQLite dediee
  * indexee par position, mise en cache memoire (write-through).
  */
 public class LuckyBlockGeneratorManager {

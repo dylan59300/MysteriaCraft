@@ -1,0 +1,6 @@
+{
+  "layers": {
+    "humanoid": [ { "texture": "mysteriacraft:platinum" } ],
+    "humanoid_leggings": [ { "texture": "mysteriacraft:platinum" } ]
+  }
+}

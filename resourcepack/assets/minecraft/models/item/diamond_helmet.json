@@ -1,7 +1,7 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "item/golden_helmet"
+    "layer0": "item/diamond_helmet"
   },
   "overrides": [
     {

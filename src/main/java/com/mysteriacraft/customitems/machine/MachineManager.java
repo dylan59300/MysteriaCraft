@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * -> famille de Lucky Block cible, types de carburant, amelioration) et fabrique/marque son bloc.
  *
  * IMPORTANT : contrairement a un ItemStack ou une Entity, un Block "nu" (ex: IRON_BLOCK) n'a PAS
- * de PersistentDataContainer sur paper-api 1.20.1 (seuls les blocs avec tile entity, comme les
+ * de PersistentDataContainer sur paper-api 1.21.2 (seuls les blocs avec tile entity, comme les
  * coffres, en ont un via leur BlockState). L'etat de chaque machine posee (tier actuel, charges
  * de carburant, cooldown actif, bonus de reussite, hologramme) est donc suivi via une table
  * SQLite dediee indexee par position, mise en cache memoire (write-through : chaque ecriture met

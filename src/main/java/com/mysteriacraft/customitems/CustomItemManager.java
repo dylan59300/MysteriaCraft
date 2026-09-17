@@ -14,6 +14,7 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.components.EquippableComponent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
@@ -26,9 +27,12 @@ import java.util.UUID;
 
 /**
  * Charge les minerais/objets custom depuis custom_items.yml et fabrique leurs ItemStack
- * (item de base vanilla + nom/lore custom + marque PersistentDataContainer). Aucun resource
- * pack requis : chaque item custom est visuellement un item vanilla existant (choisi via
- * "item-de-base"), distingue par son nom colore et sa lore.
+ * (item de base vanilla + nom/lore custom + marque PersistentDataContainer). Par defaut, aucun
+ * resource pack n'est requis : chaque item custom est visuellement un item vanilla existant
+ * (choisi via "item-de-base"), distingue par son nom colore et sa lore. Un item avec
+ * "custom-model-data" (voir CustomItemDefinition) recoit en plus une vraie texture (icone, et pour
+ * une piece d'armure, un skin porte propre via le composant "equippable") si le resource pack
+ * officiel du serveur (voir com.mysteriacraft.resourcepack) est installe cote client.
  */
 public class CustomItemManager {
 
@@ -260,6 +264,16 @@ public class CustomItemManager {
             }
             if (definition.hasCustomModelData()) {
                 meta.setCustomModelData(definition.customModelData());
+                // Piece d'armure avec une vraie texture (resource pack) : composant "equippable"
+                // (Minecraft 1.21.2+), qui donne un skin porte propre SANS toucher a un materiau
+                // vanilla existant (voir assets/mysteriacraft/equipment/<id>.json du resource pack).
+                if (slot == EquipmentSlot.HEAD || slot == EquipmentSlot.CHEST
+                        || slot == EquipmentSlot.LEGS || slot == EquipmentSlot.FEET) {
+                    EquippableComponent equippable = meta.getEquippable();
+                    equippable.setSlot(slot);
+                    equippable.setModel(new NamespacedKey(plugin, definition.id()));
+                    meta.setEquippable(equippable);
+                }
             }
             if (definition.isGear()) {
                 // La lore custom decrit deja les bonus : masque les lignes vanilla redondantes
