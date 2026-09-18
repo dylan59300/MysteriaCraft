@@ -1,7 +1,10 @@
 package com.mysteriacraft;
 
+import com.mysteriacraft.block.ModBlocks;
+import com.mysteriacraft.block.entity.ModBlockEntities;
 import com.mysteriacraft.item.ModCreativeModeTabs;
 import com.mysteriacraft.item.ModItems;
+import com.mysteriacraft.menu.ModMenuTypes;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -17,7 +20,10 @@ public class MysteriaCraft {
     public MysteriaCraft() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
+        ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
+        ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        ModMenuTypes.MENU_TYPES.register(modEventBus);
         ModCreativeModeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
         LOGGER.info("MysteriaCraft se reveille...");

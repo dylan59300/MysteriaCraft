@@ -1,0 +1,6 @@
+{
+    "parent": "minecraft:block/cube_all",
+    "textures": {
+        "all": "mysteriacraft:block/essence_infused_soil"
+    }
+}
