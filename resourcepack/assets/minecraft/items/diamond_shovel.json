@@ -1,0 +1,10 @@
+{
+  "model": {
+    "type": "minecraft:range_dispatch",
+    "property": "minecraft:custom_model_data",
+    "fallback": { "type": "minecraft:model", "model": "minecraft:item/diamond_shovel" },
+    "entries": [
+      { "threshold": 9, "model": { "type": "minecraft:model", "model": "minecraft:item/platinum_shovel" } }
+    ]
+  }
+}
