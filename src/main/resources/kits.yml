@@ -1,0 +1,70 @@
+# =========================================
+#   MysteriaCraft - Configuration des Kits
+# =========================================
+# /kit ouvre le menu des kits disponibles, /kit <id> recupere directement un kit precis.
+#
+# Chaque kit (sous "kits") :
+#   nom                 : nom affiche.
+#   icone               : materiau vanilla utilise comme icone dans le menu.
+#   permission          : si definie, seuls les joueurs l'ayant peuvent recuperer ce kit (utile
+#                         pour un kit VIP lie a un rang). Absente = accessible a tous.
+#   unique              : true = recuperable UNE SEULE FOIS par joueur, pour toujours (ignore
+#                         cooldown-secondes). false (defaut) = recuperable en boucle selon le
+#                         cooldown.
+#   cooldown-secondes   : delai minimum entre 2 recuperations (0 = illimite, ignore si unique).
+#   recompenses         : liste de Reward (voir les autres configs pour la liste complete des
+#                         types : ITEM, ECONOMIE, OBJET_CUSTOM, GENERATEUR,
+#                         GENERATEUR_LUCKYBLOCK, MACHINE, PET, LUCKYBLOCK, BOOST_XP,
+#                         AGRANDISSEMENT_ILE, TITRE_CHAT, COMMANDE...), toutes donnees d'un coup a la
+#                         recuperation du kit.
+
+kits:
+  starter:
+    nom: "&aKit de Depart"
+    icone: CHEST
+    unique: true
+    recompenses:
+      - type: ITEM
+        materiel: IRON_SWORD
+        quantite: 1
+        nom: "Epee en fer"
+      - type: ITEM
+        materiel: IRON_PICKAXE
+        quantite: 1
+        nom: "Pioche en fer"
+      - type: ITEM
+        materiel: BREAD
+        quantite: 16
+        nom: "Pain x16"
+      - type: ECONOMIE
+        montant: 100
+        nom: "100$"
+
+  quotidien:
+    nom: "&6Kit Quotidien"
+    icone: GOLD_INGOT
+    unique: false
+    cooldown-secondes: 86400
+    recompenses:
+      - type: ECONOMIE
+        montant: 50
+        nom: "50$"
+      - type: ITEM
+        materiel: COOKED_BEEF
+        quantite: 8
+        nom: "Steak cuit x8"
+
+  vip:
+    nom: "&d&lKit VIP"
+    icone: NETHER_STAR
+    permission: mysteriacraft.kit.vip
+    unique: false
+    cooldown-secondes: 86400
+    recompenses:
+      - type: ECONOMIE
+        montant: 250
+        nom: "250$"
+      - type: ITEM
+        materiel: DIAMOND
+        quantite: 4
+        nom: "Diamant x4"

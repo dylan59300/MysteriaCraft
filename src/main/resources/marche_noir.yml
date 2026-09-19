@@ -1,0 +1,74 @@
+# =========================================
+#   MysteriaCraft - Configuration du Marche Noir
+# =========================================
+# /marchenoir ouvre un menu presentant une selection ALEATOIRE d'objets rares (parmi "objets"
+# ci-dessous), a un prix ALEATOIRE (entre prix-min et prix-max), renouvelee toutes les
+# rotation-heures. La selection est IDENTIQUE pour tous les joueurs jusqu'a la prochaine rotation.
+#
+# nombre-objets-actifs : combien d'objets du pool sont proposes en meme temps.
+# rotation-heures      : frequence de renouvellement de la selection/des prix.
+#
+# Chaque objet du pool (sous "objets") :
+#   recompense : n'importe quel type de Reward (voir les autres configs pour la liste complete).
+#   prix-min / prix-max : bornes du prix aleatoire tire a chaque rotation ou cet objet est selectionne.
+nombre-objets-actifs: 3
+rotation-heures: 6
+
+objets:
+  generateur_legendaire:
+    recompense:
+      type: GENERATEUR
+      type-id: legendaire
+      quantite: 1
+    prix-min: 80000
+    prix-max: 150000
+
+  generateur_ressource_legendaire:
+    recompense:
+      type: GENERATEUR
+      type-id: ressource_legendaire
+      quantite: 1
+    prix-min: 60000
+    prix-max: 120000
+
+  machine_transformation:
+    recompense:
+      type: MACHINE
+      machine-id: transformation
+      quantite: 1
+    prix-min: 40000
+    prix-max: 90000
+
+  machine_miniere:
+    recompense:
+      type: MACHINE
+      machine-id: miniere
+      quantite: 1
+    prix-min: 40000
+    prix-max: 90000
+
+  boost_xp:
+    recompense:
+      type: BOOST_XP
+      duree-secondes: 1800
+      multiplicateur: 3.0
+    prix-min: 5000
+    prix-max: 15000
+
+  netherite_brute:
+    recompense:
+      type: ITEM
+      materiel: NETHERITE_INGOT
+      quantite: 2
+      nom: "Lingot de Netherite x2"
+    prix-min: 20000
+    prix-max: 50000
+
+  diamants_en_gros:
+    recompense:
+      type: ITEM
+      materiel: DIAMOND
+      quantite: 32
+      nom: "Diamants x32"
+    prix-min: 10000
+    prix-max: 25000

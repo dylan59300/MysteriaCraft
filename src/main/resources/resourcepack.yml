@@ -1,0 +1,13 @@
+# =========================================
+#   MysteriaCraft - Resource pack officiel du serveur
+# =========================================
+# url : lien HTTPS stable vers le .zip du resource pack (publie automatiquement par la CI a chaque
+#       build, voir .github/workflows/build.yml). Laisser vide ("") desactive l'envoi automatique
+#       et la commande /resourcepack.
+# envoi-automatique : si true, le pack est propose au joueur a chaque connexion.
+# obligatoire : si true, le pack est marque comme requis (le client affiche un avertissement s'il
+#               le refuse). Ne bloque jamais la connexion (Paper 1.21.4 ne le permet pas nativement
+#               sans plugin tiers).
+url: "https://github.com/dylan59300/MysteriaCraft/releases/download/latest-build/MysteriaCraft-resourcepack.zip"
+envoi-automatique: true
+obligatoire: false

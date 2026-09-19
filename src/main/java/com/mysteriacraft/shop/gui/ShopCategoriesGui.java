@@ -1,0 +1,174 @@
+package com.mysteriacraft.shop.gui;
+
+import com.mysteriacraft.core.config.MessageManager;
+import com.mysteriacraft.core.gui.ItemBuilder;
+import com.mysteriacraft.core.gui.Menu;
+import com.mysteriacraft.core.gui.MenuHolder;
+import com.mysteriacraft.economy.EconomyManager;
+import com.mysteriacraft.shop.PromotionManager;
+import com.mysteriacraft.shop.ShopManager;
+import com.mysteriacraft.shop.ShopService;
+import com.mysteriacraft.shop.StockManager;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/** Menu listant les categories de la Boutique (+ un raccourci Favoris et une banniere Happy
+ * Hour). Clic sur une categorie ouvre ses articles. */
+public class ShopCategoriesGui extends Menu {
+
+    private static final int SIZE = 27;
+    private static final int[] CATEGORY_SLOTS = {10, 11, 12, 13, 14, 15, 16};
+    private static final int FAVORITES_SLOT = 22;
+    private static final int HAPPY_HOUR_SLOT = 4;
+    private static final int PREVIOUS_SLOT = 18;
+    private static final int NEXT_SLOT = 26;
+
+    private final Plugin plugin;
+    private final ShopManager manager;
+    private final ShopService service;
+    private final EconomyManager economyManager;
+    private final PromotionManager promotionManager;
+    private final StockManager stockManager;
+    private final MessageManager messages;
+    private final Map<Integer, String> slotToCategoryId = new HashMap<>();
+
+    private Inventory inventory;
+    private List<ShopManager.ShopCategory> categories;
+    private int page = 0;
+
+    public ShopCategoriesGui(Plugin plugin, Player viewer, ShopManager manager, ShopService service,
+                              EconomyManager economyManager, PromotionManager promotionManager,
+                              StockManager stockManager, MessageManager messages) {
+        super(viewer);
+        this.plugin = plugin;
+        this.manager = manager;
+        this.service = service;
+        this.economyManager = economyManager;
+        this.promotionManager = promotionManager;
+        this.stockManager = stockManager;
+        this.messages = messages;
+    }
+
+    @Override
+    public Inventory build() {
+        MenuHolder holder = new MenuHolder(this);
+        this.inventory = Bukkit.createInventory(holder, SIZE, MessageManager.color(messages.raw("boutique.titre-categories")));
+        holder.setInventory(inventory);
+        this.categories = manager.getVisibleCategories();
+        render();
+        return inventory;
+    }
+
+    private int maxPage() {
+        return Math.max(1, (int) Math.ceil(categories.size() / (double) CATEGORY_SLOTS.length));
+    }
+
+    private void render() {
+        slotToCategoryId.clear();
+
+        ItemStack border = new ItemBuilder(Material.GRAY_STAINED_GLASS_PANE).name(" ").build();
+        for (int i = 0; i < SIZE; i++) {
+            inventory.setItem(i, border);
+        }
+
+        int firstIndex = page * CATEGORY_SLOTS.length;
+        for (int i = 0; i < CATEGORY_SLOTS.length; i++) {
+            int index = firstIndex + i;
+            if (index >= categories.size()) {
+                break;
+            }
+            ShopManager.ShopCategory category = categories.get(index);
+            List<String> lore = List.of(
+                    messages.raw("boutique.gui-nombre-articles").replace("{nombre}", String.valueOf(category.items().size())),
+                    messages.raw("boutique.gui-clic-ouvrir")
+            );
+            inventory.setItem(CATEGORY_SLOTS[i], new ItemBuilder(category.icon()).name(category.displayName()).lore(lore).build());
+            slotToCategoryId.put(CATEGORY_SLOTS[i], category.id());
+        }
+
+        inventory.setItem(FAVORITES_SLOT, new ItemBuilder(Material.NETHER_STAR)
+                .name(messages.raw("boutique.gui-favoris"))
+                .lore(List.of(messages.raw("boutique.gui-clic-ouvrir")))
+                .build());
+
+        if (promotionManager.isHappyHourActive()) {
+            inventory.setItem(HAPPY_HOUR_SLOT, new ItemBuilder(Material.CLOCK)
+                    .name(messages.raw("boutique.gui-happy-hour-active"))
+                    .lore(List.of(messages.raw("boutique.gui-happy-hour-reduction")
+                            .replace("{reduction}", String.valueOf((int) promotionManager.getHappyHourReductionPourcent()))))
+                    .build());
+        } else {
+            inventory.setItem(HAPPY_HOUR_SLOT, new ItemBuilder(Material.CLOCK)
+                    .name(messages.raw("boutique.gui-happy-hour-a-venir"))
+                    .lore(List.of(messages.raw("boutique.gui-happy-hour-heure")
+                            .replace("{heure}", String.valueOf(promotionManager.getHeureHappyHour()))))
+                    .build());
+        }
+
+        int maxPage = maxPage();
+        if (page > 0) {
+            inventory.setItem(PREVIOUS_SLOT, new ItemBuilder(Material.ARROW)
+                    .name(messages.raw("general.gui-page-precedente")).build());
+        }
+        if (page < maxPage - 1) {
+            inventory.setItem(NEXT_SLOT, new ItemBuilder(Material.ARROW)
+                    .name(messages.raw("general.gui-page-suivante")).build());
+        }
+    }
+
+    @Override
+    public void handleClick(InventoryClickEvent event) {
+        int slot = event.getSlot();
+
+        if (slot == PREVIOUS_SLOT && page > 0) {
+            page--;
+            render();
+            return;
+        }
+        if (slot == NEXT_SLOT && page < maxPage() - 1) {
+            page++;
+            render();
+            return;
+        }
+
+        if (slot == FAVORITES_SLOT) {
+            if (event.getWhoClicked() instanceof Player player) {
+                openFavorites(player);
+            }
+            return;
+        }
+
+        String categoryId = slotToCategoryId.get(slot);
+        if (categoryId == null || !(event.getWhoClicked() instanceof Player player)) {
+            return;
+        }
+        ShopManager.ShopCategory category = manager.getCategory(categoryId);
+        if (category == null) {
+            return;
+        }
+        new ShopItemsGui(plugin, player, category, manager, service, economyManager, promotionManager, stockManager, messages).open();
+    }
+
+    private void openFavorites(Player player) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            List<ShopManager.ShopItem> favorites = manager.getFavorites(player.getUniqueId());
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (!player.isOnline()) {
+                    return;
+                }
+                ShopManager.ShopCategory favoritesCategory = new ShopManager.ShopCategory(
+                        "favoris", messages.raw("boutique.gui-favoris"), Material.NETHER_STAR, favorites, null, null);
+                new ShopItemsGui(plugin, player, favoritesCategory, manager, service, economyManager, promotionManager, stockManager, messages).open();
+            });
+        });
+    }
+}

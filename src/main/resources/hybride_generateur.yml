@@ -1,0 +1,44 @@
+# =========================================
+#   MysteriaCraft - Configuration des Generateurs Hybrides
+# =========================================
+# Un Generateur Hybride produit DEUX ressources DIFFERENTES en meme temps (contrairement aux
+# Generateurs classiques, voir generateurs.yml, qui n'en produisent qu'une). Meme principe
+# d'accumulation en temps reel, clic-droit pour tout recuperer d'un coup, coffre/tonneau/hopper
+# colle pour l'auto-collecte des deux ressources.
+#
+# Chaque type (sous "types") :
+#   nom                 : nom affiche.
+#   bloc                : materiau du bloc pose.
+#   intervalle-secondes : duree d'un cycle complet de production.
+#   ressource-a/b       : chacune definit objet-resultat (materiau vanilla) OU objet-resultat-custom
+#                         (id d'item custom, prioritaire), montant (par cycle) et stockage-max.
+# Frequence (en secondes) a laquelle le stock de chaque generateur hybride pose est recalcule et
+# l'auto-collecte appliquee.
+tick-secondes: 5
+
+types:
+  fer_or:
+    nom: "&e&lGenerateur Hybride Fer/Or"
+    bloc: GOLD_BLOCK
+    intervalle-secondes: 30
+    ressource-a:
+      objet-resultat: IRON_INGOT
+      montant: 2
+      stockage-max: 64
+    ressource-b:
+      objet-resultat: GOLD_INGOT
+      montant: 1
+      stockage-max: 64
+
+  diamant_emeraude:
+    nom: "&b&lGenerateur Hybride Diamant/Emeraude"
+    bloc: EMERALD_BLOCK
+    intervalle-secondes: 60
+    ressource-a:
+      objet-resultat: DIAMOND
+      montant: 1
+      stockage-max: 32
+    ressource-b:
+      objet-resultat: EMERALD
+      montant: 2
+      stockage-max: 32

@@ -1,0 +1,34 @@
+# =========================================
+#   MysteriaCraft - Configuration des Runes
+# =========================================
+# /rune graver : en tenant l'ARME en main PRINCIPALE et la rune en main SECONDAIRE, grave
+# durablement son effet sur l'arme (remplace une rune deja gravee). A chaque coup porte avec cette
+# arme, l'effet a une chance de se declencher (voir RuneListener).
+#
+# Chaque rune (sous "runes") :
+#   nom             : nom affiche dans la lore de l'arme.
+#   item-id         : id de l'item custom consomme (voir custom_items.yml).
+#   effet           : FEU (enflamme la cible), GLACE (ralentit la cible), VIE (soigne le porteur).
+#   chance-pourcent : chance de declenchement a chaque coup porte.
+#   valeur          : ticks de feu (FEU), ticks de lenteur (GLACE), ou points de vie rendus (VIE).
+runes:
+  rune_feu:
+    nom: "&6Rune de Flammes"
+    item-id: rune_feu
+    effet: FEU
+    chance-pourcent: 20
+    valeur: 60
+
+  rune_glace:
+    nom: "&bRune de Givre"
+    item-id: rune_glace
+    effet: GLACE
+    chance-pourcent: 20
+    valeur: 60
+
+  rune_vie:
+    nom: "&dRune de Vie"
+    item-id: rune_vie
+    effet: VIE
+    chance-pourcent: 15
+    valeur: 2.0

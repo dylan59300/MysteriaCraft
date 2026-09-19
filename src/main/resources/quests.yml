@@ -1,0 +1,363 @@
+# =========================================
+#   MysteriaCraft - Configuration des Quetes
+# =========================================
+# Reset automatique : la progression est suivie par periode (jour ou semaine ISO courante).
+# Des qu'un nouveau jour/semaine commence, la progression repart de zero, sans tache a programmer.
+# type : BREAK_BLOCK | PLACE_BLOCK | KILL_MOB | FISH | CRAFT_ITEM | CONSUME_ITEM | MACHINE_TRANSFORM |
+#        ISLAND_BLOCK_PLACED (module Iles : bloc pose sur SA PROPRE ile, proprietaire ou membre) |
+#        ISLAND_MEMBER_JOINED (module Iles : nouveau membre invite rejoignant SA PROPRE ile) |
+#        ISLAND_VISITED (module Iles : visite d'une ile DIFFERENTE de la derniere via /ile visit) |
+#        EXPLORE_BIOME (nouveau biome visite cette semaine, verifie periodiquement) |
+#        COLLECT_DISTINCT_CUSTOM_ITEMS (nombre d'objets custom differents possedes EN MEME TEMPS)
+# cible : materiau (BREAK_BLOCK/PLACE_BLOCK/CRAFT_ITEM/CONSUME_ITEM), type d'entite (KILL_MOB) ou
+#         id de famille Lucky Block (MACHINE_TRANSFORM). Absent = tout compte (FISH, MACHINE_TRANSFORM,
+#         ISLAND_BLOCK_PLACED sans cible precise, ISLAND_MEMBER_JOINED, ISLAND_VISITED,
+#         COLLECT_DISTINCT_CUSTOM_ITEMS). ISLAND_BLOCK_PLACED et EXPLORE_BIOME acceptent aussi une
+#         cible precise (materiau / nom de biome) pour ne compter que celle-ci.
+# xp : ajoutee automatiquement au BattlePass a la completion.
+# recompense : ITEM, ECONOMIE, BOOST_XP (duree-secondes + multiplicateur), PET, LUCKYBLOCK,
+#              OBJET_CUSTOM, GENERATEUR (type-id + quantite), MACHINE (machine-id:
+#              "transformation" ou "miniere" + quantite) ou AGRANDISSEMENT_ILE (blocs : agrandit
+#              gratuitement le rayon protege de l'ile, module Iles).
+#              Donnee automatiquement a la completion (optionnel).
+# actif-du / actif-au : DEUX cles optionnelles (format "MM-jj") qui rendent une quete SAISONNIERE
+#                       (Halloween, Noel...) : n'apparait dans /quests et ne progresse QUE durant
+#                       cette periode (meme mecanique que les familles Lucky Block saisonnieres,
+#                       voir luckyblocks.yml). Absentes des deux cotes = quete permanente.
+# meteo : optionnel, PLUIE ou CLAIR. La quete ne progresse que si le temps du monde du joueur
+#         correspond au moment de l'action (ex: pecher pendant la pluie).
+# revelee-apres : optionnel, id d'une autre quete de la MEME periode qui doit etre terminee pour
+#                 que celle-ci apparaisse dans /quests (quete "secrete"). Continue de progresser
+#                 silencieusement avant d'etre revelee.
+# contrat : optionnel (true/false). Si true, la quete ne progresse qu'apres acceptation explicite
+#           via "/quests accepter <id>" (quete plus difficile, opt-in, recompense plus genereuse).
+# lore : optionnelle, ligne de description narrative affichee dans /quests.
+# niveau-pass-requis : optionnel (entier), niveau de BattlePass minimum pour que la quete
+#                       apparaisse dans /quests (module BattlePass, voir "idee #24").
+#
+# echanges-quotidiens-max / boost-prix : voir /quests echanger et /quests boost ci-dessous.
+echanges-quotidiens-max: 1
+boost-prix: 500
+
+quotidiennes:
+  casser_pierre:
+    nom: "&7Casser de la pierre"
+    icone: STONE
+    type: BREAK_BLOCK
+    cible: STONE
+    objectif: 64
+    xp: 50
+    recompense:
+      type: ECONOMIE
+      montant: 20
+
+  tuer_zombies:
+    nom: "&2Tuer des zombies"
+    icone: ZOMBIE_HEAD
+    type: KILL_MOB
+    cible: ZOMBIE
+    objectif: 10
+    xp: 80
+    recompense:
+      type: ITEM
+      materiel: COOKED_BEEF
+      quantite: 8
+
+  planter_bois:
+    nom: "&6Recolter du bois"
+    icone: OAK_LOG
+    type: BREAK_BLOCK
+    cible: OAK_LOG
+    objectif: 32
+    xp: 40
+    recompense:
+      type: OBJET_CUSTOM
+      item-id: hache_bucheron
+      quantite: 1
+
+  connexion_quotidienne:
+    nom: "&bManger un repas"
+    icone: COOKED_BEEF
+    type: CONSUME_ITEM
+    cible: COOKED_BEEF
+    objectif: 1
+    xp: 30
+    recompense:
+      type: ECONOMIE
+      montant: 50
+
+  # Miroir quotidien plus court de la quete hebdomadaire batir_ile (voir plus bas), pour
+  # progresser sur son ile meme les jours sans grosse session.
+  batir_ile_quotidien:
+    nom: "&aPoser des blocs sur son ile"
+    icone: DIRT
+    type: ISLAND_BLOCK_PLACED
+    objectif: 50
+    xp: 60
+    recompense:
+      type: ECONOMIE
+      montant: 100
+
+  # ISLAND_BLOCK_PLACED avec cible sur un materiau precis : ne compte QUE la pierre posee
+  # sur son ile (contrairement a batir_ile/batir_ile_quotidien qui comptent tout materiau).
+  paver_pierre_ile:
+    nom: "&7Poser de la pierre sur son ile"
+    icone: STONE
+    type: ISLAND_BLOCK_PLACED
+    cible: STONE
+    objectif: 100
+    xp: 80
+    recompense:
+      type: ECONOMIE
+      montant: 150
+
+hebdomadaires:
+  miner_diamants:
+    nom: "&bMiner du minerai de diamant"
+    icone: DIAMOND_ORE
+    type: BREAK_BLOCK
+    cible: DIAMOND_ORE
+    objectif: 20
+    xp: 400
+    recompense:
+      type: OBJET_CUSTOM
+      item-id: pioche_mineur
+      quantite: 1
+
+  pecher:
+    nom: "&9Pecher"
+    icone: FISHING_ROD
+    type: FISH
+    objectif: 30
+    xp: 300
+    recompense:
+      type: ITEM
+      materiel: EMERALD
+      quantite: 5
+
+  # Quete meteo (voir "meteo" ci-dessus) : ne progresse que lorsqu'il pleut dans le monde du joueur.
+  pecher_sous_la_pluie:
+    nom: "&9Pecher sous la pluie"
+    icone: TRIDENT
+    type: FISH
+    meteo: PLUIE
+    objectif: 10
+    xp: 250
+    recompense:
+      type: ECONOMIE
+      montant: 400
+
+  # Quete progressive par palier (voir "idee #6") : 3 versions du meme objectif avec des seuils
+  # croissants et de meilleures recompenses. Aucun code specifique requis, juste 3 quetes normales.
+  recolte_bronze:
+    nom: "&6Recolte - Palier Bronze"
+    icone: COBBLESTONE
+    type: BREAK_BLOCK
+    cible: COBBLESTONE
+    objectif: 100
+    xp: 60
+    recompense:
+      type: ECONOMIE
+      montant: 100
+  recolte_argent:
+    nom: "&7Recolte - Palier Argent"
+    icone: IRON_ORE
+    type: BREAK_BLOCK
+    cible: COBBLESTONE
+    objectif: 300
+    xp: 150
+    recompense:
+      type: ECONOMIE
+      montant: 350
+  recolte_or:
+    nom: "&eRecolte - Palier Or"
+    icone: GOLD_ORE
+    type: BREAK_BLOCK
+    cible: COBBLESTONE
+    objectif: 600
+    xp: 300
+    recompense:
+      type: ECONOMIE
+      montant: 800
+
+  # Quete d'exploration (voir QuestType.EXPLORE_BIOME) : verifiee periodiquement (QuestService#tickExploration).
+  explorer_biomes:
+    nom: "&2Explorer de nouveaux biomes"
+    icone: MAP
+    type: EXPLORE_BIOME
+    objectif: 3
+    xp: 200
+    recompense:
+      type: ECONOMIE
+      montant: 350
+
+  # Quete de collection (voir QuestType.COLLECT_DISTINCT_CUSTOM_ITEMS) : verifiee periodiquement
+  # (QuestService#tickCollection), compte les objets custom DIFFERENTS possedes SIMULTANEMENT.
+  collectionneur_objets:
+    nom: "&5Collectionneur d'objets rares"
+    icone: ENDER_CHEST
+    type: COLLECT_DISTINCT_CUSTOM_ITEMS
+    objectif: 3
+    xp: 300
+    recompense:
+      type: ECONOMIE
+      montant: 500
+
+  # Quete "secrete" (voir "revelee-apres") : n'apparait dans /quests qu'apres avoir termine
+  # collectionneur_objets cette meme semaine, mais progresse deja silencieusement avant.
+  tresor_cache:
+    nom: "&d&lTresor cache"
+    icone: NETHER_STAR
+    lore: "&7Revele apres avoir termine 'Collectionneur d'objets rares'"
+    type: KILL_MOB
+    cible: WITHER_SKELETON
+    revelee-apres: collectionneur_objets
+    objectif: 5
+    xp: 500
+    recompense:
+      type: LUCKYBLOCK
+      famille: legendaire
+      quantite: 1
+
+  # Quete "pass" (voir "niveau-pass-requis") : n'apparait dans /quests qu'a partir du niveau 5
+  # de BattlePass, pour recompenser la progression cumulee des deux modules.
+  chasse_veteran:
+    nom: "&6&lQuete du veteran"
+    lore: "&7Debloquee au niveau 5 du BattlePass"
+    icone: NETHERITE_SWORD
+    type: KILL_MOB
+    cible: WITHER_SKELETON
+    niveau-pass-requis: 5
+    objectif: 20
+    xp: 600
+    recompense:
+      type: ECONOMIE
+      montant: 1500
+
+  # Quete "contrat" (voir "contrat: true") : version plus difficile de tuer_squelettes, opt-in
+  # via /quests accepter tuer_squelettes_elite, avec une bien meilleure recompense.
+  tuer_squelettes_elite:
+    nom: "&f&lContrat : Squelettes elite"
+    lore: "&7Contrat optionnel, a accepter via /quests accepter"
+    icone: WITHER_SKELETON_SKULL
+    type: KILL_MOB
+    cible: SKELETON
+    contrat: true
+    objectif: 150
+    xp: 900
+    recompense:
+      type: ECONOMIE
+      montant: 3000
+
+  transformer_minerais:
+    nom: "&6Reussir des transformations a la Machine"
+    icone: IRON_BLOCK
+    type: MACHINE_TRANSFORM
+    objectif: 5
+    xp: 350
+    recompense:
+      type: OBJET_CUSTOM
+      item-id: carburant_legendaire
+      quantite: 3
+
+  tuer_squelettes:
+    nom: "&fTuer des squelettes"
+    icone: SKELETON_SKULL
+    type: KILL_MOB
+    cible: SKELETON
+    objectif: 50
+    xp: 350
+    recompense:
+      type: OBJET_CUSTOM
+      item-id: epee_guerrier
+      quantite: 1
+
+  forger_diamant:
+    nom: "&bFabriquer un outil en diamant"
+    icone: DIAMOND_PICKAXE
+    type: CRAFT_ITEM
+    cible: DIAMOND_PICKAXE
+    objectif: 1
+    xp: 200
+    recompense:
+      type: BOOST_XP
+      duree-secondes: 1800
+      multiplicateur: 2.0
+
+  # Quete SAISONNIERE (voir actif-du/actif-au ci-dessus) : meme periode que le Lucky Block
+  # Halloween (luckyblocks.yml). N'apparait dans /quests que du 20 octobre au 5 novembre.
+  chasse_halloween:
+    nom: "&6Tuer des creepers (Halloween)"
+    icone: CARVED_PUMPKIN
+    type: KILL_MOB
+    cible: CREEPER
+    objectif: 15
+    xp: 400
+    actif-du: "10-20"
+    actif-au: "11-05"
+    recompense:
+      type: LUCKYBLOCK
+      famille: halloween
+      quantite: 1
+
+  # Pont avec le module Iles (voir islands.yml) : compte tout bloc pose sur SA PROPRE ile,
+  # proprietaire ou membre de confiance (pas de "cible", tous les materiaux comptent).
+  batir_ile:
+    nom: "&aBatir sur son ile"
+    icone: GRASS_BLOCK
+    type: ISLAND_BLOCK_PLACED
+    objectif: 500
+    xp: 500
+    recompense:
+      type: ECONOMIE
+      montant: 2000
+
+  # Membres invites : compte chaque NOUVEAU membre invite rejoignant SA PROPRE ile cette semaine.
+  ile_communaute:
+    nom: "&dAvoir des membres actifs sur son ile"
+    icone: PLAYER_HEAD
+    type: ISLAND_MEMBER_JOINED
+    objectif: 2
+    xp: 250
+    recompense:
+      type: AGRANDISSEMENT_ILE
+      blocs: 5
+
+  # Visite d'iles : encourage l'exploration sociale via /ile visit (une meme ile revisitee
+  # plusieurs fois de suite ne compte qu'une fois, voir IslandService.visit).
+  explorer_iles:
+    nom: "&bVisiter des iles differentes"
+    icone: COMPASS
+    type: ISLAND_VISITED
+    objectif: 3
+    xp: 150
+    recompense:
+      type: ECONOMIE
+      montant: 300
+
+# Hauts faits PERMANENTS (voir "idee #29") : meme format qu'une quete normale, mais ne se
+# reinitialisent JAMAIS (periode fixe "PERMANENT", voir QuestPeriod). Une fois dans la vie du compte.
+hautsfaits:
+  premier_pas_du_royaume:
+    nom: "&6&lHaut fait : Premier pas"
+    lore: "&7Casser 5000 blocs de pierre, une fois dans la vie de votre compte."
+    icone: NETHERITE_PICKAXE
+    type: BREAK_BLOCK
+    cible: STONE
+    objectif: 5000
+    xp: 1000
+    recompense:
+      type: ECONOMIE
+      montant: 10000
+
+  chasseur_legendaire:
+    nom: "&4&lHaut fait : Chasseur legendaire"
+    lore: "&7Tuer 1000 mobs, toutes especes confondues, une fois dans la vie de votre compte."
+    icone: DIAMOND_SWORD
+    type: KILL_MOB
+    objectif: 1000
+    xp: 1500
+    recompense:
+      type: MACHINE
+      machine-id: transformation
+      quantite: 1

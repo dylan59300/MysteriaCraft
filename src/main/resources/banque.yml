@@ -1,0 +1,12 @@
+# =========================================
+#   MysteriaCraft - Configuration de la Banque
+# =========================================
+# Un solde SEPARE du solde principal (module Economie), qui rapporte des interets composes
+# chaque jour reel (calcules paresseusement : a chaque /banque, tous les jours ecoules depuis la
+# derniere visite sont appliques d'un coup, jusqu'a "interet-jours-max" pour eviter un cumul
+# demesure apres une longue absence).
+
+taux-interet-jour: 0.5
+interet-jours-max: 14
+plafond-solde: 100000
+depot-minimum: 100

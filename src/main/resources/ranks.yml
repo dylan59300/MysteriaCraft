@@ -1,0 +1,39 @@
+# =========================================
+#   MysteriaCraft - Configuration du Prestige
+# =========================================
+# /prestige affiche le palier actuel et le prochain. /prestige confirmer depense l'argent requis
+# et fait passer le joueur au palier suivant, DEFINITIVEMENT (aucun reset d'inventaire/progression,
+# contrairement a un "prestige" classique : ici c'est un simple palier permanent achete avec de
+# l'argent, qui accorde un bonus cumulatif sur les ventes de la Boutique).
+#
+# Chaque palier (sous "paliers") :
+#   niveau               : numero du palier (doivent se suivre : 1, 2, 3...).
+#   nom                  : nom affiche pour ce palier.
+#   cout                 : argent requis pour passer du palier precedent a celui-ci.
+#   bonus-vente-pourcent : bonus TOTAL (pas additionnel) sur le montant recu en revendant a la
+#                          Boutique (/boutique), une fois ce palier atteint.
+paliers:
+  - niveau: 1
+    nom: "&7Prestige I"
+    cout: 5000
+    bonus-vente-pourcent: 5
+
+  - niveau: 2
+    nom: "&ePrestige II"
+    cout: 15000
+    bonus-vente-pourcent: 10
+
+  - niveau: 3
+    nom: "&6Prestige III"
+    cout: 40000
+    bonus-vente-pourcent: 15
+
+  - niveau: 4
+    nom: "&cPrestige IV"
+    cout: 100000
+    bonus-vente-pourcent: 20
+
+  - niveau: 5
+    nom: "&d&lPrestige V"
+    cout: 250000
+    bonus-vente-pourcent: 30

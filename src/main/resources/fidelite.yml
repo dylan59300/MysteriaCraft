@@ -1,0 +1,42 @@
+# =========================================
+#   MysteriaCraft - Configuration de la Fidelite Boutique
+# =========================================
+# Chaque achat en boutique rapporte des points de fidelite CUMULATIFS (jamais depenses,
+# contrairement aux Jetons Boutique, voir promotions.yml) : "argent-par-point" d'argent
+# REELLEMENT depense (apres reductions) = 1 point. Ces points debloquent des niveaux qui donnent
+# une reduction PERMANENTE (cumulee aux autres reductions automatiques) et un coffre-cadeau recu
+# automatiquement des l'atteinte du niveau. Voir /boutique fidelite.
+
+argent-par-point: 100
+
+niveaux:
+  1:
+    points-requis: 10
+    nom: "Client Bronze"
+    reduction-pourcent: 2
+    cadeau:
+      type: ECONOMIE
+      montant: 200
+  2:
+    points-requis: 50
+    nom: "Client Argent"
+    reduction-pourcent: 5
+    cadeau:
+      type: ITEM
+      materiel: DIAMOND
+      quantite: 4
+  3:
+    points-requis: 150
+    nom: "Client Or"
+    reduction-pourcent: 8
+    cadeau:
+      type: ITEM
+      materiel: DIAMOND_BLOCK
+      quantite: 2
+  4:
+    points-requis: 400
+    nom: "Client Platine"
+    reduction-pourcent: 12
+    cadeau:
+      type: ECONOMIE
+      montant: 5000

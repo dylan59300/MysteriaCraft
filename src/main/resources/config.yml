@@ -1,0 +1,23 @@
+# =========================================
+#   MysteriaCraft - Configuration generale
+# =========================================
+
+prefix: "&8[&dMysteria&5Craft&8]&r "
+
+# Devise utilisee pour l'economie interne
+economie:
+  symbole: "$"
+  solde-depart: 100.0
+  solde-max: 1.0E12
+  autoriser-solde-negatif: false
+  # Montant minimum autorise pour un /pay
+  pay-montant-minimum: 1.0
+  # Delai minimum (secondes) entre deux /pay d'un meme joueur (anti-spam)
+  pay-cooldown-secondes: 3
+  # Au-dela de ce montant, une confirmation cliquable est demandee avant le transfert
+  pay-confirmation-seuil: 10000.0
+  # Duree (secondes) pendant laquelle la confirmation reste valide
+  pay-confirmation-expiration-secondes: 30
+
+base-de-donnees:
+  fichier: "database.db"

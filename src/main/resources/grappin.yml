@@ -1,0 +1,9 @@
+# =========================================
+#   MysteriaCraft - Configuration du Grappin
+# =========================================
+# Clic-droit avec le Grappin en main (dans le vide ou sur un bloc) projette le joueur vers le
+# premier bloc touche par sa ligne de mire, dans la limite de distance-max.
+item-id: grappin
+cooldown-secondes: 5
+distance-max: 25
+force-traction: 2.2

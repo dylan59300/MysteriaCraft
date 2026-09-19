@@ -1,0 +1,445 @@
+package com.mysteriacraft.shop;
+
+import com.mysteriacraft.core.SeasonalWindow;
+import com.mysteriacraft.core.config.ConfigManager;
+import com.mysteriacraft.core.reward.Reward;
+import com.mysteriacraft.core.reward.RewardParser;
+import com.mysteriacraft.core.reward.RewardType;
+import com.mysteriacraft.core.storage.Database;
+import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * Charge les categories/articles de la Boutique depuis boutique.yml. Chaque article reutilise le
+ * systeme generique de Reward (voir com.mysteriacraft.core.reward) pour decrire ce qu'il donne a
+ * l'achat : n'importe quel type de recompense (item, economie, objet custom, generateur...) peut
+ * donc etre vendu en boutique sans code supplementaire. La revente ("prix-vente") n'est possible
+ * que pour les articles de type ITEM ou OBJET_CUSTOM (les seuls qui correspondent a un ItemStack
+ * concret que le joueur peut tenir en main pour le revendre).
+ */
+public class ShopManager {
+
+    /** Un article de boutique : ce qu'il donne (reward), son prix d'achat et son prix de revente
+     * (0 = non rachetable). categoryId reste celui de sa VRAIE categorie meme lorsque l'article
+     * est affiche dans la categorie virtuelle "Favoris" (voir getFavorites), pour que
+     * basculer un favori depuis cet ecran cible la bonne cle.
+     * stockMax <= 0 signifie un stock ILLIMITE (comportement par defaut, voir StockManager) ;
+     * sinon l'article se reapprovisionne de "reapproQuantite" toutes les "reapproIntervalleMinutes".
+     * actifDu/actifAu (voir "idee : editions saisonnieres") : optionnels (format "MM-jj", voir
+     * SeasonalWindow), absents = toujours disponible (comportement par defaut). */
+    public record ShopItem(String id, String categoryId, String displayName, ItemStack icon, Reward reward,
+                            double buyPrice, double sellPrice, int stockMax, int reapproIntervalleMinutes,
+                            int reapproQuantite, String actifDu, String actifAu) {
+
+        public boolean isPurchasable() {
+            return buyPrice > 0;
+        }
+
+        public boolean isSellable() {
+            return sellPrice > 0 && (reward.type() == RewardType.ITEM || reward.type() == RewardType.OBJET_CUSTOM);
+        }
+
+        public boolean hasStockLimite() {
+            return stockMax > 0;
+        }
+
+        public boolean isEditionLimitee() {
+            return actifDu != null && actifAu != null;
+        }
+
+        public boolean isActiveNow() {
+            return SeasonalWindow.isActiveNow(actifDu, actifAu);
+        }
+    }
+
+    /** Une categorie de boutique regroupant plusieurs articles. actifDu/actifAu : optionnels,
+     * memes regles qu'un article (voir ShopItem), rend TOUTE la categorie saisonniere. */
+    public record ShopCategory(String id, String displayName, Material icon, List<ShopItem> items,
+                                String actifDu, String actifAu) {
+
+        public boolean isActiveNow() {
+            return SeasonalWindow.isActiveNow(actifDu, actifAu);
+        }
+    }
+
+    private final Plugin plugin;
+    private final Database database;
+    private final ConfigManager shopConfig;
+    private final Map<String, ShopCategory> categories = new LinkedHashMap<>();
+
+    public ShopManager(Plugin plugin, Database database, ConfigManager shopConfig) {
+        this.plugin = plugin;
+        this.database = database;
+        this.shopConfig = shopConfig;
+        createFavoritesTable();
+        loadCategories();
+    }
+
+    private void createFavoritesTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS shop_favoris (" +
+                "uuid TEXT NOT NULL, " +
+                "cle TEXT NOT NULL, " +
+                "PRIMARY KEY (uuid, cle)" +
+                ");";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur creation table 'shop_favoris' : " + e.getMessage());
+        }
+    }
+
+    public void loadCategories() {
+        categories.clear();
+        ConfigurationSection root = shopConfig.get().getConfigurationSection("categories");
+        if (root == null) {
+            plugin.getLogger().warning("Aucune categorie de boutique trouvee (section 'categories' manquante).");
+            return;
+        }
+
+        for (String categoryId : root.getKeys(false)) {
+            ConfigurationSection categorySection = root.getConfigurationSection(categoryId);
+            if (categorySection == null) {
+                continue;
+            }
+            try {
+                categories.put(categoryId.toLowerCase(), parseCategory(categoryId, categorySection));
+            } catch (Exception e) {
+                plugin.getLogger().severe("Erreur chargement categorie de boutique '" + categoryId + "' : " + e.getMessage());
+            }
+        }
+        int totalItems = categories.values().stream().mapToInt(c -> c.items().size()).sum();
+        plugin.getLogger().info(categories.size() + " categorie(s) de boutique chargee(s) (" + totalItems + " article(s)).");
+    }
+
+    private ShopCategory parseCategory(String categoryId, ConfigurationSection section) {
+        String displayName = section.getString("nom", categoryId);
+        Material icon = Material.matchMaterial(section.getString("icone", "CHEST"));
+        if (icon == null) {
+            icon = Material.CHEST;
+        }
+
+        List<ShopItem> items = new ArrayList<>();
+        ConfigurationSection itemsSection = section.getConfigurationSection("items");
+        if (itemsSection != null) {
+            for (String itemId : itemsSection.getKeys(false)) {
+                ConfigurationSection itemSection = itemsSection.getConfigurationSection(itemId);
+                if (itemSection == null) {
+                    continue;
+                }
+                Reward reward = RewardParser.parse(itemSection.getConfigurationSection("recompense"));
+                if (reward == null) {
+                    plugin.getLogger().warning("Article de boutique '" + itemId + "' (categorie '" + categoryId
+                            + "') ignore : recompense invalide/manquante.");
+                    continue;
+                }
+                double buyPrice = itemSection.getDouble("prix-achat", 0);
+                double sellPrice = itemSection.getDouble("prix-vente", 0);
+                int stockMax = Math.max(0, itemSection.getInt("stock-max", 0));
+                int reapproIntervalleMinutes = Math.max(1, itemSection.getInt("reappro-intervalle-minutes", 60));
+                int reapproQuantite = Math.max(1, itemSection.getInt("reappro-quantite", 1));
+                String actifDu = itemSection.getString("actif-du");
+                String actifAu = itemSection.getString("actif-au");
+                items.add(new ShopItem(itemId.toLowerCase(), categoryId.toLowerCase(), reward.displayName(),
+                        reward.displayIcon(), reward, buyPrice, sellPrice, stockMax, reapproIntervalleMinutes,
+                        reapproQuantite, actifDu, actifAu));
+            }
+        }
+        String categorieActifDu = section.getString("actif-du");
+        String categorieActifAu = section.getString("actif-au");
+        return new ShopCategory(categoryId.toLowerCase(), displayName, icon, items, categorieActifDu, categorieActifAu);
+    }
+
+    public Collection<ShopCategory> getCategoriesSorted() {
+        return categories.values();
+    }
+
+    /** Categories actuellement actives (voir "editions saisonnieres"), dans l'ordre de chargement.
+     * Utilise par le menu principal de la Boutique : une categorie hors-saison n'y apparait pas. */
+    public List<ShopCategory> getVisibleCategories() {
+        List<ShopCategory> visibles = new ArrayList<>();
+        for (ShopCategory category : categories.values()) {
+            if (category.isActiveNow()) {
+                visibles.add(category);
+            }
+        }
+        return visibles;
+    }
+
+    /** Articles actuellement actifs de cette categorie (voir "editions saisonnieres"). Si la
+     * categorie elle-meme est hors-saison, aucun article n'est renvoye. */
+    public List<ShopItem> getVisibleItems(ShopCategory category) {
+        List<ShopItem> visibles = new ArrayList<>();
+        if (category == null || !category.isActiveNow()) {
+            return visibles;
+        }
+        for (ShopItem item : category.items()) {
+            if (item.isActiveNow()) {
+                visibles.add(item);
+            }
+        }
+        return visibles;
+    }
+
+    public ShopCategory getCategory(String id) {
+        return id == null ? null : categories.get(id.toLowerCase());
+    }
+
+    /** Toutes les cles "categorie:item" ACTUELLEMENT VISIBLES de la boutique, dans un ordre stable
+     * (celui du chargement de la config) : utilise par PromotionManager pour tirer un article du
+     * jour deterministe (un article hors-saison ne peut jamais etre tire). */
+    public List<String> getAllItemKeysSorted() {
+        List<String> keys = new ArrayList<>();
+        for (ShopCategory category : categories.values()) {
+            if (!category.isActiveNow()) {
+                continue;
+            }
+            for (ShopItem item : category.items()) {
+                if (item.isActiveNow()) {
+                    keys.add(category.id() + ":" + item.id());
+                }
+            }
+        }
+        return keys;
+    }
+
+    /** Tous les articles (toutes categories confondues) dont le nom affiche contient ce texte
+     * (insensible a la casse). Voir /boutique chercher. */
+    public List<ShopItem> searchItems(String texte) {
+        List<ShopItem> resultats = new ArrayList<>();
+        String recherche = texte.toLowerCase();
+        for (ShopCategory category : categories.values()) {
+            for (ShopItem item : getVisibleItems(category)) {
+                if (item.displayName().toLowerCase().contains(recherche)) {
+                    resultats.add(item);
+                }
+            }
+        }
+        return resultats;
+    }
+
+    public ShopItem getItem(ShopCategory category, String itemId) {
+        if (category == null || itemId == null) {
+            return null;
+        }
+        for (ShopItem item : category.items()) {
+            if (item.id().equalsIgnoreCase(itemId)) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    // ---- Editeur de categories/articles en jeu (voir /boutique editeur) ----
+
+    public synchronized void addCategory(String id, String nom, Material icone) {
+        ConfigurationSection root = shopConfig.get().getConfigurationSection("categories");
+        if (root == null) {
+            root = shopConfig.get().createSection("categories");
+        }
+        ConfigurationSection section = root.createSection(id.toLowerCase());
+        section.set("nom", nom);
+        section.set("icone", icone.name());
+        shopConfig.save();
+        loadCategories();
+    }
+
+    public synchronized void removeCategory(String id) {
+        ConfigurationSection root = shopConfig.get().getConfigurationSection("categories");
+        if (root != null) {
+            root.set(id.toLowerCase(), null);
+            shopConfig.save();
+            loadCategories();
+        }
+    }
+
+    /** Ajoute un article de type ITEM a partir d'un ItemStack (typiquement l'objet tenu en main
+     * par l'admin). */
+    public synchronized void addItem(String categoryId, String itemId, ItemStack modele, double prixAchat) {
+        ConfigurationSection categorieSection = getCategorySection(categoryId);
+        if (categorieSection == null) {
+            return;
+        }
+        ConfigurationSection itemsSection = categorieSection.getConfigurationSection("items");
+        if (itemsSection == null) {
+            itemsSection = categorieSection.createSection("items");
+        }
+        ConfigurationSection itemSection = itemsSection.createSection(itemId.toLowerCase());
+        itemSection.set("recompense.type", "ITEM");
+        itemSection.set("recompense.materiel", modele.getType().name());
+        itemSection.set("recompense.quantite", Math.max(1, modele.getAmount()));
+        itemSection.set("prix-achat", Math.max(0, prixAchat));
+        shopConfig.save();
+        loadCategories();
+    }
+
+    /** Ajoute un article de type COMMANDE (execute une commande console a l'achat, voir
+     * RewardType.COMMANDE), sans prix par defaut (a definir ensuite dans l'editeur d'article). */
+    public synchronized void addItemCommand(String categoryId, String itemId, String commande) {
+        ConfigurationSection categorieSection = getCategorySection(categoryId);
+        if (categorieSection == null) {
+            return;
+        }
+        ConfigurationSection itemsSection = categorieSection.getConfigurationSection("items");
+        if (itemsSection == null) {
+            itemsSection = categorieSection.createSection("items");
+        }
+        ConfigurationSection itemSection = itemsSection.createSection(itemId.toLowerCase());
+        itemSection.set("recompense.type", "COMMANDE");
+        itemSection.set("recompense.commande", commande);
+        itemSection.set("recompense.nom", commande);
+        itemSection.set("prix-achat", 0);
+        shopConfig.save();
+        loadCategories();
+    }
+
+    public synchronized void removeItem(String categoryId, String itemId) {
+        ConfigurationSection itemsSection = getItemsSection(categoryId);
+        if (itemsSection != null) {
+            itemsSection.set(itemId.toLowerCase(), null);
+            shopConfig.save();
+            loadCategories();
+        }
+    }
+
+    public synchronized void setItemPrixAchat(String categoryId, String itemId, double prix) {
+        editItemSection(categoryId, itemId, section -> section.set("prix-achat", Math.max(0, prix)));
+    }
+
+    public synchronized void setItemPrixVente(String categoryId, String itemId, double prix) {
+        editItemSection(categoryId, itemId, section -> section.set("prix-vente", Math.max(0, prix)));
+    }
+
+    public synchronized void setItemStockMax(String categoryId, String itemId, int stockMax) {
+        editItemSection(categoryId, itemId, section -> section.set("stock-max", Math.max(0, stockMax)));
+    }
+
+    public synchronized void setItemReapproIntervalle(String categoryId, String itemId, int minutes) {
+        editItemSection(categoryId, itemId, section -> section.set("reappro-intervalle-minutes", Math.max(1, minutes)));
+    }
+
+    public synchronized void setItemReapproQuantite(String categoryId, String itemId, int quantite) {
+        editItemSection(categoryId, itemId, section -> section.set("reappro-quantite", Math.max(1, quantite)));
+    }
+
+    /** "MM-jj" ou null pour effacer (voir "editions saisonnieres"). */
+    public synchronized void setItemActifDu(String categoryId, String itemId, String valeur) {
+        editItemSection(categoryId, itemId, section -> section.set("actif-du", valeur));
+    }
+
+    public synchronized void setItemActifAu(String categoryId, String itemId, String valeur) {
+        editItemSection(categoryId, itemId, section -> section.set("actif-au", valeur));
+    }
+
+    private ConfigurationSection getCategorySection(String categoryId) {
+        ConfigurationSection root = shopConfig.get().getConfigurationSection("categories");
+        return root == null ? null : root.getConfigurationSection(categoryId.toLowerCase());
+    }
+
+    private ConfigurationSection getItemsSection(String categoryId) {
+        ConfigurationSection categorieSection = getCategorySection(categoryId);
+        return categorieSection == null ? null : categorieSection.getConfigurationSection("items");
+    }
+
+    private void editItemSection(String categoryId, String itemId, java.util.function.Consumer<ConfigurationSection> editor) {
+        ConfigurationSection itemsSection = getItemsSection(categoryId);
+        if (itemsSection == null) {
+            return;
+        }
+        ConfigurationSection itemSection = itemsSection.getConfigurationSection(itemId.toLowerCase());
+        if (itemSection == null) {
+            return;
+        }
+        editor.accept(itemSection);
+        shopConfig.save();
+        loadCategories();
+    }
+
+    // ---- Favoris (voir ShopItemsGui : shift-clic pour basculer) ----
+
+    private static String favoriteKey(String categoryId, String itemId) {
+        return categoryId.toLowerCase() + ":" + itemId.toLowerCase();
+    }
+
+    /** Requete synchrone : a appeler hors du thread principal. */
+    public boolean isFavorite(UUID uuid, String categoryId, String itemId) {
+        String select = "SELECT 1 FROM shop_favoris WHERE uuid = ? AND cle = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, favoriteKey(categoryId, itemId));
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture favori pour " + uuid + " : " + e.getMessage());
+            return false;
+        }
+    }
+
+    /** Requete synchrone : a appeler hors du thread principal. Renvoie le nouvel etat (true = ajoute). */
+    public boolean toggleFavorite(UUID uuid, String categoryId, String itemId) {
+        String key = favoriteKey(categoryId, itemId);
+        Connection connection = database.getConnection();
+        if (isFavorite(uuid, categoryId, itemId)) {
+            String delete = "DELETE FROM shop_favoris WHERE uuid = ? AND cle = ?;";
+            try (PreparedStatement statement = connection.prepareStatement(delete)) {
+                statement.setString(1, uuid.toString());
+                statement.setString(2, key);
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Erreur suppression favori pour " + uuid + " : " + e.getMessage());
+            }
+            return false;
+        }
+        String insert = "INSERT OR IGNORE INTO shop_favoris (uuid, cle) VALUES (?, ?);";
+        try (PreparedStatement statement = connection.prepareStatement(insert)) {
+            statement.setString(1, uuid.toString());
+            statement.setString(2, key);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur ajout favori pour " + uuid + " : " + e.getMessage());
+        }
+        return true;
+    }
+
+    /** Tous les articles favoris de ce joueur, toutes categories confondues. Requete synchrone :
+     * a appeler hors du thread principal. */
+    public List<ShopItem> getFavorites(UUID uuid) {
+        List<ShopItem> favorites = new ArrayList<>();
+        String select = "SELECT cle FROM shop_favoris WHERE uuid = ?;";
+        Connection connection = database.getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(select)) {
+            statement.setString(1, uuid.toString());
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    String[] parts = rs.getString("cle").split(":", 2);
+                    if (parts.length != 2) {
+                        continue;
+                    }
+                    ShopCategory category = getCategory(parts[0]);
+                    ShopItem item = getItem(category, parts[1]);
+                    if (item != null && category.isActiveNow() && item.isActiveNow()) {
+                        favorites.add(item);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Erreur lecture favoris pour " + uuid + " : " + e.getMessage());
+        }
+        return favorites;
+    }
+}

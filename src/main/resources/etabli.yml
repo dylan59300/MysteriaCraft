@@ -1,0 +1,40 @@
+# =========================================
+#   MysteriaCraft - Configuration de l'Etabli Ameliore
+# =========================================
+# L'Etabli est materialise par un bloc unique (n'importe quel bloc pose de ce materiau agit comme
+# un Etabli). Clic-droit dessus ouvre le menu de ses recettes SECRETES : chacune reste verrouillee
+# ("???") tant que son Parchemin dedie (item custom, voir custom_items.yml) n'a pas ete consomme
+# sur le bloc (clic-droit en le tenant en main). Le deblocage est PERMANENT et propre a chaque
+# joueur : trouver un Parchemin (loot/LuckyBlock/Marchand...) EST un "plan de craft a collectionner".
+bloc: CARTOGRAPHY_TABLE
+
+recettes:
+  amulette_forgeron:
+    nom: "&6&lAmulette du Forgeron"
+    parchemin-item-id: parchemin_amulette_forgeron
+    resultat:
+      type: OBJET_CUSTOM
+      item-id: amulette_forgeron
+      quantite: 1
+    ingredients:
+      - materiel: GOLD_BLOCK
+        quantite: 2
+      - materiel: DIAMOND
+        quantite: 1
+      - materiel: NETHER_STAR
+        quantite: 1
+
+  collier_alchimiste:
+    nom: "&d&lCollier de l'Alchimiste"
+    parchemin-item-id: parchemin_collier_alchimiste
+    resultat:
+      type: OBJET_CUSTOM
+      item-id: collier_alchimiste
+      quantite: 1
+    ingredients:
+      - materiel: GOLD_INGOT
+        quantite: 4
+      - materiel: GLOWSTONE_DUST
+        quantite: 8
+      - materiel: NETHER_STAR
+        quantite: 1

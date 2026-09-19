@@ -1,0 +1,146 @@
+# =========================================
+#   MysteriaCraft - Configuration de la Boutique
+# =========================================
+# La Boutique (/boutique) est un magasin toujours ouvert, independant du PNJ Marchand (offres
+# rotatives, monnaie custom) : ici on achete/revend directement avec la monnaie interne du serveur
+# (module Economie), classe par categories.
+#
+# Chaque categorie (sous "categories") :
+#   nom   : nom affiche dans le menu.
+#   icone : materiau vanilla utilise comme icone de la categorie.
+#   items : articles de cette categorie (voir ci-dessous).
+#
+# Chaque article (sous "items") :
+#   recompense  : n'importe quel type de Reward (voir les autres configs pour la liste complete :
+#                 ITEM, ECONOMIE, OBJET_CUSTOM, GENERATEUR, GENERATEUR_LUCKYBLOCK, MACHINE,
+#                 PET, LUCKYBLOCK, BOOST_XP, AGRANDISSEMENT_ILE, TITRE_CHAT, COMMANDE...), donnee a l'achat.
+#                 Pour type ITEM, l'icone du menu est automatiquement le materiau/quantite donnes
+#                 (le champ "icone" de la recompense n'est utilise que par les autres types).
+#   prix-achat  : cout en monnaie interne pour 1 achat (absent/0 = non achetable, affiche seulement).
+#   prix-vente  : montant credite pour revendre TOUT le stack tenu en main (absent/0 = non
+#                 rachetable). Uniquement possible pour une recompense de type ITEM ou OBJET_CUSTOM
+#                 (les seules qui correspondent a un objet concret que le joueur peut tenir).
+#   stock-max, reappro-intervalle-minutes, reappro-quantite (voir StockManager) : optionnels,
+#                 absent/0 sur "stock-max" = stock ILLIMITE (comportement par defaut). Si defini,
+#                 l'article ne peut etre achete que "stock-max" fois avant de se reapprovisionner
+#                 tout seul de "reappro-quantite" toutes les "reappro-intervalle-minutes".
+#   actif-du, actif-au (voir "editions saisonnieres", meme format "MM-jj" que les autres modules) :
+#                 optionnels, absents = toujours disponible. Si definis, l'article n'apparait dans
+#                 le menu et n'est achetable que durant cette fenetre (peut chevaucher le nouvel an,
+#                 ex: "12-15" -> "01-05"). Une categorie entiere peut aussi avoir actif-du/actif-au
+#                 (voir "halloween" ci-dessous) pour la rendre saisonniere en bloc.
+
+categories:
+  blocs:
+    nom: "&aBlocs & Minerais"
+    icone: GRASS_BLOCK
+    items:
+      pierre:
+        recompense:
+          type: ITEM
+          materiel: STONE
+          quantite: 1
+          nom: "Pierre"
+        prix-achat: 2
+        prix-vente: 1
+
+      fer:
+        recompense:
+          type: ITEM
+          materiel: IRON_INGOT
+          quantite: 1
+          nom: "Lingot de fer"
+        prix-achat: 25
+        prix-vente: 12
+        # Exemple de stock limite (voir la doc en tete de fichier) : 200 lingots en stock, qui se
+        # reapprovisionnent de 50 toutes les 30 minutes.
+        stock-max: 200
+        reappro-intervalle-minutes: 30
+        reappro-quantite: 50
+
+      or:
+        recompense:
+          type: ITEM
+          materiel: GOLD_INGOT
+          quantite: 1
+          nom: "Lingot d'or"
+        prix-achat: 50
+        prix-vente: 25
+
+      diamant:
+        recompense:
+          type: ITEM
+          materiel: DIAMOND
+          quantite: 1
+          nom: "Diamant"
+        prix-achat: 200
+        prix-vente: 100
+
+  outils:
+    nom: "&bOutils"
+    icone: DIAMOND_PICKAXE
+    items:
+      pioche_fer:
+        recompense:
+          type: ITEM
+          materiel: IRON_PICKAXE
+          quantite: 1
+          nom: "Pioche en fer"
+        prix-achat: 150
+
+      pioche_diamant:
+        recompense:
+          type: ITEM
+          materiel: DIAMOND_PICKAXE
+          quantite: 1
+          nom: "Pioche en diamant"
+        prix-achat: 800
+
+  nourriture:
+    nom: "&6Nourriture"
+    icone: COOKED_BEEF
+    items:
+      pain:
+        recompense:
+          type: ITEM
+          materiel: BREAD
+          quantite: 4
+          nom: "Pain x4"
+        prix-achat: 8
+
+      steak:
+        recompense:
+          type: ITEM
+          materiel: COOKED_BEEF
+          quantite: 4
+          nom: "Steak cuit x4"
+        prix-achat: 20
+
+      # Exemple d'article saisonnier individuel (dans une categorie non-saisonniere) : n'apparait/
+      # n'est achetable que du 20 decembre au 26 decembre, meme si la categorie "nourriture" reste
+      # ouverte toute l'annee.
+      biscuit_de_noel:
+        recompense:
+          type: ITEM
+          materiel: COOKIE
+          quantite: 8
+          nom: "Biscuits de Noel x8"
+        prix-achat: 40
+        actif-du: "12-20"
+        actif-au: "12-26"
+
+  # Exemple de categorie saisonniere (voir la doc en tete de fichier) : n'apparait dans le menu et
+  # n'est achetable que du 25 octobre au 2 novembre.
+  halloween:
+    nom: "&6🎃 Boutique d'Halloween"
+    icone: JACK_O_LANTERN
+    actif-du: "10-25"
+    actif-au: "11-02"
+    items:
+      citrouille_sculptee:
+        recompense:
+          type: ITEM
+          materiel: JACK_O_LANTERN
+          quantite: 1
+          nom: "Citrouille sculptee"
+        prix-achat: 100

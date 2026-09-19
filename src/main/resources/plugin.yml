@@ -1,0 +1,309 @@
+name: MysteriaCraft
+version: '${project.version}'
+main: com.mysteriacraft.MysteriaCraft
+api-version: '1.21'
+author: dylan59300
+description: Plugin serveur - Economie, BattlePass, Quetes, Pets, LuckyBlock, Custom Items
+
+commands:
+  admin:
+    description: Ouvre le panel admin unifie (reload/editeurs de tous les modules)
+    usage: /<command>
+  balance:
+    description: Affiche votre solde ou celui d'un joueur
+    usage: /<command> [joueur]
+    aliases: [bal, argent]
+  pay:
+    description: Envoie de l'argent a un autre joueur
+    usage: /<command> <joueur> <montant>
+  payconfirm:
+    description: Confirme un paiement en attente (montant superieur au seuil configure)
+    usage: /<command>
+  baltop:
+    description: Classement des joueurs les plus riches
+    usage: /<command> [page]
+  eco:
+    description: Commande admin pour gerer l'economie
+    usage: /<command> <give|take|set|reset> <joueur> [montant]
+    permission: mysteriacraft.eco.admin
+  ecoreload:
+    description: Recharge la configuration et les messages du plugin
+    usage: /<command>
+    permission: mysteriacraft.eco.admin
+  battlepass:
+    description: Ouvre le menu du BattlePass (par saisons)
+    usage: /<command> [prestige|sprint|stats|donner|titre|titres|top|historique|missions]
+  battlepassadmin:
+    description: Gere le BattlePass (addxp, reload, nouvellesaison, editeur)
+    usage: /<command> <addxp <joueur> <montant>|reload|nouvellesaison|editeur>
+    permission: mysteriacraft.battlepass.admin
+  battlepassconfirmpremium:
+    description: Confirme l'achat en attente du Pass Premium
+    usage: /<command>
+  quests:
+    description: Ouvre le menu des quetes quotidiennes et hebdomadaires
+    usage: /<command>
+  questsadmin:
+    description: Recharge quests.yml ou reinitialise la progression d'un joueur
+    usage: /<command> [reset <joueur>]
+    permission: mysteriacraft.quests.admin
+  pets:
+    description: Ouvre le menu des pets (achat, invocation)
+    usage: /<command>
+  petsadmin:
+    description: Recharge pets.yml
+    usage: /<command>
+    permission: mysteriacraft.pets.admin
+  luckyblock:
+    description: Ouvre le menu des Lucky Blocks, ou achete directement avec buy
+    usage: /<command> [buy <famille> [quantite]]
+  luckyblockadmin:
+    description: Donne un Lucky Block, simule N casses reelles (test/preview), recharge luckyblocks.yml, ou ouvre l'editeur en jeu
+    usage: /<command> <give <joueur> <famille> [quantite]|simulate <famille> <nombre>|reload|editeur>
+    permission: mysteriacraft.luckyblock.admin
+  customitem:
+    description: Catalogue des items custom, gere les minerais/objets (give admin, sell, reload admin)
+    usage: /<command> [gui|give <joueur> <id> [quantite]|sell <id>|reload]
+  machine:
+    description: Donne/recharge/simule la Machine a Transformation (admin), ou affiche vos stats/infos
+    usage: /<command> <give <joueur> [quantite]|preset|reload|stats|info|doubleloot <secondes>|simulate <minerai> <nombre>>
+    # Pas de "permission:" ici : /machine stats et /machine info doivent rester accessibles a
+    # tout joueur (les sous-commandes admin restent protegees dans le code par mysteriacraft.machine.admin).
+  machineminiere:
+    description: Donne/recharge la Machine a Miner (admin)
+    usage: /<command> <give <joueur> [quantite]|reload>
+    permission: mysteriacraft.machineminiere.admin
+  generateur:
+    description: Liste vos generateurs actifs, ou donne/recharge (admin)
+    usage: /<command> <liste|give <joueur> <fer|or|diamant> [quantite]|reload>
+    # Pas de "permission:" ici : /generateur liste doit rester accessible a tout joueur.
+    # give/reload sont verifies manuellement dans le code (mysteriacraft.generateur.admin).
+  generateurlb:
+    description: Liste vos Generateurs de Lucky Block actifs, ou donne/recharge (admin)
+    usage: /<command> <liste|give <joueur> <famille> [quantite]|reload>
+    # Pas de "permission:" ici : /generateurlb liste doit rester accessible a tout joueur.
+    # give/reload sont verifies manuellement dans le code (mysteriacraft.generateurlb.admin).
+  guide:
+    description: Ouvre le guide du serveur (s'ouvre aussi automatiquement a la 1ere connexion)
+    usage: /<command> [reload]
+    # Pas de "permission:" ici : /guide doit rester accessible a tout joueur.
+    # reload est verifie manuellement dans le code (mysteriacraft.guide.admin).
+  ile:
+    description: Gere votre ile privee (skyblock) - creation, invitations, agrandissement
+    usage: /<command> <create|home|spawn|sethome|delete confirm|invite <joueur>|accept <joueur>|kick <joueur>|membres|visit <joueur>|upgrade|niveau|top [page]>
+    # Pas de "permission:" ici : la plupart des sous-commandes doivent rester accessibles a tout
+    # joueur. reload/tp sont verifies manuellement dans le code (mysteriacraft.island.admin).
+  pnjmarchand:
+    description: Recharge la configuration du PNJ Marchand (offres, nom)
+    usage: /<command> reload
+    permission: mysteriacraft.pnjmarchand.admin
+  banque:
+    description: Gere votre solde en banque (interets journaliers, separe du solde principal)
+    usage: /<command> [solde|deposer <montant>|retirer <montant>|reload]
+    # Pas de "permission:" ici : solde/deposer/retirer doivent rester accessibles a tout joueur.
+    # reload est verifie manuellement dans le code (mysteriacraft.banque.admin).
+  enchantementadmin:
+    description: Recharge la configuration de la Table d'Enchantement Custom
+    usage: /<command> reload
+    permission: mysteriacraft.enchantement.admin
+  classe:
+    description: Choisit ou affiche votre classe/metier (bonus passif)
+    usage: /<command> [choisir <id>|reload]
+    # Pas de "permission:" ici : le choix doit rester accessible a tout joueur.
+    # reload est verifie manuellement dans le code (mysteriacraft.classes.admin).
+  mesmachines:
+    description: Ouvre un menu recapitulatif de tous vos generateurs/machines actifs
+    usage: /<command>
+  hoteldesventes:
+    description: Achete/vend des objets entre joueurs a prix fixe
+    usage: /<command> [vendre <prix>|mesventes|annuler <id>|reload]
+    # Pas de "permission:" ici : vendre/mesventes/annuler doivent rester accessibles a tout joueur.
+    # reload est verifie manuellement dans le code (mysteriacraft.encheres.admin).
+  boutique:
+    description: Ouvre le menu de la Boutique (achat/revente avec la monnaie interne)
+    usage: /<command> [code <code>|jetons|fidelite|panier|chercher <texte>|editeur|convertir <argent|jetons> <montant>|reload]
+    # Pas de "permission:" ici : ouvrir la boutique doit rester accessible a tout joueur.
+    # reload est verifie manuellement dans le code (mysteriacraft.boutique.admin).
+  kit:
+    description: Ouvre le menu des kits, ou en recupere un directement
+    usage: /<command> [id-kit|reload]
+    # Pas de "permission:" ici : ouvrir le menu doit rester accessible a tout joueur (chaque kit
+    # peut avoir sa propre permission optionnelle, voir kits.yml). reload est verifie manuellement
+    # dans le code (mysteriacraft.kit.admin).
+  prestige:
+    description: Affiche votre palier de prestige, ou en achete le suivant
+    usage: /<command> [confirmer]
+  home:
+    description: Gere vos homes multiples (limite selon votre prestige)
+    usage: /<command> [nom|set [nom]|del <nom>|liste]
+  sac:
+    description: Ouvre votre Sac personnel, ou l'ameliore avec l'item dedie en main
+    usage: /<command> [ameliorer]
+  coffrefort:
+    description: Ouvre votre Coffre-fort personnel, ou paye pour l'agrandir
+    usage: /<command> [ameliorer]
+  trier:
+    description: Range et fusionne automatiquement votre inventaire
+    usage: /<command>
+  raffinerie:
+    description: Recharge la configuration de la Raffinerie (admin)
+    usage: /<command> reload
+    permission: mysteriacraft.raffinerie.admin
+  recycler:
+    description: Recycle l'item custom use en main contre des materiaux
+    usage: /<command> [reload]
+    # Pas de "permission:" ici : recycler doit rester accessible a tout joueur. reload est verifie
+    # manuellement dans le code (mysteriacraft.recyclage.admin).
+  gemme:
+    description: Insere la gemme en main secondaire dans l'equipement en main principale
+    usage: /<command> [inserer|reload]
+    # Pas de "permission:" ici : inserer doit rester accessible a tout joueur. reload est verifie
+    # manuellement dans le code (mysteriacraft.gemme.admin).
+  rune:
+    description: Grave la rune en main secondaire sur l'arme en main principale
+    usage: /<command> [graver|reload]
+    # Pas de "permission:" ici : graver doit rester accessible a tout joueur. reload est verifie
+    # manuellement dans le code (mysteriacraft.rune.admin).
+  marchenoir:
+    description: Ouvre le menu du Marche Noir (selection aleatoire d'objets rares)
+    usage: /<command> [reload]
+    # Pas de "permission:" ici : ouvrir le menu doit rester accessible a tout joueur. reload est
+    # verifie manuellement dans le code (mysteriacraft.marchenoir.admin).
+  dressage:
+    description: Affiche le niveau de dressage de votre pet actif et ses bonus
+    usage: /<command>
+  talents:
+    description: Ouvre l'arbre de talents (points gagnes par kill)
+    usage: /<command> [reload]
+    # Pas de "permission:" ici : ouvrir l'arbre doit rester accessible a tout joueur. reload est
+    # verifie manuellement dans le code (mysteriacraft.talents.admin).
+  metier:
+    description: Affiche ou choisit votre metier (pecheur/forgeron/alchimiste)
+    usage: /<command> [choisir <id>|reload]
+    # Pas de "permission:" ici : choisir doit rester accessible a tout joueur. reload est verifie
+    # manuellement dans le code (mysteriacraft.metier.admin).
+  generateurhybride:
+    description: Donne/recharge un Generateur Hybride (admin)
+    usage: /<command> <give <joueur> <type> [quantite]|reload>
+    permission: mysteriacraft.generateurhybride.admin
+  mobcustom:
+    description: Fait apparaitre un mob custom, ou recharge sa configuration (admin)
+    usage: /<command> <spawn <id> [nombre]|reload>
+    permission: mysteriacraft.mobcustom.admin
+  etabli:
+    description: Recharge la configuration de l'Etabli Ameliore (admin)
+    usage: /<command> reload
+    permission: mysteriacraft.etabli.admin
+  resourcepack:
+    description: Renvoie le resource pack du serveur (textures des items custom), ou le recharge (admin)
+    usage: /<command> [reload]
+    # Pas de "permission:" ici : renvoyer le pack doit rester accessible a tout joueur. reload est
+    # verifie manuellement dans le code (mysteriacraft.resourcepack.admin).
+  voucher:
+    description: Gere les Vouchers (objets a usage unique donnant une recompense via commande)
+    usage: /<command> <give <joueur> <id> [quantite]|list|reload|admin>
+    permission: mysteriacraft.voucher.admin
+
+permissions:
+  mysteriacraft.admin:
+    description: Autorise l'acces au panel admin unifie (/admin)
+    default: op
+  mysteriacraft.eco.admin:
+    description: Autorise la gestion admin de l'economie
+    default: op
+  mysteriacraft.battlepass.admin:
+    description: Autorise la gestion admin du BattlePass (xp, reload)
+    default: op
+  mysteriacraft.battlepass.premium:
+    description: Accorde le Pass Premium sans achat (a lier a un rang ou un kit VIP)
+    default: false
+  mysteriacraft.quests.admin:
+    description: Autorise la gestion admin des quetes (reload)
+    default: op
+  mysteriacraft.pets.admin:
+    description: Autorise la gestion admin des pets (reload)
+    default: op
+  mysteriacraft.luckyblock.admin:
+    description: Autorise la gestion admin des Lucky Blocks (give, reload)
+    default: op
+  mysteriacraft.customitem.admin:
+    description: Autorise la gestion admin des items custom (give, reload)
+    default: op
+  mysteriacraft.machine.admin:
+    description: Autorise la gestion admin de la Machine a Transformation (give, preset, reload)
+    default: op
+  mysteriacraft.machineminiere.admin:
+    description: Autorise la gestion admin de la Machine a Miner (give, reload, casse pendant le minage)
+    default: op
+  mysteriacraft.generateur.admin:
+    description: Autorise la gestion admin des Generateurs d'Argent (give, reload)
+    default: op
+  mysteriacraft.generateurlb.admin:
+    description: Autorise la gestion admin des Generateurs de Lucky Block (give, reload)
+    default: op
+  mysteriacraft.guide.admin:
+    description: Autorise la gestion admin du guide (reload)
+    default: op
+  mysteriacraft.island.admin:
+    description: Autorise la gestion admin des Iles (reload, tp sur l'ile d'un joueur, bypass protection)
+    default: op
+  mysteriacraft.pnjmarchand.admin:
+    description: Autorise la gestion admin du PNJ Marchand (reload)
+    default: op
+  mysteriacraft.banque.admin:
+    description: Autorise la gestion admin de la Banque (reload)
+    default: op
+  mysteriacraft.enchantement.admin:
+    description: Autorise la gestion admin de la Table d'Enchantement Custom (reload)
+    default: op
+  mysteriacraft.classes.admin:
+    description: Autorise la gestion admin des Classes/Metiers (reload)
+    default: op
+  mysteriacraft.encheres.admin:
+    description: Autorise la gestion admin de l'Hotel des Ventes (reload)
+    default: op
+  mysteriacraft.boutique.admin:
+    description: Autorise la gestion admin de la Boutique (reload)
+    default: op
+  mysteriacraft.kit.admin:
+    description: Autorise la gestion admin des Kits (reload)
+    default: op
+  mysteriacraft.kit.vip:
+    description: Autorise la recuperation du Kit VIP (a lier a un rang)
+    default: false
+  mysteriacraft.raffinerie.admin:
+    description: Autorise la gestion admin de la Raffinerie (reload)
+    default: op
+  mysteriacraft.recyclage.admin:
+    description: Autorise la gestion admin du Recyclage (reload)
+    default: op
+  mysteriacraft.gemme.admin:
+    description: Autorise la gestion admin des Gemmes (reload)
+    default: op
+  mysteriacraft.rune.admin:
+    description: Autorise la gestion admin des Runes (reload)
+    default: op
+  mysteriacraft.marchenoir.admin:
+    description: Autorise la gestion admin du Marche Noir (reload)
+    default: op
+  mysteriacraft.talents.admin:
+    description: Autorise la gestion admin des Talents (reload)
+    default: op
+  mysteriacraft.metier.admin:
+    description: Autorise la gestion admin des Metiers (reload)
+    default: op
+  mysteriacraft.generateurhybride.admin:
+    description: Autorise la gestion admin des Generateurs Hybrides (give, reload)
+    default: op
+  mysteriacraft.mobcustom.admin:
+    description: Autorise la gestion admin des Mobs Custom (spawn, reload)
+    default: op
+  mysteriacraft.etabli.admin:
+    description: Autorise la gestion admin de l'Etabli Ameliore (reload)
+    default: op
+  mysteriacraft.resourcepack.admin:
+    description: Autorise la gestion admin du resource pack (reload)
+    default: op
+  mysteriacraft.voucher.admin:
+    description: Autorise la gestion des Vouchers (give, reload, editeur)
+    default: op

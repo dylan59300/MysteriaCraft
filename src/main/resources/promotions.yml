@@ -1,0 +1,55 @@
+# =========================================
+#   MysteriaCraft - Configuration des Promotions & Jetons Boutique
+# =========================================
+# Toutes les reductions AUTOMATIQUES (happy hour, article du jour, premier achat, anniversaire,
+# VIP) se CUMULENT par addition sur un achat, plafonnees a reduction-max-pourcent. Un code promo
+# actif (voir /boutique code) s'ajoute par-dessus, avec le meme plafond.
+
+reduction-max-pourcent: 80
+
+# Happy Hour : 1 heure aleatoire par jour (tiree deterministement, identique pour tous les joueurs,
+# change chaque jour a minuit) ou TOUS les achats beneficient de cette reduction.
+happy-hour-reduction-pourcent: 15
+
+# Article du jour ("prix casse") : 1 article aleatoire par jour (tire deterministement parmi TOUS
+# les articles de boutique.yml) beneficie de cette reduction supplementaire toute la journee.
+prix-casse-pourcent: 40
+
+# Premier achat jamais effectue en boutique par ce joueur (tous serveurs/personnages confondus,
+# suivi en base).
+reduction-premier-achat-pourcent: 20
+
+# Applique le jour anniversaire de la premiere connexion du joueur sur le serveur (comparaison
+# jour/mois avec Player#getFirstPlayed).
+reduction-anniversaire-pourcent: 25
+
+# Reduction VIP basee sur la permission la plus avantageuse detenue par le joueur (a lier a des
+# rangs de permissions, ex: LuckPerms). Non cumulable entre elles (seule la meilleure s'applique).
+vip:
+  mysteriacraft.boutique.vip.bronze: 5
+  mysteriacraft.boutique.vip.argent: 10
+  mysteriacraft.boutique.vip.or: 15
+  mysteriacraft.boutique.vip.platine: 25
+
+# Codes promo actives via /boutique code <code> (valables pour le PROCHAIN achat uniquement).
+# usages-max-par-joueur : nombre de fois qu'un MEME joueur peut utiliser ce code (a vie).
+codes-promo:
+  BIENVENUE:
+    reduction-pourcent: 15
+    usages-max-par-joueur: 1
+  FIDELE10:
+    reduction-pourcent: 10
+    usages-max-par-joueur: 5
+
+# Jetons Boutique : monnaie secondaire, gagnee en cashback sur chaque achat (voir ShopService#buy)
+# et convertible dans les deux sens avec l'argent (/boutique convertir), a un taux qui varie
+# chaque jour dans cette fourchette (tire deterministement, identique pour tous).
+jetons:
+  cashback-jeton-par-100-argent: 1
+  taux-argent-par-jeton-min: 80
+  taux-argent-par-jeton-max: 120
+
+# Integration avec le BattlePass (voir "idee : integrations inter-modules") : chaque achat en
+# boutique donne aussi un peu d'xp BattlePass, proportionnelle a l'argent REELLEMENT depense
+# (apres reductions). 0 = desactive.
+xp-battlepass-par-100-argent: 5

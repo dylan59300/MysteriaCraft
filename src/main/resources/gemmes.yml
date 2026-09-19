@@ -1,0 +1,37 @@
+# =========================================
+#   MysteriaCraft - Configuration des Gemmes
+# =========================================
+# /gemme inserer : en tenant l'EQUIPEMENT (arme/outil/armure) en main PRINCIPALE et la gemme en
+# main SECONDAIRE, insere durablement le bonus d'attribut de la gemme dans l'equipement. Une seule
+# gemme par piece d'equipement (en inserer une nouvelle remplace l'ancienne, qui est perdue).
+#
+# Chaque gemme (sous "gemmes") :
+#   nom      : nom affiche dans la lore de l'equipement.
+#   item-id  : id de l'item custom consomme (voir custom_items.yml).
+#   attribut : attribut Bukkit vanilla applique (ex: ATTACK_DAMAGE, ARMOR,
+#              MAX_HEALTH, MOVEMENT_SPEED, ATTACK_SPEED).
+#   valeur   : montant ajoute a cet attribut (ADD_NUMBER).
+gemmes:
+  gemme_force:
+    nom: "&cGemme de Force"
+    item-id: gemme_force
+    attribut: ATTACK_DAMAGE
+    valeur: 2.0
+
+  gemme_protection:
+    nom: "&9Gemme de Protection"
+    item-id: gemme_protection
+    attribut: ARMOR
+    valeur: 2.0
+
+  gemme_vitalite:
+    nom: "&aGemme de Vitalite"
+    item-id: gemme_vitalite
+    attribut: MAX_HEALTH
+    valeur: 4.0
+
+  gemme_agilite:
+    nom: "&bGemme d'Agilite"
+    item-id: gemme_agilite
+    attribut: MOVEMENT_SPEED
+    valeur: 0.02

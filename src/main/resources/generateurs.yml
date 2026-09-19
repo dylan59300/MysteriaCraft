@@ -1,0 +1,219 @@
+# =========================================
+#   MysteriaCraft - Configuration des Generateurs d'Argent
+# =========================================
+# Un generateur pose (voir /generateur give <joueur> <type> [quantite]) accumule automatiquement
+# de l'argent au fil du temps REEL (meme hors-ligne : le calcul se base sur l'horloge, pas sur un
+# tick programme), jusqu'a un plafond de stockage (stockage-max). Clic-droit dessus pour recuperer
+# tout l'argent stocke, credite directement sur votre solde (module Economie).
+# Casser un generateur recupere automatiquement son stock pour vous avant qu'il ne tombe en item :
+# rien n'est jamais perdu.
+# Coller un hopper a une face du generateur active l'AUTO-COLLECTE : l'argent genere est credite
+# en continu au proprietaire (celui qui a pose le bloc) sans avoir a cliquer. Aucune monnaie
+# physique n'existe dans ce plugin : le hopper sert de detecteur, pas de transporteur d'argent.
+#
+# montant : argent (ou nombre d'objets, voir type-resultat ci-dessous) genere pour un cycle
+#           complet (intervalle-secondes).
+# intervalle-secondes : duree necessaire pour generer "montant" en integralite.
+# stockage-max : plafond d'argent/objets que le generateur peut stocker avant de devoir etre
+#                recupere (par defaut = montant, soit 1 cycle complet ; augmentez pour laisser
+#                plus de marge aux joueurs qui ne repassent pas regulierement).
+# type-resultat : ARGENT (par defaut, comportement historique credite le solde) ou OBJET (donne
+#                 de VRAIS exemplaires de "objet-resultat" au clic-droit/a la casse ; colle un
+#                 hopper pour les recuperer automatiquement DANS le hopper, comme un generateur de
+#                 minerai classique skyblock). "montant" est alors un nombre d'objets par cycle,
+#                 les fractions de cycle s'accumulent sans jamais rien perdre ni arrondir au
+#                 superieur.
+# objet-resultat : materiau VANILLA donne par cycle, uniquement si type-resultat: OBJET.
+# objet-resultat-custom : id d'un item CUSTOM (voir custom_items.yml) donne a la place d'un
+#                         materiau vanilla, si defini (prioritaire sur objet-resultat).
+# obtenable-en-recompense-uniquement : purement informatif (ajoute une ligne de lore) ; n'empeche
+#                                       pas un admin de le donner via /generateur give.
+# recette : ingredients d'un craft shapeless (n'importe quel agencement dans la table), optionnel.
+# generateur-precedent : id d'un AUTRE generateur requis EN PLUS de "recette" (1 exemplaire, tel
+#                        quel, non consomme separement du reste) pour craft ce palier suivant :
+#                        cree une PROGRESSION EN PLUSIEURS PALIERS (fer -> or -> diamant ->
+#                        legendaire), chaque generateur craftable servant d'ingredient au suivant.
+generateurs:
+  fer:
+    nom: "&7Generateur de Fer"
+    bloc: IRON_ORE
+    montant: 100000
+    intervalle-secondes: 18000   # 5 heures
+    stockage-max: 100000
+    # Palier 1/4 : craftable directement, aucun generateur requis.
+    recette:
+      - materiel: IRON_BLOCK
+        quantite: 4
+      - materiel: REDSTONE_BLOCK
+        quantite: 2
+      - materiel: IRON_INGOT
+        quantite: 2
+
+  or:
+    nom: "&6Generateur d'Or"
+    bloc: GOLD_ORE
+    montant: 200000
+    intervalle-secondes: 3600    # 1 heure
+    stockage-max: 200000
+    # Palier 2/4 : necessite un Generateur de Fer.
+    generateur-precedent: fer
+    recette:
+      - materiel: GOLD_BLOCK
+        quantite: 4
+      - materiel: REDSTONE_BLOCK
+        quantite: 2
+
+  diamant:
+    nom: "&bGenerateur de Diamant"
+    bloc: DIAMOND_ORE
+    montant: 500000
+    intervalle-secondes: 1800    # 30 minutes
+    stockage-max: 500000
+    # Palier 3/4 : necessite un Generateur d'Or.
+    generateur-precedent: or
+    recette:
+      - materiel: DIAMOND_BLOCK
+        quantite: 2
+      - materiel: EMERALD_BLOCK
+        quantite: 2
+      - materiel: REDSTONE_BLOCK
+        quantite: 2
+
+  legendaire:
+    nom: "&5&lGenerateur Legendaire"
+    bloc: NETHERITE_BLOCK
+    montant: 1000000
+    intervalle-secondes: 900     # 15 minutes
+    stockage-max: 1000000
+    # Palier 4/4 : necessite un Generateur de Diamant. Reste egalement obtenable en recompense
+    # (obtenable-en-recompense-uniquement n'empeche PAS le craft : c'est juste une ligne de lore).
+    generateur-precedent: diamant
+    recette:
+      - materiel: NETHERITE_BLOCK
+        quantite: 1
+      - materiel: NETHER_STAR
+        quantite: 1
+      - materiel: DIAMOND_BLOCK
+        quantite: 2
+    obtenable-en-recompense-uniquement: true
+
+  # ---- Generateurs de RESSOURCES (voir type-resultat/objet-resultat ci-dessus) : donnent de
+  # vrais lingots/diamants, pas de l'argent, contrairement aux generateurs "fer/or/diamant"
+  # ci-dessus qui ne font que reprendre leur theme visuel pour de l'argent. Meme principe de
+  # progression en paliers (chaine INDEPENDANTE de celle des generateurs d'argent).
+  ressource_fer:
+    nom: "&7Generateur de Minerai de Fer"
+    bloc: IRON_BLOCK
+    type-resultat: OBJET
+    objet-resultat: IRON_INGOT
+    montant: 8
+    intervalle-secondes: 5       # ~5760 lingots/heure
+    stockage-max: 128
+    recette:
+      - materiel: IRON_BLOCK
+        quantite: 4
+      - materiel: REDSTONE_BLOCK
+        quantite: 1
+      - materiel: IRON_INGOT
+        quantite: 4
+
+  ressource_or:
+    nom: "&6Generateur de Minerai d'Or"
+    bloc: GOLD_BLOCK
+    type-resultat: OBJET
+    objet-resultat: GOLD_INGOT
+    montant: 4
+    intervalle-secondes: 5       # ~2880 lingots/heure
+    stockage-max: 64
+    generateur-precedent: ressource_fer
+    recette:
+      - materiel: GOLD_BLOCK
+        quantite: 4
+      - materiel: REDSTONE_BLOCK
+        quantite: 1
+      - materiel: GOLD_INGOT
+        quantite: 4
+
+  ressource_diamant:
+    nom: "&bGenerateur de Diamant"
+    bloc: DIAMOND_BLOCK
+    type-resultat: OBJET
+    objet-resultat: DIAMOND
+    montant: 1
+    intervalle-secondes: 5       # ~720 diamants/heure
+    stockage-max: 32
+    generateur-precedent: ressource_or
+    recette:
+      - materiel: DIAMOND_BLOCK
+        quantite: 2
+      - materiel: EMERALD_BLOCK
+        quantite: 1
+      - materiel: REDSTONE_BLOCK
+        quantite: 1
+
+  # Palier ultime de la chaine de ressources : tres lent, mais donne de la netherite brute.
+  ressource_legendaire:
+    nom: "&5&lGenerateur de Netherite"
+    bloc: NETHERITE_BLOCK
+    type-resultat: OBJET
+    objet-resultat: NETHERITE_SCRAP
+    montant: 1
+    intervalle-secondes: 5       # ~720 eclats de netherite/heure
+    stockage-max: 8
+    generateur-precedent: ressource_diamant
+    recette:
+      - materiel: NETHERITE_BLOCK
+        quantite: 1
+      - materiel: NETHER_STAR
+        quantite: 1
+      - materiel: DIAMOND_BLOCK
+        quantite: 2
+    obtenable-en-recompense-uniquement: true
+
+  # Genere directement un item CUSTOM (voir objet-resultat-custom) plutot qu'un materiau vanilla :
+  # ici, l'essence utilisee comme catalyseur de la Table d'Enchantement Custom (idee "lien avec la
+  # table d'enchantement"). Independant de la chaine de ressources ci-dessus.
+  ressource_essence:
+    nom: "&d&lGenerateur d'Essence d'Enchantement"
+    bloc: LAPIS_BLOCK
+    type-resultat: OBJET
+    objet-resultat-custom: essence_enchantement
+    montant: 1
+    intervalle-secondes: 5       # ~720 essences/heure
+    stockage-max: 8
+    recette:
+      - materiel: LAPIS_BLOCK
+        quantite: 4
+      - materiel: EXPERIENCE_BOTTLE
+        quantite: 8
+      - materiel: NETHER_STAR
+        quantite: 1
+
+# Frequence (en secondes) a laquelle le stock de chaque generateur pose est recalcule et son
+# hologramme mis a jour, meme sans interaction du joueur (auto-collecte comprise).
+tick-secondes: 5
+
+# Limite du nombre de generateurs actifs qu'un meme joueur peut poser (0 = illimite). Bloque la
+# pose au-dela de cette limite. Limitation connue : le comptage ne suit que les generateurs vus
+# depuis le dernier demarrage du plugin (comme les autres effets ambiants de MysteriaCraft).
+max-generateurs-par-joueur: 30
+
+# % preleve sur chaque recuperation (clic-droit, casse, ou auto-collecte via hopper), quel que
+# soit le type de generateur. 0 = pas de taxe.
+taxe-recuperation-pourcent: 5
+
+# Amelioration de rythme : objet custom consommable (voir custom_items.yml) qui augmente
+# durablement le rythme de generation d'UN generateur precis (independant de son type de base),
+# jusqu'a bonus-max. Se cumule avec le type de base (ex: +10% par utilisation, jusqu'a +50%).
+amelioration:
+  item-id: boost_generateur
+  bonus-par-amelioration: 10
+  bonus-max: 50
+
+# Amelioration de stockage : objet custom consommable qui augmente durablement le PLAFOND de
+# stockage d'UN generateur precis (independant du type de base et du bonus de rythme ci-dessus),
+# jusqu'a bonus-max.
+amelioration-stockage:
+  item-id: boost_stockage_generateur
+  bonus-par-amelioration: 20
+  bonus-max: 100
