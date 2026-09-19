@@ -96,4 +96,18 @@ public class ModBlocks {
     public static final RegistryObject<Block> RUBY_FURNACE = registerBlock("ruby_furnace",
             () -> new RubyFurnaceBlock(baseProps(MapColor.COLOR_RED)
                     .lightLevel(state -> state.getValue(RubyFurnaceBlock.LIT) ? 13 : 0)));
+
+    // Blocs Chanceux : ne dropent jamais eux-memes, uniquement un item aleatoire (voir loot_table/blocks/lucky_block*.json).
+    public static final RegistryObject<Block> LUCKY_BLOCK = registerBlock("lucky_block",
+            () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(0.5f)
+                    .sound(SoundType.WOOL).lightLevel(state -> 8)));
+    public static final RegistryObject<Block> LUCKY_BLOCK_RED = registerBlock("lucky_block_red",
+            () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED).strength(0.5f)
+                    .sound(SoundType.WOOL).lightLevel(state -> 8)));
+    public static final RegistryObject<Block> LUCKY_BLOCK_YELLOW = registerBlock("lucky_block_yellow",
+            () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_YELLOW).strength(0.5f)
+                    .sound(SoundType.WOOL).lightLevel(state -> 8)));
+    public static final RegistryObject<Block> LUCKY_BLOCK_BLUE = registerBlock("lucky_block_blue",
+            () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLUE).strength(0.5f)
+                    .sound(SoundType.WOOL).lightLevel(state -> 8)));
 }

@@ -60,6 +60,12 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.RUBY_FURNACE.get());
                         output.accept(ModItems.RUBY.get());
 
+                        // Blocs Chanceux
+                        output.accept(ModBlocks.LUCKY_BLOCK.get());
+                        output.accept(ModBlocks.LUCKY_BLOCK_RED.get());
+                        output.accept(ModBlocks.LUCKY_BLOCK_YELLOW.get());
+                        output.accept(ModBlocks.LUCKY_BLOCK_BLUE.get());
+
                         // Equipement Mercure Ardent
                         output.accept(ModItems.ARDENT_MERCURY_SWORD.get());
                         output.accept(ModItems.ARDENT_MERCURY_HELMET.get());
