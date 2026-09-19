@@ -1,0 +1,41 @@
+{
+    "textures": {
+        "top": "mysteriacraft:block/ruby_furnace_top",
+        "side": "mysteriacraft:block/ruby_furnace_side",
+        "front": "mysteriacraft:block/ruby_furnace_front_on"
+    },
+    "elements": [
+        {
+            "from": [
+                0,
+                0,
+                0
+            ],
+            "to": [
+                16,
+                16,
+                16
+            ],
+            "faces": {
+                "down": {
+                    "texture": "#top"
+                },
+                "up": {
+                    "texture": "#top"
+                },
+                "north": {
+                    "texture": "#front"
+                },
+                "south": {
+                    "texture": "#side"
+                },
+                "west": {
+                    "texture": "#side"
+                },
+                "east": {
+                    "texture": "#side"
+                }
+            }
+        }
+    ]
+}
