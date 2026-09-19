@@ -1,0 +1,20 @@
+# =========================================
+#   MysteriaCraft - Configuration des Vouchers
+# =========================================
+# Un Voucher est un objet physique donne a un joueur (/voucher give <joueur> <id> [quantite]) qui,
+# une fois utilise (clic-droit, avec confirmation), execute une commande console et se consomme.
+# Gerable entierement en jeu via /voucher admin (voir le panel admin unifie, /admin).
+#
+# nom : nom colore affiche sur l'objet.
+# materiau : materiau vanilla utilise comme icone (ex: PAPER, DIAMOND, NETHER_STAR...).
+# lore : lore colore affiche sous le nom (en plus de la ligne "clic-droit pour utiliser" ajoutee
+#        automatiquement).
+# commande : commande executee (console) a la confirmation, {joueur} remplace par le nom du joueur.
+
+vouchers:
+  exemple:
+    nom: "&aVoucher Exemple"
+    materiau: PAPER
+    lore:
+      - "&7Un exemple de voucher."
+    commande: "give {joueur} diamond 1"

@@ -51,6 +51,8 @@ public final class AdminRegistry {
             new AdminModule("Metiers", Material.DIAMOND_PICKAXE, "mysteriacraft.metier.admin", "metier reload"),
             new AdminModule("Generateur Hybride", Material.MAGMA_BLOCK, "mysteriacraft.generateurhybride.admin", "generateurhybride reload"),
             new AdminModule("Mobs Custom", Material.ZOMBIE_HEAD, "mysteriacraft.mobcustom.admin", "mobcustom reload"),
-            new AdminModule("Etabli Ameliore", Material.CRAFTING_TABLE, "mysteriacraft.etabli.admin", "etabli reload")
+            new AdminModule("Etabli Ameliore", Material.CRAFTING_TABLE, "mysteriacraft.etabli.admin", "etabli reload"),
+            new AdminModule("Vouchers", Material.PAPER, "mysteriacraft.voucher.admin",
+                    "voucher reload", "voucher admin", "voucher", false)
     );
 }

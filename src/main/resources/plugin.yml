@@ -199,6 +199,10 @@ commands:
     usage: /<command> [reload]
     # Pas de "permission:" ici : renvoyer le pack doit rester accessible a tout joueur. reload est
     # verifie manuellement dans le code (mysteriacraft.resourcepack.admin).
+  voucher:
+    description: Gere les Vouchers (objets a usage unique donnant une recompense via commande)
+    usage: /<command> <give <joueur> <id> [quantite]|list|reload|admin>
+    permission: mysteriacraft.voucher.admin
 
 permissions:
   mysteriacraft.admin:
@@ -299,4 +303,7 @@ permissions:
     default: op
   mysteriacraft.resourcepack.admin:
     description: Autorise la gestion admin du resource pack (reload)
+    default: op
+  mysteriacraft.voucher.admin:
+    description: Autorise la gestion des Vouchers (give, reload, editeur)
     default: op

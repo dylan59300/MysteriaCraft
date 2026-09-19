@@ -163,6 +163,12 @@ import com.mysteriacraft.etabli.commands.EtabliCommand;
 import com.mysteriacraft.resourcepack.ResourcePackCommand;
 import com.mysteriacraft.resourcepack.ResourcePackListener;
 import com.mysteriacraft.resourcepack.ResourcePackManager;
+import com.mysteriacraft.voucher.VoucherEditorService;
+import com.mysteriacraft.voucher.VoucherManager;
+import com.mysteriacraft.voucher.VoucherService;
+import com.mysteriacraft.voucher.commands.VoucherCommand;
+import com.mysteriacraft.voucher.listeners.VoucherEditorChatListener;
+import com.mysteriacraft.voucher.listeners.VoucherListener;
 import com.mysteriacraft.etabli.listeners.EtabliListener;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
@@ -416,6 +422,9 @@ public final class MysteriaCraft extends JavaPlugin {
 
         // ---- Etabli Ameliore (depend de customItemManager, rewardGiver et metierService) ----
         setupEtabli();
+
+        // ---- Vouchers (depend de rewardGiver) ----
+        setupVoucher();
 
         // ---- Panel admin unifie (/admin, voir AdminRegistry) : independant, ne fait que
         // dispatcher les commandes deja enregistrees par les setup*() precedents. ----
@@ -872,6 +881,18 @@ public final class MysteriaCraft extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(
                 new EtabliListener(this, etabliManager, etabliService, customItemManager, messages), this);
         getCommand("etabli").setExecutor(new EtabliCommand(etabliConfig, etabliManager, messages));
+    }
+
+    private void setupVoucher() {
+        ConfigManager voucherConfig = new ConfigManager(this, "voucher.yml");
+        VoucherManager voucherManager = new VoucherManager(voucherConfig);
+        VoucherService voucherService = new VoucherService(this, voucherManager, rewardGiver, messages);
+        VoucherEditorService voucherEditorService = new VoucherEditorService(this, voucherManager, messages);
+        Bukkit.getPluginManager().registerEvents(new VoucherListener(voucherManager, voucherService, messages), this);
+        Bukkit.getPluginManager().registerEvents(new VoucherEditorChatListener(this, voucherEditorService), this);
+        VoucherCommand voucherCommand = new VoucherCommand(voucherConfig, voucherManager, voucherService, voucherEditorService, messages);
+        getCommand("voucher").setExecutor(voucherCommand);
+        getCommand("voucher").setTabCompleter(voucherCommand);
     }
 
     private void setupResourcePack() {
