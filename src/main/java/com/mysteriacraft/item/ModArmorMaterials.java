@@ -12,10 +12,10 @@ import net.minecraft.world.item.crafting.Ingredient;
 import java.util.EnumMap;
 import java.util.function.Supplier;
 
-/** Matériau de l'armure Infernale : forgée à partir de Lingots Runiques. */
+/** Matériau de l'armure Mercure Ardent : forgée à partir de Lingots Runiques. */
 public enum ModArmorMaterials implements ArmorMaterial {
 
-    INFERNAL("infernal", 37, Util.make(new EnumMap<>(ArmorItem.Type.class), map -> {
+    ARDENT_MERCURY("ardent_mercury", 37, Util.make(new EnumMap<>(ArmorItem.Type.class), map -> {
         map.put(ArmorItem.Type.BOOTS, 3);
         map.put(ArmorItem.Type.LEGGINGS, 6);
         map.put(ArmorItem.Type.CHESTPLATE, 8);

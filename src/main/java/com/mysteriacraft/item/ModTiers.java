@@ -6,10 +6,10 @@ import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.block.Block;
 
-/** Tier de l'Épée Infernale, forgée à partir de Lingots Runiques. */
+/** Tier de l'Épée de Mercure Ardent, forgée à partir de Lingots Runiques. */
 public enum ModTiers implements Tier {
 
-    INFERNAL(2500, 9.0F, 3.5F, 16, () -> Ingredient.of(ModItems.RUNIC_INGOT.get()));
+    ARDENT_MERCURY(2500, 9.0F, 3.5F, 16, () -> Ingredient.of(ModItems.RUNIC_INGOT.get()));
 
     private final int uses;
     private final float speed;

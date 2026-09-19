@@ -58,12 +58,12 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.RUNIC_FORGE.get());
                         output.accept(ModBlocks.STARLIGHT_REFINER.get());
 
-                        // Equipement Infernal
-                        output.accept(ModItems.INFERNAL_SWORD.get());
-                        output.accept(ModItems.INFERNAL_HELMET.get());
-                        output.accept(ModItems.INFERNAL_CHESTPLATE.get());
-                        output.accept(ModItems.INFERNAL_LEGGINGS.get());
-                        output.accept(ModItems.INFERNAL_BOOTS.get());
+                        // Equipement Mercure Ardent
+                        output.accept(ModItems.ARDENT_MERCURY_SWORD.get());
+                        output.accept(ModItems.ARDENT_MERCURY_HELMET.get());
+                        output.accept(ModItems.ARDENT_MERCURY_CHESTPLATE.get());
+                        output.accept(ModItems.ARDENT_MERCURY_LEGGINGS.get());
+                        output.accept(ModItems.ARDENT_MERCURY_BOOTS.get());
                     })
                     .build());
 }

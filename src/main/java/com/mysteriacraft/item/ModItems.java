@@ -37,18 +37,18 @@ public class ModItems {
     public static final RegistryObject<Item> STARLIGHT_INGOT = ITEMS.register("starlight_ingot",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> INFERNAL_HELMET = ITEMS.register("infernal_helmet",
-            () -> new ArmorItem(ModArmorMaterials.INFERNAL, ArmorItem.Type.HELMET, new Item.Properties()));
+    public static final RegistryObject<Item> ARDENT_MERCURY_HELMET = ITEMS.register("ardent_mercury_helmet",
+            () -> new ArmorItem(ModArmorMaterials.ARDENT_MERCURY, ArmorItem.Type.HELMET, new Item.Properties()));
 
-    public static final RegistryObject<Item> INFERNAL_CHESTPLATE = ITEMS.register("infernal_chestplate",
-            () -> new ArmorItem(ModArmorMaterials.INFERNAL, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+    public static final RegistryObject<Item> ARDENT_MERCURY_CHESTPLATE = ITEMS.register("ardent_mercury_chestplate",
+            () -> new ArmorItem(ModArmorMaterials.ARDENT_MERCURY, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
 
-    public static final RegistryObject<Item> INFERNAL_LEGGINGS = ITEMS.register("infernal_leggings",
-            () -> new ArmorItem(ModArmorMaterials.INFERNAL, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+    public static final RegistryObject<Item> ARDENT_MERCURY_LEGGINGS = ITEMS.register("ardent_mercury_leggings",
+            () -> new ArmorItem(ModArmorMaterials.ARDENT_MERCURY, ArmorItem.Type.LEGGINGS, new Item.Properties()));
 
-    public static final RegistryObject<Item> INFERNAL_BOOTS = ITEMS.register("infernal_boots",
-            () -> new ArmorItem(ModArmorMaterials.INFERNAL, ArmorItem.Type.BOOTS, new Item.Properties()));
+    public static final RegistryObject<Item> ARDENT_MERCURY_BOOTS = ITEMS.register("ardent_mercury_boots",
+            () -> new ArmorItem(ModArmorMaterials.ARDENT_MERCURY, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-    public static final RegistryObject<Item> INFERNAL_SWORD = ITEMS.register("infernal_sword",
-            () -> new SwordItem(ModTiers.INFERNAL, 3, -2.4F, new Item.Properties()));
+    public static final RegistryObject<Item> ARDENT_MERCURY_SWORD = ITEMS.register("ardent_mercury_sword",
+            () -> new SwordItem(ModTiers.ARDENT_MERCURY, 3, -2.4F, new Item.Properties()));
 }
