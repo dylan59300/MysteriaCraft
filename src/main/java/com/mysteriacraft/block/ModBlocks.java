@@ -93,4 +93,7 @@ public class ModBlocks {
             () -> new RunicForgeBlock(baseProps(MapColor.COLOR_RED)));
     public static final RegistryObject<Block> STARLIGHT_REFINER = registerBlock("starlight_refiner",
             () -> new StarlightRefinerBlock(baseProps(MapColor.SNOW)));
+    public static final RegistryObject<Block> RUBY_FURNACE = registerBlock("ruby_furnace",
+            () -> new RubyFurnaceBlock(baseProps(MapColor.COLOR_RED)
+                    .lightLevel(state -> state.getValue(RubyFurnaceBlock.LIT) ? 13 : 0)));
 }

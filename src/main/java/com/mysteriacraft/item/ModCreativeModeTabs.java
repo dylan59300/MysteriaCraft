@@ -57,6 +57,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.ARCANE_CONDENSER.get());
                         output.accept(ModBlocks.RUNIC_FORGE.get());
                         output.accept(ModBlocks.STARLIGHT_REFINER.get());
+                        output.accept(ModBlocks.RUBY_FURNACE.get());
+                        output.accept(ModItems.RUBY.get());
 
                         // Equipement Mercure Ardent
                         output.accept(ModItems.ARDENT_MERCURY_SWORD.get());

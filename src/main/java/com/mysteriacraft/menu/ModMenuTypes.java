@@ -31,4 +31,8 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<MachineMenu>> STARLIGHT_REFINER_MENU =
             MENU_TYPES.register("starlight_refiner_menu", () -> IForgeMenuType.create(
                     (windowId, inv, extraData) -> new MachineMenu(STARLIGHT_REFINER_MENU.get(), windowId, inv, extraData)));
+
+    public static final RegistryObject<MenuType<MachineMenu>> RUBY_FURNACE_MENU =
+            MENU_TYPES.register("ruby_furnace_menu", () -> IForgeMenuType.create(
+                    (windowId, inv, extraData) -> new MachineMenu(RUBY_FURNACE_MENU.get(), windowId, inv, extraData)));
 }

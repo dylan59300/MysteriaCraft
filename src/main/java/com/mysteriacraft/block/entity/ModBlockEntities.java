@@ -31,4 +31,8 @@ public class ModBlockEntities {
     public static final RegistryObject<BlockEntityType<StarlightRefinerBlockEntity>> STARLIGHT_REFINER =
             BLOCK_ENTITIES.register("starlight_refiner", () -> BlockEntityType.Builder.of(
                     StarlightRefinerBlockEntity::new, ModBlocks.STARLIGHT_REFINER.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<RubyFurnaceBlockEntity>> RUBY_FURNACE =
+            BLOCK_ENTITIES.register("ruby_furnace", () -> BlockEntityType.Builder.of(
+                    RubyFurnaceBlockEntity::new, ModBlocks.RUBY_FURNACE.get()).build(null));
 }

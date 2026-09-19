@@ -51,4 +51,7 @@ public class ModItems {
 
     public static final RegistryObject<Item> ARDENT_MERCURY_SWORD = ITEMS.register("ardent_mercury_sword",
             () -> new SwordItem(ModTiers.ARDENT_MERCURY, 3, -2.4F, new Item.Properties()));
+
+    public static final RegistryObject<Item> RUBY = ITEMS.register("ruby",
+            () -> new Item(new Item.Properties()));
 }

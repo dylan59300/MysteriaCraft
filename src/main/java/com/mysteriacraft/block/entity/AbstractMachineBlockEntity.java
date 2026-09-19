@@ -46,6 +46,7 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
     private final Component title;
 
     private int progress = 0;
+    private boolean active = false;
     protected final EnergyStorage energyStorage;
 
     protected final ItemStackHandler itemHandler = new ItemStackHandler(2) {
@@ -115,6 +116,12 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         ItemStack recipeOutput = blockEntity.recipes.get(input.getItem());
         boolean hasRecipe = !input.isEmpty() && recipeOutput != null && blockEntity.canInsertOutput(recipeOutput);
         boolean hasEnergy = blockEntity.energyStorage.getEnergyStored() >= blockEntity.energyPerTick;
+
+        boolean nowActive = hasRecipe && hasEnergy;
+        if (nowActive != blockEntity.active) {
+            blockEntity.active = nowActive;
+            blockEntity.onActiveChanged(nowActive);
+        }
 
         boolean changed = false;
         if (hasRecipe && hasEnergy) {
@@ -212,5 +219,9 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
 
     public ItemStackHandler getItemHandler() {
         return itemHandler;
+    }
+
+    /** Point d'extension pour les machines qui reflètent leur activité sur le bloc (ex: four allumé). */
+    protected void onActiveChanged(boolean active) {
     }
 }

@@ -31,6 +31,8 @@ public class ClientModEvents {
                     (menu, inv, title) -> new MachineScreen(menu, inv, title, "runic_forge"));
             MenuScreens.register(ModMenuTypes.STARLIGHT_REFINER_MENU.get(),
                     (menu, inv, title) -> new MachineScreen(menu, inv, title, "starlight_refiner"));
+            MenuScreens.register(ModMenuTypes.RUBY_FURNACE_MENU.get(),
+                    (menu, inv, title) -> new MachineScreen(menu, inv, title, "ruby_furnace"));
         });
     }
 }
