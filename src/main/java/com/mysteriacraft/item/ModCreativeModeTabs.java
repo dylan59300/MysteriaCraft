@@ -57,6 +57,13 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.ARCANE_CONDENSER.get());
                         output.accept(ModBlocks.RUNIC_FORGE.get());
                         output.accept(ModBlocks.STARLIGHT_REFINER.get());
+
+                        // Equipement Infernal
+                        output.accept(ModItems.INFERNAL_SWORD.get());
+                        output.accept(ModItems.INFERNAL_HELMET.get());
+                        output.accept(ModItems.INFERNAL_CHESTPLATE.get());
+                        output.accept(ModItems.INFERNAL_LEGGINGS.get());
+                        output.accept(ModItems.INFERNAL_BOOTS.get());
                     })
                     .build());
 }
