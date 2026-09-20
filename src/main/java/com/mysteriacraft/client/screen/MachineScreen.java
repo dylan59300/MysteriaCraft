@@ -34,19 +34,22 @@ public class MachineScreen extends AbstractContainerScreen<MachineMenu> {
         renderProgressArrow(guiGraphics, x, y);
     }
 
+    private static final int ENERGY_BAR_HEIGHT = 46;
+    private static final int PROGRESS_ARROW_WIDTH = 18;
+
     private void renderEnergyBar(GuiGraphics guiGraphics, int x, int y) {
         int maxEnergy = Math.max(1, menu.getMaxEnergy());
-        int energyHeight = (int) (52 * ((float) menu.getEnergy() / maxEnergy));
+        int energyHeight = (int) (ENERGY_BAR_HEIGHT * ((float) menu.getEnergy() / maxEnergy));
         if (energyHeight > 0) {
-            guiGraphics.fill(x + 10, y + 69 - energyHeight, x + 20, y + 69, 0xFFE0A030);
+            guiGraphics.fill(x + 11, y + 66 - energyHeight, x + 19, y + 66, 0xFFE0A030);
         }
     }
 
     private void renderProgressArrow(GuiGraphics guiGraphics, int x, int y) {
         int maxProgress = Math.max(1, menu.getMaxProgress());
-        int arrowWidth = (int) (16 * ((float) menu.getProgress() / maxProgress));
+        int arrowWidth = (int) (PROGRESS_ARROW_WIDTH * ((float) menu.getProgress() / maxProgress));
         if (arrowWidth > 0) {
-            guiGraphics.fill(x + 79, y + 41, x + 79 + arrowWidth, y + 47, 0xFF3ADF6C);
+            guiGraphics.fill(x + 80, y + 36, x + 80 + arrowWidth, y + 40, 0xFF3ADF6C);
         }
     }
 
