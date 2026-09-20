@@ -7,7 +7,7 @@ on:
       - claude/beautiful-clarke-xkgjv1
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -33,3 +33,17 @@ jobs:
           name: mysteriacraft-jar
           path: build/libs/*.jar
           retention-days: 14
+
+      - name: Publish jar to ci-jar-output branch
+        run: |
+          JAR=$(ls build/libs/*.jar | grep -v sources | head -n1)
+          mkdir /tmp/publish
+          cp "$JAR" /tmp/publish/mysteriacraft.jar
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan ci-jar-output
+          git rm -rf . > /dev/null 2>&1 || true
+          cp /tmp/publish/mysteriacraft.jar .
+          git add mysteriacraft.jar
+          git commit -m "CI build from ${{ github.sha }}"
+          git push -f origin HEAD:ci-jar-output
