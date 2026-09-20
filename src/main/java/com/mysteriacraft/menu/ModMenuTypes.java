@@ -14,25 +14,25 @@ public class ModMenuTypes {
 
     public static final RegistryObject<MenuType<MachineMenu>> ESSENCE_EXTRACTOR_MENU =
             MENU_TYPES.register("essence_extractor_menu", () -> IForgeMenuType.create(
-                    (windowId, inv, extraData) -> new MachineMenu(ESSENCE_EXTRACTOR_MENU.get(), windowId, inv, extraData)));
+                    (windowId, inv, extraData) -> new MachineMenu(ModMenuTypes.ESSENCE_EXTRACTOR_MENU.get(), windowId, inv, extraData)));
 
     public static final RegistryObject<MenuType<MachineMenu>> CRYSTAL_INFUSER_MENU =
             MENU_TYPES.register("crystal_infuser_menu", () -> IForgeMenuType.create(
-                    (windowId, inv, extraData) -> new MachineMenu(CRYSTAL_INFUSER_MENU.get(), windowId, inv, extraData)));
+                    (windowId, inv, extraData) -> new MachineMenu(ModMenuTypes.CRYSTAL_INFUSER_MENU.get(), windowId, inv, extraData)));
 
     public static final RegistryObject<MenuType<MachineMenu>> ARCANE_CONDENSER_MENU =
             MENU_TYPES.register("arcane_condenser_menu", () -> IForgeMenuType.create(
-                    (windowId, inv, extraData) -> new MachineMenu(ARCANE_CONDENSER_MENU.get(), windowId, inv, extraData)));
+                    (windowId, inv, extraData) -> new MachineMenu(ModMenuTypes.ARCANE_CONDENSER_MENU.get(), windowId, inv, extraData)));
 
     public static final RegistryObject<MenuType<MachineMenu>> RUNIC_FORGE_MENU =
             MENU_TYPES.register("runic_forge_menu", () -> IForgeMenuType.create(
-                    (windowId, inv, extraData) -> new MachineMenu(RUNIC_FORGE_MENU.get(), windowId, inv, extraData)));
+                    (windowId, inv, extraData) -> new MachineMenu(ModMenuTypes.RUNIC_FORGE_MENU.get(), windowId, inv, extraData)));
 
     public static final RegistryObject<MenuType<MachineMenu>> STARLIGHT_REFINER_MENU =
             MENU_TYPES.register("starlight_refiner_menu", () -> IForgeMenuType.create(
-                    (windowId, inv, extraData) -> new MachineMenu(STARLIGHT_REFINER_MENU.get(), windowId, inv, extraData)));
+                    (windowId, inv, extraData) -> new MachineMenu(ModMenuTypes.STARLIGHT_REFINER_MENU.get(), windowId, inv, extraData)));
 
     public static final RegistryObject<MenuType<MachineMenu>> RUBY_FURNACE_MENU =
             MENU_TYPES.register("ruby_furnace_menu", () -> IForgeMenuType.create(
-                    (windowId, inv, extraData) -> new MachineMenu(RUBY_FURNACE_MENU.get(), windowId, inv, extraData)));
+                    (windowId, inv, extraData) -> new MachineMenu(ModMenuTypes.RUBY_FURNACE_MENU.get(), windowId, inv, extraData)));
 }

@@ -64,8 +64,8 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         }
     };
 
-    private final LazyOptional<IItemHandler> itemHandlerOptional = LazyOptional.of(() -> itemHandler);
-    private final LazyOptional<IEnergyStorage> energyOptional = LazyOptional.of(() -> energyStorage);
+    private final LazyOptional<IItemHandler> itemHandlerOptional;
+    private final LazyOptional<IEnergyStorage> energyOptional;
 
     private final ContainerData data = new ContainerData() {
         @Override
@@ -103,6 +103,8 @@ public abstract class AbstractMachineBlockEntity extends BlockEntity implements 
         this.energyPerTick = energyPerTick;
         this.energyRegenPerTick = energyRegenPerTick;
         this.energyStorage = new EnergyStorage(energyCapacity);
+        this.itemHandlerOptional = LazyOptional.of(() -> itemHandler);
+        this.energyOptional = LazyOptional.of(() -> energyStorage);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, AbstractMachineBlockEntity blockEntity) {
