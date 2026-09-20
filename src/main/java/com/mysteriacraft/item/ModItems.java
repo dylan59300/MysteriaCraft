@@ -54,4 +54,10 @@ public class ModItems {
 
     public static final RegistryObject<Item> RUBY = ITEMS.register("ruby",
             () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> JADE = ITEMS.register("jade",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> JADE_AXE = ITEMS.register("jade_axe",
+            () -> new JadeAxeItem(ModTiers.JADE, 6.0F, -3.0F, new Item.Properties()));
 }

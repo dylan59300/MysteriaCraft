@@ -110,4 +110,9 @@ public class ModBlocks {
     public static final RegistryObject<Block> LUCKY_BLOCK_BLUE = registerBlock("lucky_block_blue",
             () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLUE).strength(0.5f)
                     .sound(SoundType.WOOL).lightLevel(state -> 8)));
+
+    public static final RegistryObject<Block> JADE_ORE = registerBlock("jade_ore",
+            () -> new Block(baseProps(MapColor.STONE).strength(3.0f, 6.0f)));
+    public static final RegistryObject<Block> JADE_BLOCK = registerBlock("jade_block",
+            () -> new Block(baseProps(MapColor.COLOR_GREEN)));
 }

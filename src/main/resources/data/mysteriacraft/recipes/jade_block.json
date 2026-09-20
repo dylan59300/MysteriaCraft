@@ -1,0 +1,16 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "JJJ",
+        "JJJ",
+        "JJJ"
+    ],
+    "key": {
+        "J": {
+            "item": "mysteriacraft:jade"
+        }
+    },
+    "result": {
+        "item": "mysteriacraft:jade_block"
+    }
+}

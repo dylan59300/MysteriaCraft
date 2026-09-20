@@ -1,0 +1,12 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "ingredients": [
+        {
+            "item": "mysteriacraft:jade_block"
+        }
+    ],
+    "result": {
+        "item": "mysteriacraft:jade",
+        "count": 9
+    }
+}

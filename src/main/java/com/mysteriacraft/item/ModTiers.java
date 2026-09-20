@@ -5,10 +5,11 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.function.Supplier;
 
-/** Tier de l'Épée de Mercure Ardent, forgée à partir de Lingots Runiques. */
+/** Tiers d'outils/armes de MysteriaCraft. */
 public enum ModTiers implements Tier {
 
-    ARDENT_MERCURY(3, 2500, 9.0F, 3.5F, 16, () -> Ingredient.of(ModItems.RUNIC_INGOT.get()));
+    ARDENT_MERCURY(3, 2500, 9.0F, 3.5F, 16, () -> Ingredient.of(ModItems.RUNIC_INGOT.get())),
+    JADE(3, 800, 8.0F, 4.0F, 12, () -> Ingredient.of(ModItems.JADE.get()));
 
     private final int level;
     private final int uses;

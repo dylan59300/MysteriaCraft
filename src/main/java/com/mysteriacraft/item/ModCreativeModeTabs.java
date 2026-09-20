@@ -66,6 +66,12 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.LUCKY_BLOCK_YELLOW.get());
                         output.accept(ModBlocks.LUCKY_BLOCK_BLUE.get());
 
+                        // Jade
+                        output.accept(ModItems.JADE.get());
+                        output.accept(ModItems.JADE_AXE.get());
+                        output.accept(ModBlocks.JADE_ORE.get());
+                        output.accept(ModBlocks.JADE_BLOCK.get());
+
                         // Equipement Mercure Ardent
                         output.accept(ModItems.ARDENT_MERCURY_SWORD.get());
                         output.accept(ModItems.ARDENT_MERCURY_HELMET.get());
