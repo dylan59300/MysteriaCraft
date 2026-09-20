@@ -223,6 +223,31 @@
                     "type": "minecraft:item",
                     "name": "mysteriacraft:jade_block",
                     "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_hoe",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_cleaver_hoe",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_pickaxe",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_war_pickaxe",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_shovel",
+                    "weight": 1
                 }
             ],
             "conditions": [

@@ -72,6 +72,13 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.JADE_ORE.get());
                         output.accept(ModBlocks.JADE_BLOCK.get());
 
+                        // Outillage Mercure Ardent
+                        output.accept(ModItems.ARDENT_MERCURY_PICKAXE.get());
+                        output.accept(ModItems.ARDENT_MERCURY_WAR_PICKAXE.get());
+                        output.accept(ModItems.ARDENT_MERCURY_SHOVEL.get());
+                        output.accept(ModItems.ARDENT_MERCURY_HOE.get());
+                        output.accept(ModItems.ARDENT_MERCURY_CLEAVER_HOE.get());
+
                         // Equipement Mercure Ardent
                         output.accept(ModItems.ARDENT_MERCURY_SWORD.get());
                         output.accept(ModItems.ARDENT_MERCURY_HELMET.get());
