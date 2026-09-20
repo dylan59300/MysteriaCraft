@@ -1,0 +1,10 @@
+{
+    "variants": {
+        "lit=false": {
+            "model": "mysteriacraft:block/ruby_furnace"
+        },
+        "lit=true": {
+            "model": "mysteriacraft:block/ruby_furnace_on"
+        }
+    }
+}

@@ -1,0 +1,260 @@
+{
+    "type": "minecraft:block",
+    "pools": [
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:magic_essence",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:mystic_crystal",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:mysteria_wand",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:starlight_shard",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:infused_crystal",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:arcane_dust",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:runic_ingot",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:starlight_ingot",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_helmet",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_chestplate",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_leggings",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_boots",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_sword",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ruby",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:mystic_stone",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:arcane_bricks",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:arcane_bricks_polished",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:void_stone",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:void_stone_polished",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:shadow_stone",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:shadow_bricks",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:runic_stone",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:runic_pillar",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:starlight_ore",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:crystal_ore",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:crystal_block",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:starlight_block",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:luminescent_log",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:luminescent_planks",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:luminescent_leaves",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:glowing_moss",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:enchanted_glass",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:enchanted_sand",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:essence_infused_soil",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:essence_extractor",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:crystal_infuser",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:arcane_condenser",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:runic_forge",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:starlight_refiner",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ruby_furnace",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:jade",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:jade_axe",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:jade_ore",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:jade_block",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_hoe",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_cleaver_hoe",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_pickaxe",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_war_pickaxe",
+                    "weight": 1
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "mysteriacraft:ardent_mercury_shovel",
+                    "weight": 1
+                }
+            ],
+            "conditions": [
+                {
+                    "condition": "minecraft:survives_explosion"
+                }
+            ]
+        }
+    ]
+}
